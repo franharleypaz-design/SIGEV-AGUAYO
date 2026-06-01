@@ -2,11 +2,22 @@
 import { auth, db } from "./app.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL LAYOUT
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const tenantActual = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+
 // ==============================================================================
-// 0. ANTI-FLASH DEL MODO OSCURO (EJECUCIÓN INMEDIATA)
+// 0. ANTI-FLASH DEL MODO CONFIGURADO EN CACHÉ (EJECUCIÓN INMEDIATA)
 // ==============================================================================
 // Leemos la memoria caché local antes de que el navegador dibuje la pantalla
 const temaGuardado = localStorage.getItem("sigev_tema_cache");
+const colorSidebarCache = localStorage.getItem("sigev_color_sidebar_cache") || "#093570";
+const colorHeaderCache = localStorage.getItem("sigev_color_header_cache") || "#ffffff";
+
+// Seteamos las variables CSS de manera inmediata basándonos en la última configuración limpia guardada
+document.documentElement.style.setProperty('--sidebar-dinamico', colorSidebarCache);
+document.documentElement.style.setProperty('--header-dinamico', colorHeaderCache);
+
 if (temaGuardado === "oscuro") {
     document.documentElement.style.setProperty('--bg-workspace', '#0f172a');
     document.documentElement.style.setProperty('--card-bg', '#1e293b');
@@ -28,12 +39,12 @@ if (temaGuardado === "oscuro") {
 // ==============================================================================
 
 const SIDEBAR_HTML = `
-<aside class="sidebar" style="background-color: #093570; transition: background-color 0.4s ease;">
+<aside class="sidebar" style="background-color: var(--sidebar-dinamico); transition: background-color 0.4s ease;">
     <div class="sidebar-brand" id="sidebar-brand-container" style="display: flex; justify-content: center; align-items: center; height: 120px; min-height: 120px; max-height: 120px; padding: 0; box-sizing: border-box; opacity: 0; transition: opacity 0.4s ease; overflow: hidden; flex-shrink: 0;">
         </div>
     
     <div class="sidebar-profile" id="sidebar-profile-container" style="opacity: 0; transition: opacity 0.4s ease; padding-top: 14px; padding-bottom: 24px; padding-left: 10px; padding-right: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 65px; box-sizing: border-box; flex-shrink: 0; width: 100%;">
-        <h2 id="sidebar-dynamic-title" style="font-size: 14.5px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; min-height: 18px; text-align: center; width: 100%; display: block; transition: color 0.4s ease;">SIGEV-AGUAYO</h2>
+        <h2 id="sidebar-dynamic-title" style="font-size: 14.5px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; min-height: 18px; text-align: center; width: 100%; display: block; transition: color 0.4s ease;">SIGEV</h2>
         <p id="sidebar-dynamic-subtitle" style="font-size: 11.5px; color: rgba(255,255,255,0.7); margin: 0; font-weight: 500; min-height: 14px; text-align: center; width: 100%; display: block; transition: color 0.4s ease;">Portal Territorial Vecinal</p>
     </div>
     
@@ -199,7 +210,7 @@ export async function inyectarEstructuraGlobal() {
 
     // --- RECOPILADOR: APLICACIÓN DE BRANDING DINÁMICO (SaaS) ---
     try {
-        const configRef = doc(db, "configuracion_tenant", "aguayo");
+        const configRef = doc(db, "configuracion_tenant", tenantActual);
         const configSnap = await getDoc(configRef);
         
         if (configSnap.exists()) {
@@ -210,11 +221,20 @@ export async function inyectarEstructuraGlobal() {
             const titleTopbar = document.getElementById("topbar-dynamic-title");
             const subtitleTopbar = document.getElementById("topbar-dynamic-subtitle");
 
-            const sidebarEl = document.querySelector(".sidebar");
-            if (sidebarEl) sidebarEl.style.backgroundColor = '#093570';
+            // Sincronización estricta de colores desde los campos de la Base de Datos
+            const colorSidebarFinal = data.colorSidebar || "#093570";
+            const colorHeaderFinal = data.colorEncabezado || "#ffffff";
 
-            // Guardamos el tema en caché para la próxima recarga
+            document.documentElement.style.setProperty('--sidebar-dinamico', colorSidebarFinal);
+            document.documentElement.style.setProperty('--header-dinamico', colorHeaderFinal);
+
+            const sidebarEl = document.querySelector(".sidebar");
+            if (sidebarEl) sidebarEl.style.backgroundColor = colorSidebarFinal;
+
+            // Almacenamos en caché local para acelerar el render del anti-flash del ciclo de vida
             localStorage.setItem("sigev_tema_cache", data.temaPlataforma || "claro");
+            localStorage.setItem("sigev_color_sidebar_cache", colorSidebarFinal);
+            localStorage.setItem("sigev_color_header_cache", colorHeaderFinal);
 
             if (data.temaPlataforma === "claro") {
                 document.documentElement.style.setProperty('--bg-workspace', '#f1f5f9');
@@ -224,7 +244,7 @@ export async function inyectarEstructuraGlobal() {
                 document.documentElement.style.setProperty('--border-color', '#e2e8f0');
                 document.documentElement.style.setProperty('--input-bg', '#ffffff');
                 
-                if (topbarEl) topbarEl.style.backgroundColor = '#ffffff';
+                if (topbarEl) topbarEl.style.backgroundColor = colorHeaderFinal;
                 if (titleTopbar) titleTopbar.style.color = '#0f172a';
                 if (subtitleTopbar) subtitleTopbar.style.color = '#64748b';
             } else {
@@ -235,7 +255,7 @@ export async function inyectarEstructuraGlobal() {
                 document.documentElement.style.setProperty('--border-color', '#334155');
                 document.documentElement.style.setProperty('--input-bg', '#161e2e'); 
                 
-                if (topbarEl) topbarEl.style.backgroundColor = '#1e293b';
+                if (topbarEl) topbarEl.style.backgroundColor = colorHeaderFinal;
                 if (titleTopbar) titleTopbar.style.color = '#f8fafc';
                 if (subtitleTopbar) subtitleTopbar.style.color = '#94a3b8';
             }
@@ -270,7 +290,7 @@ export async function inyectarEstructuraGlobal() {
                 if (titleTopbar) titleTopbar.innerText = data.sidebarTitle;
             } else {
                 const headSidebarProfile = document.getElementById("sidebar-dynamic-title");
-                if (headSidebarProfile) headSidebarProfile.innerText = "SIGEV-AGUAYO";
+                if (headSidebarProfile) headSidebarProfile.innerText = `SIGEV-${tenantActual.toUpperCase()}`;
                 if (titleTopbar) titleTopbar.innerText = "Sistema de Gestión Vecinal";
             }
             
@@ -281,7 +301,7 @@ export async function inyectarEstructuraGlobal() {
             } else {
                 const subSidebarProfile = document.getElementById("sidebar-dynamic-subtitle");
                 if (subSidebarProfile) subSidebarProfile.innerText = "Portal Territorial Vecinal";
-                if (subtitleTopbar) subtitleTopbar.innerText = "Concejal Gonzalo Aguayo – La Cisterna";
+                if (subtitleTopbar) subtitleTopbar.innerText = `Portal Territorial – ${tenantActual.toUpperCase()}`;
             }
 
             // === 4. ESTILOS DE RELOJ DINÁMICO ===
@@ -305,7 +325,7 @@ export async function inyectarEstructuraGlobal() {
                 logoArea.style.opacity = "1";
             }
             const headSidebarProfile = document.getElementById("sidebar-dynamic-title");
-            if (headSidebarProfile) headSidebarProfile.innerText = "SIGEV-AGUAYO";
+            if (headSidebarProfile) headSidebarProfile.innerText = `SIGEV-${tenantActual.toUpperCase()}`;
             const titleTopbar = document.getElementById("topbar-dynamic-title");
             if (titleTopbar) titleTopbar.innerText = "Sistema de Gestión Vecinal";
             if (profileArea) profileArea.style.opacity = "1";
@@ -336,7 +356,7 @@ function mostrarConfirmacionLogoutPersonalizada(nombreUsuario, onConfirm) {
             <div class="custom-alert-icon" style="background-color: rgba(59, 130, 246, 0.08); color: #2563eb; font-size: 24px; padding: 4px; border: 1px solid rgba(59,130,246,0.15);">👋</div>
             <div class="custom-alert-title" style="color: var(--text-dark); font-size: 16px; margin-top: 14px;">¿Finalizar sesión de trabajo?</div>
             <div class="custom-alert-message" style="line-height: 1.5; color: var(--text-light); font-size: 13px; margin-bottom: 22px;">
-                Hola <b>${nombreUsuario}</b>, estás a punto de salir del ecosistema SIGEV-AGUAYO.<br>¿Deseas cerrar tu sesión activa de forma segura?
+                Hola <b>${nombreUsuario}</b>, estás a punto de salir del ecosistema SIGEV-${tenantActual.toUpperCase()}.<br>¿Deseas cerrar tu sesión activa de forma segura?
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
                 <button class="btn-confirmar-logout-ui" style="background-color: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; flex: 1; transition: background 0.2s;" onmouseenter="this.style.background='#1d4ed8'" onmouseleave="this.style.background='#2563eb'">Cerrar Sesión</button>
@@ -420,6 +440,7 @@ function fantasticalCenteringFallback(elementId, fallbackText) {
     }
 }
 
+// Inicialización asíncrona del reloj local chileno
 function inicializarRelojMundial() {
     const clockContainer = document.getElementById("live-clock");
     if (!clockContainer) return;
@@ -464,7 +485,7 @@ function inicializarNotificaciones() {
             e.stopPropagation(); 
             notifBody.innerHTML = `
                 <div style="padding: 32px 16px; text-align: center; color: #64748b; font-size: 13px; font-weight: 500;">
-                    ✨ ¡Al día! No tienes notificaciones nuevas.
+                    ✨ ¡Al día! No tienes notificaciones McKenzie.
                 </div>`;
             if (badge) badge.style.display = "none"; 
         });
@@ -475,7 +496,7 @@ function inicializarNotificaciones() {
     });
 }
 
-// Mobile
+// Mobile Responsive Handler
 function inicializarMenuMobile() {
     const btnHamburguesa = document.getElementById("btn-toggle-sidebar-mobile");
     const capaOscura = document.getElementById("sidebar-overlay-tap");

@@ -6,7 +6,8 @@ import {
     collection, getDocs, doc, getDoc, query, where 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // Caché global del módulo documental
 let vecinosDocumentalMemory = [];

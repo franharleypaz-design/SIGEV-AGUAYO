@@ -39,7 +39,8 @@ let estadoFiltroKPIActivo = "Todos";
 let vDataActual = null; // Caché operativa global para auto-asociación de expediente verificado
 
 // ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // --- DICCIONARIO VISUAL DE SECTORES (Para mostrar los paréntesis en los selectores dinámicos) ---
 const ETIQUETAS_SECTORES = {

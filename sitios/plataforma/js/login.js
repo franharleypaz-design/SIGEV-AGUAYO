@@ -27,6 +27,11 @@ const db = initializeFirestore(app, {
     experimentalForceLongPolling: true
 });
 
+// 🕵️‍♂️ DETECTOR MULTI-TENANT INTELIGENTE
+// Si estás programando localmente usa por defecto el entorno "paz". En internet leerá la URL automáticamente.
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const tenantActual = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
@@ -55,10 +60,10 @@ if (btnGoogleLogin) {
                     email: user.email,
                     photoURL: user.photoURL,
                     fechaRegistro: serverTimestamp(),
-                    tenantId: "aguayo",
+                    tenantId: tenantActual,
                     rol: "pendiente"
                 });
-                console.log("¡Nuevo perfil territorial registrado en Cloud Firestore bajo Tenant-Aguayo!");
+                console.log(`¡Nuevo perfil territorial registrado en Cloud Firestore bajo Tenant-${tenantActual}!`);
             } else {
                 await setDoc(userRef, {
                     nombre: user.displayName,
@@ -97,7 +102,7 @@ if (btnGoogleLogin) {
 // ==============================================================================
 async function cargarBrandingPublico() {
     try {
-        const docRef = doc(db, "configuracion_tenant", "aguayo");
+        const docRef = doc(db, "configuracion_tenant", tenantActual);
         const snap = await getDoc(docRef);
 
         if (snap.exists()) {
@@ -412,7 +417,7 @@ function inicializarFormularioBuzonCiudadano() {
                 }
 
                 const formularioPayload = {
-                    tenantId: "aguayo",
+                    tenantId: tenantActual,
                     nombre: nombre || "Vecino Identificado",
                     rut: rut,
                     telefono: telefono || "No proporcionado",

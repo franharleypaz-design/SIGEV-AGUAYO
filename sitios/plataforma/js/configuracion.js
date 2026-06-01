@@ -7,7 +7,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 import { actualizarPerfilLayout } from "./layout.js";
 
 const storage = getStorage(app);
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // Variables para almacenar las imágenes en memoria antes de guardarlas
 let archivoLogoSidebarPendiente = null;

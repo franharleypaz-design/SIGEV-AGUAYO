@@ -19,8 +19,10 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Constante de control para el guardián de este Workspace específico
-const TARGET_TENANT_ID = "aguayo";
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL GUARDIÁN GLOBAL
+// Si estás localmente en localhost o 127.0.0.1 validará el entorno de "paz". En producción leerá la URL.
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const TARGET_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // --- FUNCIÓN EXCLUSIVA PARA MOSTRAR ALERTAS DE SEGURIDAD PREMIUM ---
 function mostrarAlertaSeguridadYSalir(mensaje) {
@@ -74,7 +76,7 @@ onAuthStateChanged(auth, async (user) => {
 
                 // FIJADO DE SEGURIDAD: Bloquea accesos cruzados de funcionarios de otros municipios
                 if (userTenant !== TARGET_TENANT_ID) {
-                    mostrarAlertaSeguridadYSalir("Tu cuenta no pertenece al Workspace territorial del Concejal Gonzalo Aguayo.");
+                    mostrarAlertaSeguridadYSalir(`Tu cuenta no pertenece al Workspace territorial de SIGEV-${TARGET_TENANT_ID.toUpperCase()}.`);
                     return;
                 }
 
@@ -93,7 +95,7 @@ onAuthStateChanged(auth, async (user) => {
                     mostrarAlertaSeguridadYSalir("Tu cuenta requiere aprobación del administrador para acceder al Equipo Territorial.");
                 }
             } else {
-                mostrarAlertaSeguridadYSalir("Tu correo electrónico no figura registrado en el sistema SIGEV-AGUAYO.");
+                mostrarAlertaSeguridadYSalir(`Tu correo electrónico no figura registrado en el sistema SIGEV-${TARGET_TENANT_ID.toUpperCase()}.`);
             }
         } catch (error) {
             console.error("Error en el guardián de acceso:", error);

@@ -16,7 +16,8 @@ let fechaActual = new Date();
 let eventosGlobales = [];
 
 // ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // Diccionario para traducir la clase de color a nombre real
 const diccionarioNombresEventos = {

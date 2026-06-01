@@ -15,7 +15,8 @@ let solicitudesMemory = []; // Caché global para cruce instantáneo de expedien
 const hoverCard = document.getElementById("vecino-hover-card");
 
 // ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 const ETIQUETAS_SECTORES = {
     "Sector Territorial 1": "Sector Territorial 1 (UV 1)",

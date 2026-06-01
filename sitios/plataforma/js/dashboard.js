@@ -35,8 +35,10 @@ let archivoFotoSeleccionado = null;
 let archivoDocSeleccionado = null; 
 let estaGuardando = false; 
 
-// ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
-const CURRENT_TENANT_ID = "aguayo";
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL DASHBOARD
+// Si estás localmente en localhost o 127.0.0.1 forzará el entorno de la prueba ("paz"). En internet leerá la URL real.
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // Variables para el Mini-Calendario del Dashboard
 let fechaActualDashboard = new Date();
@@ -108,6 +110,7 @@ function despertarMapaDashboard() {
                 pinMarcadorDashboard = L.marker(e.latlng, { icon: SVG_MARKER_TEMPLATE }).addTo(miniMapaDashboard); 
             }
 
+            // Integración de geocodificación inversa con Nominatim OpenStreetMap
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
                 const dataRes = await response.json();
@@ -529,7 +532,6 @@ async function abrirEditorVecino(id) {
 
         modalOverlay.innerHTML = `
             <div class="profile-modal-card">
-                <div class="profile-modal-card">
                 <div class="profile-modal-header" style="background: linear-gradient(135deg, #1e293b, #475569);">
                     <div class="modal-avatar-wrapper" style="position: relative; cursor: pointer;" title="Cambiar Foto">
                         <img src="${fotoSrc}" class="profile-modal-avatar" id="edit-modal-preview">
@@ -641,7 +643,7 @@ async function abrirEditorVecino(id) {
                     <button class="btn btn-primary btn-modal-save" style="background-color: #0b438c;">Guardar cambios</button>
                 </div>
             </div>`;
-        document.body.appendChild(modalOverlay);
+    document.body.appendChild(modalOverlay);
 
         const eMotivo = modalOverlay.querySelector("#e-solicitud-motivo"); const eSub = modalOverlay.querySelector("#e-solicitud-subcategoria"); const eOficina = modalOverlay.querySelector("#e-solicitud-oficina");
         const listContainer = modalOverlay.querySelector("#lista-solicitudes-container"); const formContainer = modalOverlay.querySelector("#editor-solicitudes-form");
@@ -1137,8 +1139,8 @@ function inicializarManejadorFormularioEstatico() {
                     nombreCompleto: nom, rut: rut, telefono: document.getElementById("vecino-telefono").value.trim(), 
                     fechaNacimiento: document.getElementById("vecino-fecha-nacimiento").value, correoElectronico: document.getElementById("vecino-correo").value.trim(),
                     direccion: document.getElementById("vecino-direccion").value.trim(),
-                    lat: latVal ? Number(latVal) : "", // ◄ NUEVO: Inserción de latitud permanente
-                    lng: lngVal ? Number(lngVal) : "", // ◄ NUEVO: Inserción de longitud permanente
+                    lat: latVal ? Number(latVal) : "", // ◄ Inserción de latitud permanente
+                    lng: lngVal ? Number(lngVal) : "", // ◄ Inserción de longitud permanente
                     fotoPerfil: urlFotoFinal, urlDocumento: urlDocFinal, nombreDocumento: document.getElementById("vecino-documento-nombre")?.value.trim() || "",
                     fechaRegistro: serverTimestamp(),
                     tenantId: CURRENT_TENANT_ID, 

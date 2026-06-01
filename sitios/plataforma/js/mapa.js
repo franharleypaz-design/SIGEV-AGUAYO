@@ -5,7 +5,8 @@ import { auth, db } from "./app.js";
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { actualizarPerfilLayout } from "./layout.js";
 
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 let mapaInstancia = null;
 
 // Inicialización de contenedores lógicos aislados para evitar sobrecargar la GPU

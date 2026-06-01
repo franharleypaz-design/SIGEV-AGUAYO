@@ -15,7 +15,8 @@ let archivoFotoPendiente = null; // Almacena el binario de la nueva foto selecci
 const modalUsuario = document.getElementById("modal-editar-usuario");
 
 // ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 inyectarEstructuraGlobal();
 

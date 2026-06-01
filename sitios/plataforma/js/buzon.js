@@ -5,7 +5,10 @@ import { auth, db } from "./app.js";
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { actualizarPerfilLayout } from "./layout.js";
 
-const TENANT_ID = "aguayo";
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL BUZÓN
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+
 let listaRegistrosBuzon = [];
 let registroSeleccionadoId = null;
 let filtroEstadoActual = "Nuevo";

@@ -9,7 +9,8 @@ import { actualizarPerfilLayout } from "./layout.js";
 import { MAPEO_TERRITORIAL } from "./mapeoMunicipal.js"; 
 
 let donacionesMemory = [];
-const CURRENT_TENANT_ID = "aguayo";
+const subdominioDetectado = window.location.hostname.split('.')[0];
+const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 let vecinoVinculadoId = null;
 let estadoFiltroKPIActivo = "Todos";
 
