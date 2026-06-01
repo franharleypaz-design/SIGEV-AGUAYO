@@ -6,62 +6,74 @@
     <title>SIGEV - Sistema Integrado de Gestión Vecinal</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Cuadrícula técnica sutil de fondo para el Hero */
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
 </head>
 <body class="bg-[#F5F5F5] text-slate-800 font-sans antialiased">
 
-    <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-[#2E7D32] text-white p-2 rounded-xl font-bold text-lg shadow-md">SIGEV</div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-[#C9A227] bg-amber-50 px-2 py-1 rounded border border-amber-200">SaaS GovTech</span>
+    <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-100 h-32 w-full relative flex items-center justify-end overflow-hidden px-4 sm:px-6 lg:px-8">
+        
+        <img src="img/banner.jpg" alt="SIGEV Banner" class="absolute inset-0 w-full h-full object-cover object-left mix-blend-multiply z-0">
+        
+        <div class="relative z-10 flex items-center gap-6 lg:gap-8 h-full">
+            
+            <div class="hidden md:flex items-center gap-6 lg:gap-8 font-black text-slate-800 text-sm whitespace-nowrap">
+                <a href="#problema" class="hover:text-[#2E7D32] transition-colors">El Desafío</a>
+                <a href="#solucion" class="hover:text-[#2E7D32] transition-colors">La Solución</a>
+                <a href="#modulos" class="hover:text-[#2E7D32] transition-colors">Módulos</a>
+                <a href="#modelo" class="hover:text-[#2E7D32] transition-colors">Modelo Comercial</a>
             </div>
-            <div class="hidden md:flex items-center gap-8 font-semibold text-slate-600 text-sm">
-                <a href="#problema" class="hover:text-[#2E7D32] transition">El Desafío</a>
-                <a href="#solucion" class="hover:text-[#2E7D32] transition">La Solución</a>
-                <a href="#modulos" class="hover:text-[#2E7D32] transition">Módulos</a>
-                <a href="#modelo" class="hover:text-[#2E7D32] transition">Modelo Comercial</a>
-            </div>
-            <div>
-                <a href="https://aguayo.sigev.cl" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-5 py-2.5 rounded-xl font-bold transition shadow-md shadow-green-100 text-sm">
+            
+            <div class="flex-shrink-0">
+                <a href="https://aguayo.sigev.cl" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-6 py-3 rounded-xl font-black transition-all shadow-md shadow-green-100 text-sm whitespace-nowrap inline-block">
                     Ingresar a la App
                 </a>
             </div>
+            
         </div>
     </nav>
 
-    <header class="relative bg-white py-20 lg:py-28 overflow-hidden border-b border-slate-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
-            <div class="space-y-6">
+    <header class="relative bg-white border-b border-slate-100 overflow-hidden bg-grid w-full pt-3 pb-16 md:pt-4 md:pb-24 flex flex-col justify-start items-start">
+        <div class="absolute inset-0 bg-[url('img/sigev2.jpg')] bg-contain bg-no-repeat bg-center md:bg-right opacity-15 md:opacity-100 pointer-events-none transition-all"></div>
+        
+        <div class="absolute inset-0 bg-gradient-to-r from-white via-white/95 md:via-white/80 to-transparent"></div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-0 pt-0">
+            <div class="max-w-xl md:max-w-2xl space-y-6 mt-0 pt-0">
                 <div class="inline-flex items-center gap-2 bg-green-50 text-[#2E7D32] px-3 py-1 rounded-full text-xs font-bold border border-green-200">
                     <i data-lucide="shield" class="w-3.5 h-3.5 text-[#C9A227]"></i> Innovación y Gestión Territorial
                 </div>
-                <h1 class="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                    SIGEV: <span class="text-[#2E7D32]">Conectando gestión,</span> territorio y comunidad.
+                
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+                    Plataforma Digital para la <span class="text-[#2E7D32]">Gestión Municipal Moderna.</span>
                 </h1>
-                <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
-                    La primera plataforma digital SaaS diseñada para centralizar los requerimientos de los vecinos, optimizar los tiempos de respuesta de las autoridades y automatizar el trabajo en terreno.
+                
+                <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+                    La primera arquitectura SaaS diseñada para centralizar los requerimientos de los vecinos, optimizar los tiempos de respuesta de las autoridades y automatizar el trabajo en terreno.
                 </p>
+                
                 <div class="flex flex-wrap gap-4 pt-2">
-                    <a href="#contacto" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-6 py-4 rounded-xl font-bold transition shadow-lg shadow-green-100 text-center w-full sm:w-auto text-sm">
+                    <a href="#contacto" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-6 py-4 rounded-xl font-bold transition-all shadow-lg shadow-green-100 text-center w-full sm:w-auto text-sm">
                         🚀 Solicitar Demostración
                     </a>
-                    <a href="#solucion" class="border-2 border-slate-200 hover:border-slate-300 text-slate-700 px-6 py-4 rounded-xl font-bold transition text-center w-full sm:w-auto text-sm">
+                    <a href="#solucion" class="bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center w-full sm:w-auto text-sm">
                         📊 Ver Módulos
                     </a>
-                </div>
-            </div>
-            <div class="relative flex justify-center">
-                <div class="absolute -inset-4 bg-gradient-to-tr from-green-50 to-amber-50 rounded-3xl opacity-60 blur-lg"></div>
-                <div class="relative bg-white p-4 rounded-2xl shadow-xl border border-slate-100 max-w-md">
-                    <img src="img/logo-familiar-sigev.png" alt="SIGEV Comunidad Conectada" class="rounded-xl w-full">
                 </div>
             </div>
         </div>
     </header>
 
-    <section id="problema" class="py-16 bg-[#F5F5F5]">
+    <section id="problema" class="py-20 bg-[#F5F5F5]">
         <div class="max-w-4xl mx-auto px-4 text-center space-y-4">
-            <h2 class="text-xs uppercase tracking-widest font-black text-[#C9A227]">El Problema</h2>
+            <h2 class="text-xs uppercase tracking-widest font-black text-[#C9A227]">El Desafío</h2>
             <p class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Gestión municipal lenta y desorganizada</p>
             <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">Hoy en día, la comunicación entre las juntas de vecinos, concejales y alcaldías está rota debido a procesos obsoletos.</p>
             
@@ -84,7 +96,7 @@
         </div>
     </section>
 
-    <section id="solucion" class="py-16 bg-white">
+    <section id="solucion" class="py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-2xl mx-auto space-y-3 mb-12">
                 <h2 class="text-xs uppercase tracking-widest font-black text-[#2E7D32]">La Solución</h2>
@@ -112,7 +124,7 @@
         </div>
     </section>
 
-    <section id="modelo" class="py-16 bg-slate-900 text-white border-b-4 border-[#C9A227]">
+    <section id="modelo" class="py-20 bg-slate-900 text-white border-b-4 border-[#C9A227]">
         <div class="max-w-4xl mx-auto px-4 text-center space-y-6">
             <h2 class="text-xs uppercase tracking-widest font-black text-[#C9A227]">Arquitectura Multi-Tenant (SaaS)</h2>
             <p class="text-2xl sm:text-3xl font-black tracking-tight">Software de Alta Escalabilidad Comercial</p>
@@ -123,37 +135,37 @@
             <div class="grid sm:grid-cols-2 gap-4 pt-4 text-left text-xs text-slate-300 max-w-2xl mx-auto">
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-start gap-3">
                     <i data-lucide="lock" class="text-[#C9A227] w-5 h-5 shrink-0"></i>
-                    <p><strong>Privacidad de Datos:</strong> Muros de seguridad reforzados mediante Firebase Security Rules. Los datos de un municipio jamás se mezclan con otros.</p>
+                    <p><strong>Privacidad de Datos:</strong> Muros de seguridad de Firebase. Los datos de un municipio jamás se mezclan con otros.</p>
                 </div>
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-start gap-3">
                     <i data-lucide="refresh-cw" class="text-[#C9A227] w-5 h-5 shrink-0"></i>
-                    <p><strong>Actualización Global:</strong> Mejoras automáticas desde GitHub ejecutando un solo despliegue para toda la red de clientes en tiempo real.</p>
+                    <p><strong>Actualización Global:</strong> Mejoras automáticas desde GitHub ejecutando un solo despliegue para toda la red de clientes.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="contacto" class="py-16 bg-white">
+    <section id="contacto" class="py-20 bg-white">
         <div class="max-w-md mx-auto px-4 space-y-6">
             <div class="text-center space-y-2">
                 <h3 class="text-2xl font-black text-slate-900 tracking-tight">Moderniza tu gestión hoy</h3>
                 <p class="text-slate-500 text-xs sm:text-sm">Agenda una demostración en vivo del sistema adaptada a los desafíos de tu comuna.</p>
             </div>
             
-            <form class="space-y-4 bg-[#F5F5F5] p-6 sm:p-8 rounded-2xl border border-slate-200/60" onsubmit="event.preventDefault(); alert('¡Solicitud registrada con éxito! Te contactaremos en menos de 24 horas.');">
+            <form class="space-y-4 bg-[#F5F5F5] p-6 sm:p-8 rounded-2xl border border-slate-200/60" onsubmit="event.preventDefault(); alert('¡Solicitud registrada con éxito!');">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nombre de la Autoridad / Representante</label>
-                    <input type="text" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32] transition">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nombre de la Autoridad</label>
+                    <input type="text" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Municipio / Comuna o Institución</label>
-                    <input type="text" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32] transition">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Municipio / Comuna</label>
+                    <input type="text" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Correo Institucional de Contacto</label>
-                    <input type="email" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32] transition">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Correo Institucional</label>
+                    <input type="email" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
                 </div>
-                <button type="submit" class="w-full bg-[#2E7D32] hover:bg-[#235f26] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-green-100 text-sm mt-2">
+                <button type="submit" class="w-full bg-[#2E7D32] hover:bg-[#235f26] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-100 text-sm mt-2">
                     Solicitar Demo de SIGEV
                 </button>
             </form>
@@ -161,7 +173,7 @@
     </section>
 
     <footer class="bg-[#F5F5F5] border-t border-slate-200/60 py-6 text-center text-[11px] text-slate-400">
-        <p>&copy; 2026 SIGEV. Todos los derechos reservados. Tecnología GovTech con impacto social y territorial.</p>
+        <p>&copy; 2026 SIGEV. Todos los derechos reservados. Tecnología GovTech con impacto social.</p>
     </footer>
 
     <script>

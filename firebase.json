@@ -1,0 +1,22 @@
+{
+  "hosting": [
+    {
+      "target": "landing",
+      "public": "sitios/landing",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    },
+    {
+      "target": "plataforma",
+      "public": "sitios/plataforma",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  ]
+}

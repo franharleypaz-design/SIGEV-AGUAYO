@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "sigev-aguayo"
+  },
+  "targets": {
+    "sigev-aguayo": {
+      "hosting": {
+        "landing": [
+          "sigev-landing"
+        ],
+        "plataforma": [
+          "sigev-aguayo"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
