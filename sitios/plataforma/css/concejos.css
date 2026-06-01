@@ -1,0 +1,147 @@
+/* ==============================================================================
+   SIGEV-AGUAYO - ESTILOS CORPORATIVOS MÓDULO CONCEJO MUNICIPAL RESTRUCTURADO
+   ============================================================================== */
+
+.menu-tabs-card-concejo {
+    background: #fff;
+    padding: 0 24px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.tabs-wrapper-concejo {
+    display: flex;
+    gap: 24px;
+}
+
+.concejo-tab-btn {
+    background: none;
+    border: none;
+    padding: 16px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    white-space: nowrap;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.concejo-tab-btn:hover { color: var(--primary-blue); }
+.concejo-tab-btn.active { color: var(--primary-blue); font-weight: 700; }
+
+.concejo-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--primary-blue);
+    border-radius: 3px 3px 0 0;
+}
+
+.concejo-panel-content {
+    display: none;
+    animation: fadeIn 0.2s ease-in-out forwards;
+}
+
+.concejo-panel-content.active { display: block; }
+
+/* GRID DE ACTAS MUNICIPALES */
+.sessions-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.session-acta-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.session-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.session-badge-num {
+    background: rgba(11, 67, 140, 0.08);
+    color: var(--primary-blue);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+/* DASHBOARD DE MEDIDORES KPI */
+.kpi-dashboard-grid-concejo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.kpi-mini-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+}
+
+.kpi-mini-card h5 { margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; }
+.kpi-mini-card p { margin: 0; font-size: 24px; font-weight: 800; color: var(--text-dark); font-variant-numeric: tabular-nums; }
+
+/* Colores de los medidores */
+.kpi-mini-card.favor-votes { border-left: 4px solid #10b981; }
+.kpi-mini-card.contra-votes { border-left: 4px solid #ef4444; }
+.kpi-mini-card.abstencion-votes { border-left: 4px solid #f59e0b; }
+.kpi-mini-card.ausente-votes { border-left: 4px solid #64748b; }
+
+/* BADGES DE PILAS DE VOTACIÓN PARA LA TABLA */
+.vote-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 12px;
+    text-align: center;
+}
+.vote-pill.favor { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.vote-pill.contra { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.vote-pill.abstencion { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.vote-pill.ausente { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+/* SUBFORMULARIO DINÁMICO REPETIBLE */
+.subform-vote-row-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 16px;
+    position: relative;
+    margin-bottom: 12px;
+}
+.btn-remove-subform {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

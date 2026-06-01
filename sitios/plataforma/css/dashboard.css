@@ -1,0 +1,1084 @@
+/* ==========================================================================
+   1. VARIABLES GLOBALES, RESETEO Y FUENTES
+   ========================================================================== */
+:root {
+    /* Variables Dinámicas Base (Heredadas y modificadas por el Layout) */
+    --bg-workspace: #f1f5f9;
+    --card-bg: #ffffff;
+    --text-dark: #0f172a;
+    --text-light: #64748b;
+    --border-color: #e2e8f0;
+    --input-bg: #ffffff;
+    
+    /* Paleta Corporativa Estática de Componentes (KPIs) */
+    --kpi-blue: #2563eb;
+    --kpi-green: #10b981;
+    --kpi-orange: #f59e0b;
+    --kpi-purple: #8b5cf6;
+    
+    /* Estados de Solicitudes (Badges) */
+    --badge-open-bg: #fef3c7;
+    --badge-open-text: #d97706;
+    --badge-review-bg: #dbeafe;
+    --badge-review-text: #2563eb;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Núcleo Estructural Maestro */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-workspace);
+    color: var(--text-dark);
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* ==========================================================================
+   2. ESTRUCTURA Y NAVEGACIÓN LATERAL (SIDEBAR PREMIUM CONSTANTE)
+   ========================================================================== */
+.app-container {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+    min-height: 100vh;
+}
+
+#sidebar-container {
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    flex-shrink: 0;
+}
+
+.sidebar {
+    width: 260px;
+    background-color: #093570 !important; /* Blindado: Siempre oscuro corporativo */
+    color: #ffffff !important;
+    display: flex;
+    flex-direction: column;
+    
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh; 
+    z-index: 1000;
+    
+    overflow-y: auto; 
+    box-shadow: 4px 0 16px rgba(15, 23, 42, 0.06);
+}
+
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 4px; }
+
+/* Menú de Opciones Interno */
+.sidebar-menu {
+    list-style: none;
+    padding: 12px 0 24px 0;
+    display: flex;
+    flex-direction: column;
+    height: max-content !important; 
+    flex-grow: 0 !important; 
+}
+
+.sidebar-item a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.75) !important;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-item a:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+}
+
+.sidebar-item.active a {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    border-left: 4px solid #ffffff;
+    padding-left: 16px;
+}
+
+.sidebar-item svg { width: 18px; height: 18px; opacity: 0.9; }
+
+.sidebar-menu li:last-child {
+    margin-top: 0 !important;
+}
+
+/* ==========================================================================
+   3. BARRA SUPERIOR (TOP BAR) Y ESPACIO DE TRABAJO (DINÁMICOS)
+   ========================================================================== */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100vh;
+    background-color: var(--bg-workspace);
+    transition: background-color 0.4s ease;
+}
+
+.top-bar {
+    height: 70px;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--card-bg);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.top-bar-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+    letter-spacing: -0.2px;
+    transition: color 0.4s ease;
+}
+
+.top-bar-title p {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 1px;
+    transition: color 0.4s ease;
+}
+
+.top-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: #ef4444;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 10px;
+    border: 2px solid var(--card-bg);
+    transition: border-color 0.4s ease;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--border-color);
+    transition: border-color 0.4s ease;
+}
+
+.user-info h4 { 
+    font-size: 13px; 
+    font-weight: 600; 
+    color: var(--text-dark); 
+    transition: color 0.4s ease;
+}
+
+.user-info p { 
+    font-size: 11px; 
+    color: var(--text-light); 
+    transition: color 0.4s ease;
+}
+
+.dashboard-body {
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* ==========================================================================
+   4. PANELES DE ESTADÍSTICAS METRICAS (KPI GRID)
+   ========================================================================== */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.kpi-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.015), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.kpi-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kpi-icon-box.blue { background-color: rgba(37, 99, 235, 0.08); color: var(--kpi-blue); }
+.kpi-icon-box.green { background-color: rgba(16, 185, 129, 0.08); color: var(--kpi-green); }
+.kpi-icon-box.orange { background-color: rgba(245, 158, 11, 0.08); color: var(--kpi-orange); }
+.kpi-icon-box.purple { background-color: rgba(139, 92, 246, 0.08); color: var(--kpi-purple); }
+
+.kpi-details h3 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    transition: color 0.4s ease;
+}
+
+.kpi-details p {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 3px;
+    font-weight: 500;
+    transition: color 0.4s ease;
+}
+
+.kpi-trend {
+    font-size: 11px;
+    font-weight: 600;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.kpi-link {
+    font-size: 11.5px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.kpi-link:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   5. DISEÑO DE FORMULARIOS, TARJETAS Y BOTONES
+   ========================================================================== */
+.content-layout-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 32px;
+}
+
+.section-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.015);
+    border: 1px solid var(--border-color);
+    padding: 28px;
+    margin-bottom: 28px;
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+.section-card:last-child { margin-bottom: 0; }
+
+.section-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    transition: color 0.4s ease;
+}
+
+.tab-navigation {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    gap: 28px;
+    transition: border-color 0.4s ease;
+}
+
+.tab-item {
+    padding: 10px 0;
+    font-size: 13px;
+    color: var(--text-light);
+    cursor: pointer;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-item.active {
+    color: #2563eb;
+    font-weight: 700;
+    border-bottom-color: #2563eb;
+}
+
+.form-layout-with-photo {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.photo-upload-container {
+    width: 140px;
+    height: 150px;
+    border: 1.5px dashed var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 14px;
+    cursor: pointer;
+    background-color: var(--bg-workspace);
+    flex-shrink: 0;
+    transition: all 0.4s ease;
+}
+
+.photo-upload-container:hover {
+    border-color: #2563eb;
+}
+
+.photo-upload-container svg {
+    width: 28px;
+    height: 28px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+.photo-upload-container span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.photo-upload-container p {
+    font-size: 9.5px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+.form-fields-side { flex-grow: 1; }
+.form-row-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full-width { grid-column: span 2; }
+
+label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: color 0.4s ease;
+}
+label .required { color: #ef4444; margin-left: 2px; }
+
+input[type="text"], input[type="date"], input[type="email"], select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: var(--text-dark);
+    background-color: var(--input-bg);
+    outline: none;
+    transition: border-color 0.15s ease, background-color 0.4s ease, color 0.4s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.06);
+}
+
+.sub-section-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    margin: 28px 0 16px 0;
+    transition: color 0.4s ease;
+}
+
+.file-dropzone {
+    border: 1.5px dashed var(--border-color);
+    border-radius: 6px;
+    padding: 24px;
+    text-align: center;
+    background-color: var(--bg-workspace);
+    cursor: pointer;
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+.file-dropzone p { font-size: 12.5px; font-weight: 600; color: var(--text-dark); transition: color 0.4s ease; }
+.file-dropzone span { font-size: 10px; color: var(--text-light); transition: color 0.4s ease; }
+
+.form-actions-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.4s ease;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+}
+.btn svg { width: 14px; height: 14px; }
+.btn-secondary { background-color: var(--card-bg); color: var(--text-light); border: 1px solid var(--border-color); transition: all 0.4s ease; }
+.btn-secondary:hover { opacity: 0.8; }
+.btn-primary { background-color: #2563eb; color: white; }
+.btn-primary:hover { opacity: 0.9; }
+
+.btn:disabled {
+    background-color: var(--border-color) !important;
+    color: var(--text-light) !important;
+    cursor: not-allowed;
+    transition: all 0.4s ease;
+}
+
+/* ==========================================================================
+   6. CALENDARIO INFORMATIVO VECINAL
+   ========================================================================== */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.calendar-nav button {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-dark);
+    transition: all 0.4s ease;
+}
+
+.calendar-nav h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 6px;
+    color: var(--text-dark);
+    transition: color 0.4s ease;
+}
+
+.calendar-view-toggle {
+    display: flex;
+    background-color: var(--bg-workspace);
+    padding: 2px;
+    border-radius: 6px;
+    transition: background-color 0.4s ease;
+}
+
+.view-btn {
+    border: none;
+    background: none;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-light);
+}
+
+.view-btn.active {
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    font-weight: 600;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: border-color 0.4s ease;
+}
+
+.calendar-day-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px 0;
+    background-color: var(--bg-workspace);
+    color: var(--text-dark);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+
+.calendar-cell {
+    height: 76px;
+    padding: 6px;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.calendar-cell.muted { background-color: var(--bg-workspace); opacity: 0.4; }
+.cell-number { font-size: 11px; font-weight: 600; color: var(--text-dark); margin-bottom: 4px; transition: color 0.4s ease; }
+
+.calendar-event {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 4px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+.event-green { background-color: rgba(16, 185, 129, 0.15); color: #10b981; border-left: 3px solid #10b981; }
+.event-blue { background-color: rgba(37, 99, 235, 0.15); color: #3b82f6; border-left: 3px solid #2563eb; }
+.event-orange { background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; border-left: 3px solid #f59e0b; }
+.event-purple { background-color: rgba(139, 92, 246, 0.15); color: #a78bfa; border-left: 3px solid #8b5cf6; }
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.action-block-btn {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.4s ease;
+}
+
+.action-block-btn:hover {
+    border-color: #2563eb;
+}
+
+.action-block-btn svg { width: 16px; height: 16px; color: #2563eb; flex-shrink: 0; }
+.leyenda-item-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-dark); margin-bottom: 8px; transition: color 0.4s ease; }
+.section-card .pane-section-subtitle { color: var(--text-dark) !important; transition: color 0.4s ease; }
+
+/* ==========================================================================
+   7. REJILLAS DE TABLAS DE DATOS INFERIORES
+   ========================================================================== */
+.bottom-tables-grid {
+    display: grid;
+    grid-template-columns: 1.12fr 0.88fr;
+    gap: 32px;
+}
+
+.table-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.view-all-link { font-size: 12px; color: #2563eb; text-decoration: none; font-weight: 700; }
+.view-all-link:hover { text-decoration: underline; }
+
+.custom-data-table { width: 100%; border-collapse: collapse; text-align: left; }
+
+.custom-data-table th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-light);
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-workspace);
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+
+.custom-data-table td {
+    font-size: 13px;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    vertical-align: middle;
+    transition: border-color 0.4s ease, color 0.4s ease;
+}
+
+.custom-data-table tr { background-color: var(--card-bg); transition: background-color 0.4s ease; }
+.custom-data-table tr.row-highlight { background-color: rgba(37, 99, 235, 0.08) !important; border-left: 4px solid #2563eb; }
+.custom-data-table tr:hover td { background-color: rgba(37, 99, 235, 0.04); }
+
+.table-user-cell h4 { font-size: 13px; font-weight: 700; color: var(--text-dark); transition: color 0.4s ease; }
+.table-user-cell span { font-size: 11px; color: var(--text-light); font-family: monospace; transition: color 0.4s ease; }
+.table-user-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); transition: border-color 0.4s ease;}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.badge.open { background-color: var(--badge-open-bg); color: var(--badge-open-text); }
+.badge.review { background-color: var(--badge-review-bg); color: var(--badge-review-text); }
+
+.action-icons-group { display: flex; align-items: center; gap: 12px; color: var(--text-light); }
+.action-icons-group svg { width: 16px; height: 16px; cursor: pointer; transition: color 0.1s; }
+.action-icons-group svg:hover { color: #2563eb; }
+
+.ticket-id { color: #2563eb; font-weight: 700; text-decoration: none; }
+
+/* ==========================================================================
+   8. PIE DE PÁGINA (FOOTER)
+   ========================================================================== */
+.app-main-footer {
+    margin-top: auto;
+    padding: 20px 32px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 500;
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+}
+
+/* ==========================================================================
+   9. NOTIFICACIONES Y ALERTAS PERSONALIZADAS (PREMIUM MODAL)
+   ========================================================================== */
+.custom-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.5); 
+    backdrop-filter: blur(5px); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    animation: alertFadeIn 0.2s ease-out forwards;
+}
+
+.custom-alert-card {
+    background: var(--card-bg);
+    padding: 32px 35px;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    border: 1px solid var(--border-color);
+    animation: alertScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.custom-alert-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: rgba(16, 185, 129, 0.1); 
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px auto;
+}
+
+.custom-alert-icon.error {
+    background-color: rgba(239, 68, 68, 0.1); 
+    color: #ef4444;
+}
+
+.custom-alert-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    letter-spacing: -0.2px;
+    transition: color 0.4s ease;
+}
+
+.custom-alert-message {
+    font-size: 13.5px;
+    color: var(--text-light);
+    margin-bottom: 24px;
+    line-height: 1.5;
+    transition: color 0.4s ease;
+}
+
+.btn-alert-confirm {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 11px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+}
+
+.btn-alert-confirm:hover { opacity: 0.9; }
+
+@keyframes alertFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes alertScaleUp {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   10. MODAL VISOR DE PERFIL COMPLETO (ESTRUCTURA DE FLEXBOX RESPONSIVA)
+   ========================================================================== */
+.profile-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(6px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2500;
+    padding: 20px; 
+    overflow-y: auto;
+    animation: alertFadeIn 0.2s ease-out forwards;
+}
+
+.profile-modal-card {
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 680px;
+    max-height: calc(100vh - 40px); 
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border-color);
+    display: flex; 
+    flex-direction: column;
+    overflow: hidden;
+    animation: alertScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.profile-modal-header {
+    background: linear-gradient(135deg, #093570, #0b438c);
+    padding: 32px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    flex-shrink: 0; 
+}
+
+.profile-modal-avatar {
+    width: 85px;
+    height: 85px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    background-color: #f1f5f9;
+}
+
+.profile-header-info h3 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+}
+
+.profile-header-info p {
+    font-size: 13px;
+    opacity: 0.85;
+    font-weight: 500;
+}
+
+.btn-profile-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-profile-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+.profile-modal-tabs {
+    display: flex;
+    background-color: var(--bg-workspace);
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 24px;
+    flex-shrink: 0; 
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.profile-tab {
+    padding: 14px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+}
+.profile-tab.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+.profile-modal-body {
+    padding: 32px;
+    flex: 1; 
+    overflow-y: auto; 
+}
+
+.profile-panel { display: none; }
+.profile-panel.active { display: block; }
+
+.profile-data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 24px;
+}
+
+.profile-data-item label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+    transition: color 0.4s ease;
+}
+
+.profile-data-item p {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 500;
+    transition: color 0.4s ease;
+}
+
+.profile-solicitud-box {
+    margin-top: 24px;
+    padding: 16px;
+    background-color: var(--bg-workspace);
+    border-radius: 8px;
+    border-left: 4px solid var(--kpi-blue);
+    transition: background-color 0.4s ease;
+}
+
+.profile-solicitud-box h4 {
+    font-size: 13.5px;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: color 0.4s ease;
+}
+
+.profile-solicitud-box p {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.4;
+    transition: color 0.4s ease;
+}
+
+.no-data-placeholder {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-light);
+    font-size: 13.5px;
+}
+.no-data-placeholder svg {
+    color: var(--border-color);
+    margin-bottom: 8px;
+}
+
+/* ==========================================================================
+   BLINDAJE MAESTRO PARA CONTRASTE DEL CALENDARIO COMPLETO (MODO OSCURO VECINAL)
+   ========================================================================== */
+
+/* 1. Forzar el fondo oscuro en la tarjeta de la Leyenda Lateral e Inputs del panel */
+.main-content[style*="--bg-workspace: #0f172a"] .section-card,
+.main-content[style*="--bg-workspace: #0f172a"] aside,
+.main-content[style*="--bg-workspace: #0f172a"] .card,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="legend"],
+.main-content[style*="--bg-workspace: #0f172a"] [id*="legend"] {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+/* Forzar contraste blanco de la tipografía estática en leyendas e inputs en modo oscuro */
+.main-content[style*="--bg-workspace: #0f172a"] [class*="legend"] h3,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="legend"] h4,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="legend"] div,
+.main-content[style*="--bg-workspace: #0f172a"] .leyenda-item-row,
+.main-content[style*="--bg-workspace: #0f172a"] input,
+.main-content[style*="--bg-workspace: #0f172a"] select,
+.main-content[style*="--bg-workspace: #0f172a"] textarea {
+    color: #f8fafc !important;
+}
+
+/* 2. Forzar que las celdas de la grilla e interfaces del calendario de la pestaña sean oscuras */
+.main-content[style*="--bg-workspace: #0f172a"] .calendar-cell,
+.main-content[style*="--bg-workspace: #0f172a"] .calendar-grid div,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="fc-day"], 
+.main-content[style*="--bg-workspace: #0f172a"] [class*="fc-widget-content"],
+.main-content[style*="--bg-workspace: #0f172a"] .calendar-grid {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* 3. Corregir los números de los días y encabezados para que tengan alto contraste en la grilla externa */
+.main-content[style*="--bg-workspace: #0f172a"] .cell-number,
+.main-content[style*="--bg-workspace: #0f172a"] .calendar-day-label,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="fc-day-number"],
+.main-content[style*="--bg-workspace: #0f172a"] [class*="fc-day-header"] {
+    color: #f8fafc !important;
+    font-weight: 700 !important;
+}
+
+/* 4. Atenuar los días que no corresponden al mes actual (Muted Days) en la grilla mapeada */
+.main-content[style*="--bg-workspace: #0f172a"] .calendar-cell.muted,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="fc-other-month"] {
+    background-color: #161e2e !important;
+    opacity: 0.45 !important;
+}
+
+/* ==========================================================================
+   BLINDAJE DE TARJETAS DE SOLICITUDES Y DONACIONES (MODO OSCURO)
+   ========================================================================== */
+.main-content[style*="--bg-workspace: #0f172a"] [class*="card"],
+.main-content[style*="--bg-workspace: #0f172a"] [class*="status"],
+.main-content[style*="--bg-workspace: #0f172a"] [class*="summary"],
+.main-content[style*="--bg-workspace: #0f172a"] [class*="metric"],
+.main-content[style*="--bg-workspace: #0f172a"] [class*="box"] {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Sincroniza los textos internos (títulos y números) */
+.main-content[style*="--bg-workspace: #0f172a"] [class*="card"] h2,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="card"] h3,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="card"] h4,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="status"] h3 {
+    color: var(--text-dark) !important;
+}
+
+/* Sincroniza los subtítulos */
+.main-content[style*="--bg-workspace: #0f172a"] [class*="card"] p,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="card"] span,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="status"] p {
+    color: var(--text-light) !important;
+}
+
+/* ==========================================================================
+   AJUSTE DE CONTRASTE PARA BOTONES DE PAGINACIÓN (MODO OSCURO)
+   ========================================================================== */
+.main-content[style*="--bg-workspace: #0f172a"] .main-content button,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="pagination"] button,
+.main-content[style*="--bg-workspace: #0f172a"] [class*="page-link"],
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background: white"] button {
+    background-color: #161e2e !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+/* Efecto hover elegante para los botones en modo oscuro */
+.main-content[style*="--bg-workspace: #0f172a"] [class*="pagination"] button:hover,
+.main-content[style*="--bg-workspace: #0f172a"] .page-link:hover {
+    background-color: #2563eb !important; /* Azul destacado */
+    border-color: #2563eb !important;
+}

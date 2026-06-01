@@ -1,0 +1,193 @@
+/* ==============================================================================
+   SIGEV-AGUAYO - HOJA DE ESTILOS EXCLUSIVA: MÓDULO BUZÓN CIUDADANO
+   ============================================================================== */
+
+/* 1. CONTENEDORES Y REJILLAS COMPLEMENTARIAS */
+.kpi-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+/* 2. REESTRUCTURACIÓN DE PESTAÑAS DE NAVEGACIÓN (TRIAGE) */
+.tab-navigation {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
+    padding-bottom: 2px;
+}
+
+.tab-navigation .tab-item {
+    padding: 10px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab-navigation .tab-item:hover {
+    color: var(--text-dark);
+}
+
+.tab-navigation .tab-item.active {
+    color: #2563eb; /* Azul Corporativo Triage */
+    font-weight: 700;
+}
+
+.tab-navigation .tab-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #2563eb;
+    border-radius: 3px 3px 0 0;
+}
+
+/* Badges numéricos dentro de los tabs */
+.tab-item span {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+/* 3. COMPONENTES INTERACTIVOS DE LA BANDEJA (TABLA) */
+.buzon-row-item {
+    transition: background-color 0.15s ease;
+}
+
+.buzon-row-item:hover td {
+    background-color: rgba(37, 99, 235, 0.04) !important;
+}
+
+/* Inputs adaptativos locales dentro del módulo */
+#buzon-search, 
+#buzon-filter-tipo {
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    outline: none;
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#buzon-search:focus, 
+#buzon-filter-tipo:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+/* 4. BARRA LATERAL DE DETALLE (SIDEBAR DE TRIAGE) */
+#buzon-detail-sidebar {
+    position: sticky;
+    top: 94px; /* Alineación perfecta con la barra superior */
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    animation: slideInSidebar 0.25s ease-out forwards;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid #2563eb !important; /* Indicador de foco operativo */
+}
+
+/* Personalización de los botones de derivación inmediata */
+#buzon-detail-sidebar .btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform 0.1s ease, filter 0.2s ease;
+}
+
+#buzon-detail-sidebar .btn:active {
+    transform: scale(0.98);
+}
+
+#buzon-detail-sidebar .btn:hover {
+    filter: brightness(0.95);
+}
+
+/* 5. LÍNEA DE TIEMPO (TIMELINE DE TRAZABILIDAD) */
+#detail-timeline {
+    position: relative;
+    margin-top: 10px;
+}
+
+#detail-timeline > div {
+    position: relative;
+    padding-left: 20px;
+    padding-bottom: 12px;
+    color: var(--text-dark);
+    font-size: 12px;
+    line-height: 1.4;
+    border-left: 2px solid var(--border-color);
+}
+
+#detail-timeline > div:last-child {
+    border-left: 2px solid transparent; /* Quita la línea sobrante al final */
+    padding-bottom: 0;
+}
+
+#detail-timeline > div span {
+    position: absolute;
+    left: -6px;
+    top: 3px;
+    width: 10px;
+    height: 10px;
+    background-color: #2563eb;
+    border: 2px solid var(--card-bg);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+/* 6. ANIMACIONES Y RESPONSIVE */
+@keyframes slideInSidebar {
+    from {
+        opacity: 0;
+        transform: translateX(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Adaptabilidad para pantallas medianas o laptops compactas */
+@media (max-width: 1200px) {
+    .content-layout-grid {
+        grid-template-columns: 1fr !important; /* Apila el Triage abajo si falta espacio */
+    }
+    #buzon-detail-sidebar {
+        position: relative;
+        top: 0;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* Rejilla de métricas compacta en móviles */
+    }
+    .tab-navigation {
+        gap: 12px;
+        overflow-x: auto; /* Scroll horizontal si los estados saturan la pantalla */
+        padding-bottom: 6px;
+    }
+}

@@ -1,0 +1,155 @@
+/* ==========================================================================
+   SIGEV-AGUAYO - ENTORNO DE CALENDARIO COMPLETO (ADAPTATIVO SAAS)
+   ========================================================================== */
+
+/* Tarjeta principal del calendario */
+.full-calendar-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 180px);
+}
+
+/* Tarjeta lateral de la leyenda de colores (CORREGIDO: Sincronizado con var(--card-bg)) */
+.legend-card {
+    width: 250px;
+    padding: 24px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.015);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Forzar que los títulos internos de la leyenda utilicen el tono del tema */
+.legend-card h3, 
+.legend-card h4, 
+.legend-card div, 
+.legend-card span {
+    color: var(--text-dark);
+    transition: color 0.3s ease;
+}
+
+.calendar-grid-full {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+    background-color: var(--border-color); /* Actúa como una grilla sutil de fondo */
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Encabezados de días (CORREGIDO: Utiliza el fondo del Workspace y color de texto adaptativo) */
+.calendar-day-header {
+    background-color: var(--bg-workspace);
+    padding: 12px;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.calendar-day-header:nth-child(7) {
+    border-right: none;
+}
+
+/* Celdas de la Grilla Completa (CORREGIDO: Eliminado fondo blanco estático, usa var(--card-bg)) */
+.calendar-cell-full {
+    min-height: 120px;
+    padding: 8px;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.calendar-cell-full:nth-child(7n) {
+    border-right: none;
+}
+
+/* Efecto Hover dinámico dependiente del entorno */
+.calendar-cell-full:hover {
+    background-color: var(--bg-workspace);
+}
+
+/* Días apagados (Muted) adaptados tanto para claro como oscuro */
+.calendar-cell-full.muted {
+    background-color: var(--bg-workspace);
+    opacity: 0.45;
+}
+
+/* Día de hoy destacado */
+.calendar-cell-full.today {
+    background-color: rgba(37, 99, 235, 0.08);
+}
+
+.calendar-cell-full.today .cell-number-full {
+    background-color: #2563eb; /* Color de realce SaaS independiente */
+    color: #ffffff !important;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cell-number-full {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+    transition: color 0.3s ease;
+}
+
+.event-pill {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.1s;
+}
+
+.event-pill:hover {
+    transform: scale(1.02);
+}
+
+/* ==========================================================================
+   COLORES PARA TIPOS DE EVENTO (CORREGIDOS CONTRASTES PARA MODO OSCURO)
+   ========================================================================== */
+.event-blue   { background-color: rgba(37, 99, 235, 0.18); color: #3b82f6; border-left: 3px solid #2563eb; }
+.event-green  { background-color: rgba(16, 185, 129, 0.18); color: #10b981; border-left: 3px solid #10b981; }
+.event-orange { background-color: rgba(245, 158, 11, 0.18); color: #f59e0b; border-left: 3px solid #f59e0b; }
+.event-purple { background-color: rgba(139, 92, 246, 0.18); color: #a78bfa; border-left: 3px solid #8b5cf6; }
+.event-red    { background-color: rgba(239, 68, 68, 0.18); color: #f87171; border-left: 3px solid #ef4444; }
+
+/* Hacer que la vista sea responsiva para pantallas de notebook pequeñas o tablets */
+@media (max-width: 1024px) {
+    div[style*="display: flex; gap: 20px; align-items: flex-start;"] {
+        flex-direction: column; /* Apila el calendario y la leyenda */
+    }
+    
+    .legend-card {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .legend-card ul {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 15px !important;
+    }
+}

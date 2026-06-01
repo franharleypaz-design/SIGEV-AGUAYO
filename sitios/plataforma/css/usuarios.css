@@ -1,0 +1,58 @@
+/* ==========================================================================
+   SIGEV-AGUAYO - ESTILOS ESPECÍFICOS PARA GESTIÓN DE ROLES INTERNOS
+   ========================================================================== */
+
+/* SUPER_ADMIN: Tonos Fucsia/Violeta Eléctrico de Alta Jerarquía */
+.badge-role-superadmin {
+    background-color: rgba(219, 39, 119, 0.1) !important;
+    color: #db2777 !important;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    font-weight: 800;
+    border-radius: 12px;
+    border: 1px solid rgba(219, 39, 119, 0.2);
+    display: inline-block;
+    letter-spacing: 0.2px;
+}
+
+/* ADMIN: Azul Ejecutivo Gubernamental */
+.badge-role-admin {
+    background-color: rgba(37, 99, 235, 0.1) !important;
+    color: #2563eb !important;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    display: inline-block;
+}
+
+/* GESTOR_TERRITORIAL: Esmeralda / Verde de Operación y Secretaría */
+.badge-role-territorial {
+    background-color: rgba(5, 150, 105, 0.1) !important;
+    color: #059669 !important;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    display: inline-block;
+}
+
+/* PENDIENTE: Gris Neutro de Espera */
+.badge-role-pendiente {
+    background-color: rgba(100, 116, 139, 0.1) !important;
+    color: #64748b !important;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid rgba(100, 116, 139, 0.18);
+    display: inline-block;
+}
+
+/* Hover interactivo para el botón de edición de fila */
+.btn-accion-u:hover {
+    color: #1d4ed8 !important;
+    transform: scale(1.15);
+}

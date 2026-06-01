@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEV-AGUAYO | Portal Territorial Vecinal</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    
+    <style>
+        /* 🚀 BLINDAJE DE CENTRADO SIMÉTRICO Y HOMOGENEIDAD PARA LOS BOTONES */
+        .option-wrapper {
+            position: relative;
+            display: flex;
+            width: 100%;
+        }
+        
+        /* Centrado absoluto del contenido, íconos y textos multilínea */
+        .option-btn {
+            width: 100%;
+            min-height: 68px; /* Fuerza a que todos los botones tengan la misma altura exacta */
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            padding: 10px 34px 10px 34px !important; /* Espaciado interno simétrico para proteger el '?' */
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            line-height: 1.3 !important;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .option-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .btn-help-badge {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            background: #e2e8f0;
+            color: #475569;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: help;
+            transition: all 0.2s ease;
+            z-index: 5;
+        }
+        .btn-help-badge:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+        }
+        
+        /* Configuración del globo flotante (Tooltip) */
+        .btn-help-badge::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 135%;
+            right: 0;
+            transform: scale(0.9);
+            background: #1e293b;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.15s ease;
+            z-index: 100;
+        }
+        
+        /* Desplegar tooltip al hacer Hover */
+        .btn-help-badge:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+    </style>
+    
+    <script type="module" src="js/login.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="#" class="brand" id="portal-logo-container">
+            <svg class="rayo-logo" viewBox="0 0 24 24">
+                <path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/>
+            </svg>
+            <div class="brand-text">
+                <h1>SIGEV-AGUAYO</h1>
+                <p>Portal Territorial Vecinal</p>
+            </div>
+        </a>
+
+        <button class="btn-access" id="open-login-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Acceso Equipo Territorial
+        </button>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-container-flex">
+            
+            <div class="hero-content">
+                <h1 class="hero-title">Conectando con los Vecinos</h1>
+                <p class="hero-subtitle">Trabajando juntos por una comuna más segura, limpia, solidaria y participativa.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        Ingresar solicitud
+                    </button>
+                    <button class="btn-secondary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        Ver actividades
+                    </button>
+                </div>
+            </div>
+
+            <div class="hero-profile-zone">
+                <div class="profile-card">
+                    <div class="profile-img-container">
+                        <div class="profile-img-frame">
+                            <img src="img/gonzalo.png" alt="Concejal Gonzalo Aguayo" class="profile-image">
+                        </div>
+                        <div class="profile-badge-ray">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f5b913">
+                                <path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="profile-info-text">
+                        <h2 class="profile-name">GONZALO AGUAYO GAJARDO</h2>
+                        <p class="profile-title">Concejal de La Cisterna</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <section class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon-box card-yellow-bg">
+                <svg width="20" height="20" fill="#d97706" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+            </div>
+            <div class="feature-info">
+                <h3>Noticias y anuncios</h3>
+                <p>Entérate de las últimas informaciones de la comuna</p>
+            </div>
+            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon-box card-green-bg">
+                <svg width="20" height="20" fill="#059669" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+            </div>
+            <div class="feature-info">
+                <h3>Calendario de actividades</h3>
+                <p>Revisa las actividades y operativos próximos</p>
+            </div>
+            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon-box card-purple-bg">
+                <svg width="20" height="20" fill="#7c3aed" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+            </div>
+            <div class="feature-info">
+                <h3>Operativos y ayudas</h3>
+                <p>Conoce los operativos vigentes y programas de apoyo</p>
+            </div>
+            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon-box card-blue-bg">
+                <svg width="20" height="20" fill="#2563eb" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <div class="feature-info">
+                <h3>Contacto directo</h3>
+                <p>Comunícate con nuestro equipo territorial</p>
+            </div>
+            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+    </section>
+
+    <main class="main-layout">
+        <section class="layout-column">
+            <div class="column-title-row">
+                <h2>Noticias destacadas</h2>
+                <a href="#" class="column-link">Ver todas</a>
+            </div>
+            
+            <div class="news-item">
+                <div class="news-thumb"></div>
+                <div class="news-details">
+                    <h3>Operativo Veterinario Gratuito</h3>
+                    <p>Este sábado 24 de mayo estaremos en Villa La Unión con operativos veterinarios gratuitos.</p>
+                    <div class="news-meta">📅 20 de mayo, 2026</div>
+                </div>
+            </div>
+
+            <div class="news-item">
+                <div class="news-thumb"></div>
+                <div class="news-details">
+                    <h3>Mejoras de iluminación en el sector</h3>
+                    <p>Seguimos trabajando por barrios más seguros. Nueva instalación de luminarias LED.</p>
+                    <div class="news-meta">📅 18 de mayo, 2026</div>
+                </div>
+            </div>
+
+            <div class="news-item">
+                <div class="news-thumb"></div>
+                <div class="news-details">
+                    <h3>Reunión con juntas de vecinos</h3>
+                    <p>Agradecemos la participación de las juntas de vecinos en la reunión territorial.</p>
+                    <div class="news-meta">📅 15 de mayo, 2026</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="layout-column">
+            <div class="column-title-row">
+                <h2>Próximas actividades</h2>
+                <a href="#" class="column-link">Ver calendario completo</a>
+            </div>
+
+            <div class="activity-item">
+                <div class="date-badge"><span class="day">24</span><span class="month">May</span></div>
+                <div class="activity-details">
+                    <h3>Operativo Veterinario Villa La Unión</h3>
+                    <div class="activity-meta"><span>🕒 10:00 hrs.</span><span>📍 Plaza Villa La Unión</span></div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="date-badge"><span class="day">28</span><span class="month">May</span></div>
+                <div class="activity-details">
+                    <h3>Feria de Servicios Públicos Plaza La Cisterna</h3>
+                    <div class="activity-meta"><span>🕒 09:00 hrs.</span><span>📍 Plaza La Cisterna</span></div>
+                </div>
+            </div>
+
+            <div class="activity-item">
+                <div class="date-badge"><span class="day">02</span><span class="month">Jun</span></div>
+                <div class="activity-details">
+                    <h3>Audiencia Ciudadana Sede Social El Parrón</h3>
+                    <div class="activity-meta"><span>🕒 18:30 hrs.</span><span>📍 Sede Social El Parrón</span></div>
+                </div>
+            </div>
+
+            <button class="btn-view-activities">Ver todas las actividades</button>
+        </section>
+
+        <section class="layout-column">
+            <div class="citizen-box">
+                <h2>Haz tu solicitud ciudadana</h2>
+                <p>Cuéntanos tu petición, reclamo, sugerencia, reconocimiento o denuncia.</p>
+                
+                <div class="option-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div class="option-wrapper">
+                        <button type="button" class="option-btn">🎁 Solicitar Apoyo Solidario</button>
+                        <span class="btn-help-badge" data-tooltip="Necesito ayuda o colaboración.">?</span>
+                    </div>
+                    <div class="option-wrapper">
+                        <button type="button" class="option-btn">⚠️ Reportar un Problema o Reclamo</button>
+                        <span class="btn-help-badge" data-tooltip="Algo no está funcionando correctamente.">?</span>
+                    </div>
+                    <div class="option-wrapper">
+                        <button type="button" class="option-btn">💡 Enviar una Idea o Iniciativa Vecinal</button>
+                        <span class="btn-help-badge" data-tooltip="Tengo una propuesta.">?</span>
+                    </div>
+                    <div class="option-wrapper">
+                        <button type="button" class="option-btn">❤️ Enviar un mensaje de agradecimiento</button>
+                        <span class="btn-help-badge" data-tooltip="Quiero destacar algo positivo.">?</span>
+                    </div>
+                    <div class="option-wrapper">
+                        <button type="button" class="option-btn">📣 Realizar una Denuncia Ciudadana</button>
+                        <span class="btn-help-badge" data-tooltip="Quiero informar una situación irregular.">?</span>
+                    </div>
+                    <div class="option-wrapper">
+                        <button type="button" class="option-btn">••• Otro Asunto o Consulta</button>
+                        <span class="btn-help-badge" data-tooltip="Necesito ayuda o gestión.">?</span>
+                    </div>
+                </div>
+
+                <button class="btn-send-request">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    Enviar solicitud
+                </button>
+                <p class="citizen-footer-text">Tu solicitud será recibida y gestionada a la brevedad posible</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <a href="#" class="brand" style="margin-bottom: 12px;">
+                    <svg class="rayo-logo" viewBox="0 0 24 24" width="24" height="24"><path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/></svg>
+                    <div class="brand-text">
+                        <h1 style="font-size:16px;">SIGEV-AGUAYO</h1>
+                    </div>
+                </a>
+                <p style="font-size:12.5px; color:var(--text-muted); line-height:1.4;">Oficina del Concejal Gonzalo Aguayo. Trabajando por y para los vecinos de La Cisterna.</p>
+            </div>
+            
+            <div class="footer-col">
+                <h3>Servicios</h3>
+                <ul>
+                    <li><a href="#">Solicitudes</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </div>
+            
+            <div class="social-links-footer" style="align-items: center; display: flex; gap: 10px;">
+                <div class="social-icon" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/></svg>
+                </div>
+                <div class="social-icon" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+                </div>
+                <div class="social-icon" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.455L0 24zm6.59-3.559c1.614.956 3.197 1.467 4.821 1.468 5.482 0 9.944-4.461 9.947-9.95.002-2.659-1.023-5.159-2.889-7.028A9.88 9.88 0 0 0 12.008 2.01c-5.492 0-9.957 4.463-9.96 9.953-.001 1.689.454 3.333 1.317 4.826l-.999 3.647 3.734-.979zM17.486 14.4c-.3-.149-1.774-.875-2.048-.974-.274-.1-.474-.149-.674.149-.2.299-.774.974-.949 1.173-.175.199-.349.224-.649.075-.3-.149-1.266-.466-2.41-1.487-.891-.795-1.492-1.777-1.667-2.076-.175-.299-.019-.461.13-.61.135-.133.3-.349.45-.523.15-.174.2-.299.3-.498.1-.199.05-.374-.025-.523-.075-.149-.674-1.62-.924-2.222-.244-.588-.492-.51-.674-.519-.174-.009-.374-.01-.574-.01-.2 0-.524.075-.798.374-.274.299-1.048 1.025-1.048 2.5 0 1.475 1.073 2.897 1.223 3.096.15.199 2.112 3.226 5.116 4.526.715.31 1.273.495 1.709.634.718.228 1.37.196 1.887.119.577-.087 1.774-.725 2.023-1.424.249-.699.249-1.299.175-1.424-.075-.125-.275-.199-.575-.349z"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            © 2026 SIGEV-AGUAYO - Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="login-modal">
+        <div class="login-card">
+            <button class="close-modal" id="close-login-btn">&times;</button>
+            <div class="login-logo-zone">
+                <svg width="75" height="75" viewBox="0 0 24 24" fill="#f5b913" style="filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.15));">
+                    <path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/>
+                </svg>
+            </div>
+            <h2 class="login-title-modal">SIGEV-AGUAYO</h2>
+            <p class="login-subtitle-modal">Acceso exclusivo para el Equipo Territorial</p>
+            <button id="btn-google-login" class="btn-google">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.32 14.24c-.24-.72-.38-1.5-.38-2.24s.14-1.52.38-2.24V6.61H1.21C.4 8.22 0 10.04 0 12s.4 3.78 1.21 5.39l4.11-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.39l4.11 3.15c.94-2.85 3.57-4.96 6.68-4.96z"/>
+                </svg>
+                <span>Iniciar sesión con Google</span>
+            </button>
+            <p id="login-error" class="login-error"></p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="citizen-modal">
+        <div class="login-card" style="max-width: 500px; text-align: left; padding: 26px;">
+            <button class="close-modal" id="close-citizen-btn">&times;</button>
+            <h2 style="color: var(--navy-blue); font-size: 19px; font-weight: 800; margin-bottom: 2px;" id="citizen-modal-title">Ingresar Solicitud Ciudadana</h2>
+            <p style="color: var(--text-muted); font-size: 12.5px; margin-bottom: 18px;">Completa tus antecedentes para despachar el caso al Buzón Territorial.</p>
+            
+            <form id="form-solicitud-ciudadana" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Nombre Completo *</label>
+                        <input type="text" id="cit-nombre" placeholder="Ej: Juan Soto" style="padding: 8px 10px;" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">RUT *</label>
+                        <input type="text" id="cit-rut" placeholder="Ej: 12.345.678-9" style="padding: 8px 10px;" required>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Teléfono *</label>
+                        <input type="text" id="cit-telefono" placeholder="Ej: +56 9 1234 5678" style="padding: 8px 10px;" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Dirección (Opcional)</label>
+                        <input type="text" id="cit-direccion" placeholder="Ej: Lo Ovalle 1234" style="padding: 8px 10px;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Asunto del Requerimiento *</label>
+                    <input type="text" id="cit-asunto" placeholder="Ej: Luminaria apagada" style="padding: 8px 10px;" required>
+                </div>
+
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Descripción del Problema *</label>
+                    <textarea id="cit-descripcion" rows="3" placeholder="Detalla la petición o denuncia aquí..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12.5px; resize: none; outline:none;" required></textarea>
+                </div>
+
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Adjuntar Imágenes (Máx. 4 - PNG o JPG)</label>
+                    <input type="file" id="cit-adjuntos" accept=".png, .jpg, .jpeg" multiple style="font-size: 12px; width: 100%;">
+                    <div id="cit-adjuntos-preview" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;"></div>
+                </div>
+
+                <div style="background: #fffdf0; border: 1px solid #fef08a; padding: 12px; border-radius: 8px; font-size: 11.5px; color: #475569; line-height: 1.45;">
+                    ℹ️ Toda la información proporcionada será utilizada exclusivamente para gestionar lo que se solicita. Recuerda que entre más antecedentes entregues, mucho mejor. Tu número de contacto debe ser viable, ya que por este medio serás contactado a la brevedad posible.
+                </div>
+                
+                <button type="button" class="btn-send-request" id="btn-submit-citizen-form" style="margin-top: 4px; padding: 12px;">
+                    🚀 Despachar Caso Oficial al Buzón
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById('open-login-btn');
+        const closeBtn = document.getElementById('close-login-btn');
+        const modal = document.getElementById('login-modal');
+
+        if (openBtn && closeBtn && modal) {
+            openBtn.addEventListener('click', () => modal.classList.add('open'));
+            closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('open');
+            });
+        }
+    </script>
+
+</body>
+</html>

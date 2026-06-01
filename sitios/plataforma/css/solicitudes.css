@@ -1,0 +1,278 @@
+/* ==========================================================================
+   1. PANEL DE KPIs MODULARES DE SOLICITUDES (5 COLUMNAS EN FILA)
+   ========================================================================== */
+.solicitudes-kpi-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    width: 100%;
+}
+
+.mini-kpi-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+}
+
+.mini-kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--sidebar-active);
+}
+
+.mini-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.mini-icon-box svg { width: 18px; height: 18px; }
+
+.mini-icon-box.blue { background: rgba(37, 99, 235, 0.06); color: #2563eb; }
+.mini-icon-box.yellow { background: rgba(245, 158, 11, 0.06); color: #d97706; }
+.mini-icon-box.green { background: rgba(16, 185, 129, 0.06); color: #10b981; }
+.mini-icon-box.purple { background: rgba(139, 92, 246, 0.06); color: #8b5cf6; }
+.mini-icon-box.red { background: rgba(239, 68, 68, 0.06); color: #ef4444; }
+
+.mini-details h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+}
+.mini-details p {
+    font-size: 11.5px;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-top: 2px;
+}
+.mini-details span {
+    font-size: 10px;
+    color: #94a3b8;
+    display: block;
+    margin-top: 1px;
+}
+
+/* ==========================================================================
+   2. PANEL MODULAR DE FILTROS DE BÚSQUEDA
+   ========================================================================== */
+.filter-panel-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.filter-layout-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 140px;
+}
+
+.filter-control label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.filter-control select, .filter-control input {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: var(--text-dark);
+}
+
+.filter-buttons-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.filter-buttons-group .btn { height: 38px; font-size: 12.5px; }
+
+/* ==========================================================================
+   3. ESTILOS AVANZADOS DE LA TABLA Y BADGES MULTICOLOR
+   ========================================================================== */
+.table-responsive-container {
+    width: 100%;
+    overflow-x: auto !important;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.custom-data-table th, .custom-data-table td {
+    padding: 12px 16px;
+}
+
+/* Diseños apilados internos */
+.stacked-cell-primary { font-weight: 600; color: var(--text-dark); display: block; }
+.stacked-cell-secondary { font-size: 11px; color: var(--text-light); margin-top: 3px; display: block; }
+
+/* Badges de Estado Planos */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-status.revision { background: #fff7ed; color: #c2410c; }
+.badge-status.gestion { background: #f0fdf4; color: #15803d; }
+.badge-status.finalizada { background: #eff6ff; color: #1d4ed8; }
+.badge-status.vencida { background: #fef2f2; color: #b91c1c; }
+
+/* Badges de Prioridad Planos */
+.badge-priority {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.badge-priority.baja { background: #f0fdf4; color: #16a34a; }
+.badge-priority.media { background: #fffbeb; color: #d97706; }
+.badge-priority.alta { background: #fff5f5; color: #e11d48; }
+
+/* Celda Funcionario Asignado */
+.table-assignee-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.assignee-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+.assignee-name { font-size: 12.5px; font-weight: 500; color: var(--text-dark); }
+
+/* ==========================================================================
+   4. BARRA DE PAGINACIÓN INFERIOR
+   ========================================================================== */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: #ffffff;
+    border-top: 1px solid var(--border-color);
+    font-size: 12.5px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.entries-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.entries-selector select {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 12px;
+}
+
+.pagination-controls-buttons { display: flex; gap: 4px; }
+.page-nav-btn, .page-number-btn {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: var(--text-dark);
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.page-number-btn:hover, .page-nav-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+.page-number-btn.active {
+    background: var(--primary-blue);
+    color: #ffffff;
+    border-color: var(--primary-blue);
+}
+
+/* ==========================================================================
+   5. LIBERACIÓN DE SCROLL NATURAL (ELIMINA CUALQUIER RESTRICCIÓN DE CAJA)
+   ========================================================================== */
+html, body {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-y: auto !important; /* Fuerza al navegador a mostrar el scroll vertical principal */
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.app-container {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: flex !important;
+    width: 100% !important;
+}
+
+.main-content {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
+    min-width: 0 !important;
+}
+
+.top-bar {
+    height: 70px !important;
+    flex-shrink: 0 !important;
+}
+
+.dashboard-body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important; /* Remueve el empaquetado interno que cortaba el diseño */
+    padding: 32px !important;
+    padding-bottom: 100px !important; /* Espacio de amortiguación para el pie de página */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 32px !important;
+}
+
+.section-card {
+    margin-bottom: 0 !important; /* Manejado de forma fluida por el gap del contenedor */
+}

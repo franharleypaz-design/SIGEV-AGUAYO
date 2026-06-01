@@ -1,0 +1,208 @@
+/* ==============================================================================
+   SIGEV-AGUAYO - HOJA DE ESTILOS DEL CENTRO DE ADMINISTRACIÓN DEL SISTEMA
+   ============================================================================== */
+
+.admin-panel-workspace-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* MENÚ LATERAL INTERNO (ADAPTADO AL MODO OSCURO) */
+.admin-sidebar-menu-card {
+    background-color: var(--card-bg); /* Variable dinámica */
+    border: 1px solid var(--border-color); /* Variable dinámica */
+    border-radius: 8px;
+    padding: 12px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.admin-config-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.config-menu-item {
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light); /* Variable dinámica */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.config-menu-item:hover {
+    background-color: var(--bg-workspace); /* Hover sutil adaptativo */
+    color: var(--text-dark);
+}
+
+.config-menu-item.active {
+    background-color: rgba(37, 99, 235, 0.08); /* Fondo azul semitransparente universal */
+    color: #2563eb; /* Azul corporativo */
+    font-weight: 700;
+    border-left-color: #2563eb;
+}
+
+/* ENTORNO DE COMPONENTES DE FORMULARIO */
+.config-pane-view {
+    display: none;
+    animation: fadeInPane 0.2s ease-in-out forwards;
+}
+
+.config-pane-view.active {
+    display: block;
+}
+
+.pane-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark); /* Variable dinámica */
+    margin: 0 0 4px 0;
+    border-bottom: 2px solid var(--border-color); /* Variable dinámica */
+    padding-bottom: 10px;
+    transition: color 0.4s ease, border-color 0.4s ease;
+}
+
+.pane-section-subtitle {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark); /* Variable dinámica */
+    margin: 16px 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: color 0.4s ease;
+}
+
+/* SELECTORES CROMÁTICOS (COLOR PICKERS) */
+.color-picker-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.color-picker-group label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-light); /* Variable dinámica */
+    transition: color 0.4s ease;
+}
+
+.color-picker-group input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid var(--border-color); /* Variable dinámica */
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    transition: border-color 0.4s ease;
+}
+
+.color-picker-group input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker-group input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 5px;
+}
+
+.text-color-hex {
+    width: 80px !important;
+    text-align: center;
+    font-family: monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1px solid var(--border-color); /* Variable dinámica */
+    border-radius: 6px;
+    background-color: var(--bg-workspace); /* Fondo dinámico */
+    color: var(--text-dark); /* Color dinámico */
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+/* FILAS DE CHECKBOXES (ADAPTADAS AL ENTORNO) */
+.config-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--bg-workspace); /* Variable dinámica */
+    border: 1px solid var(--border-color); /* Variable dinámica */
+    border-radius: 6px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease, border-color 0.4s ease;
+}
+
+.config-checkbox-row:hover {
+    background-color: var(--card-bg); /* Contraste invertido en hover */
+}
+
+.config-checkbox-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.config-checkbox-row span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark); /* Variable dinámica */
+    transition: color 0.4s ease;
+}
+
+/* ANIMACIONES */
+@keyframes fadeInPane { 
+    from { opacity: 0; transform: translateY(4px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+/* DISEÑO RESPONSIVO MÓVIL */
+@media (max-width: 768px) {
+    .admin-panel-workspace-grid { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   🚀 BLINDAJE MAESTRO CORREGIDO PARA MODO OSCURO (PANEL DE CONFIGURACIÓN)
+   ========================================================================== */
+
+/* NOTA: El Modo Oscuro se inyecta en la etiqueta HTML raiz, no en .main-content */
+
+/* 1. Atrapa la caja gris/blanca inyectada directamente en el HTML (background: #f8fafc) */
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="#f8fafc"],
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="#ffffff"],
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] {
+    background-color: var(--bg-workspace) !important;
+    background: var(--bg-workspace) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* 2. Convierte todos los Inputs y Selects del formulario al Modo Oscuro Premium */
+html[style*="--bg-workspace: #0f172a"] .config-pane-view input,
+html[style*="--bg-workspace: #0f172a"] .config-pane-view select,
+html[style*="--bg-workspace: #0f172a"] .config-pane-view textarea {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+/* 3. Asegura la lectura de etiquetas "Bloque 1", "Bloque 2" dentro de la caja */
+html[style*="--bg-workspace: #0f172a"] .config-pane-view label,
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] span,
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] p,
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] div {
+    color: var(--text-dark) !important;
+}
+
+/* 4. Mantener sutiles los textos pequeños como "(fondo transp.)" para que no molesten */
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] span[style*="color"],
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] p[style*="color"],
+html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="color"] {
+    color: var(--text-light) !important;
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Territorial - SIGEV Aguayo</title>
+    <link class="tenant-branding" rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/solicitudes.css">
+    <link rel="stylesheet" href="css/mapa.css"> 
+    <link rel="stylesheet" href="css/mobile.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script type="module">
+        import { inyectarEstructuraGlobal } from "./js/layout.js";
+        inyectarEstructuraGlobal();
+    </script>
+    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/mapa.js" defer></script>
+</head>
+<body>
+
+    <div id="app-workspace" class="app-container" style="display: none;">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="topbar-container"></div>
+
+            <div class="dashboard-body">
+                <div style="margin-bottom: 4px;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: var(--text-dark);">Mapa Territorial Inteligente</h2>
+                    <p style="font-size: 13px; color: var(--text-light); margin-top: 2px;">Análisis geoespacial correlacionado de solicitudes, aportes y distribución demográfica</p>
+                </div>
+
+                <section class="map-layer-dashboard">
+                    <div class="layer-card-checkbox" data-target="vecinos" style="border-left: 4px solid #2563eb;">
+                        <input type="checkbox" id="chk-layer-vecinos" checked>
+                        <div class="layer-card-info">
+                            <span class="layer-title">👥 Padrón de Vecinos</span>
+                            <span class="layer-desc">Ubicación de familias inscritas</span>
+                        </div>
+                    </div>
+                    <div class="layer-card-checkbox" data-target="solicitudes" style="border-left: 4px solid #ef4444;">
+                        <input type="checkbox" id="chk-layer-solicitudes" checked>
+                        <div class="layer-card-info">
+                            <span class="layer-title">🔴 Requerimientos / Tickets</span>
+                            <span class="layer-desc">Casos territoriales abiertos</span>
+                        </div>
+                    </div>
+                    <div class="layer-card-checkbox" data-target="donaciones" style="border-left: 4px solid #10b981;">
+                        <input type="checkbox" id="chk-layer-donaciones" checked>
+                        <div class="layer-card-info">
+                            <span class="layer-title">💚 Aportes Sociales</span>
+                            <span class="layer-desc">Ayudas y subvenciones entregadas</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="map-canvas-container-card">
+                    <div id="mapa-canvas"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

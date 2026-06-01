@@ -1,0 +1,161 @@
+/* ==========================================================================
+   PADRÓN DE VECINOS - ESTILOS ESTRUCTURALES COMPLETOS (ADAPTATIVOS)
+   ========================================================================== */
+
+/* Contenedor de la celda de Usuario (Avatar + Texto) */
+.table-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.table-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color); /* Sincronizado dinámicamente */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Efecto al pasar el mouse sobre la celda del usuario */
+.table-user-cell:hover .table-user-avatar {
+    transform: scale(1.05);
+    border-color: #2563eb;
+}
+
+.table-user-cell span {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   BOTONERA DE ACCIONES (ESTILO PRESET PREMIUM)
+   ========================================================================== */
+
+.btn-accion-v {
+    background-color: var(--input-bg); /* Sincronizado dinámicamente con el tema */
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-accion-v:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Variación: Botón Editar (Lápiz) */
+.btn-accion-v.v-edit:hover {
+    color: #f97316 !important; 
+    border-color: rgba(249, 115, 22, 0.4);
+    background: rgba(249, 115, 22, 0.1);
+}
+
+/* Variación: Botón Notificar (Sobre/Mail) */
+.btn-accion-v.v-mail:hover {
+    color: #3b82f6 !important; 
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Variación: Botón Más Opciones (Puntitos) */
+.btn-accion-v.v-more:hover {
+    color: var(--text-dark) !important;
+    border-color: var(--border-color);
+    background: var(--bg-workspace);
+}
+
+/* ==========================================================================
+   TARJETA FLOTANTE INTERACTIVA (HOVER CARD ADAPTATIVA SAAS)
+   ========================================================================== */
+
+#vecino-hover-card {
+    display: none;
+    position: absolute;
+    background-color: var(--card-bg); /* Sincronizado dinámicamente */
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    width: 280px;
+    z-index: 2000;
+    pointer-events: none; /* Crucial para evitar parpadeos infinitos */
+    animation: entradaSuaveHover 0.15s cubic-bezier(0, 0, 0.2, 1);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes entradaSuaveHover {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos de las etiquetas internas de la tarjeta flotante */
+#vecino-hover-card label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+    transition: color 0.3s ease;
+}
+
+#vecino-hover-card p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: var(--text-dark); /* Sincronizado dinámicamente */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+#vecino-hover-card p:last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   🚀 BLINDAJE INVERSO ULTRA-PRIORITARIO PARA MODO OSCURO (VECINOS PANEL)
+   ========================================================================== */
+
+/* Rompe los contenedores con color inline blanco superiores e inferiores en Modo Oscuro */
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background-color: #ffffff"],
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background-color: white"],
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background: #ffffff"],
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background: white"],
+.main-content[style*="--bg-workspace: #0f172a"] .section-card {
+    background-color: var(--card-bg) !important;
+    background: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-dark) !important;
+}
+
+/* Fuerza el cambio de color en los textos internos de la barra de paginación inferior */
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background-color: #ffffff"] span,
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background-color: #ffffff"] p,
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background: white"] span,
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background: white"] p {
+    color: var(--text-dark) !important;
+}
+
+/* Fuerza el texto de los labels de búsqueda dentro del bloque superior */
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background-color: #ffffff"] label,
+.main-content[style*="--bg-workspace: #0f172a"] div[style*="background: white"] label {
+    color: var(--text-light) !important;
+}

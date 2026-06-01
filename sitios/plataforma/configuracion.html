@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Sistema - SIGEV Aguayo</title>
+    <link class="tenant-branding" rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/solicitudes.css">
+    <link rel="stylesheet" href="css/configuracion.css"> 
+    <link rel="stylesheet" href="css/mobile.css">
+    
+    <script type="module">
+        import { inyectarEstructuraGlobal } from "./js/layout.js";
+        inyectarEstructuraGlobal();
+    </script>
+    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/configuracion.js" defer></script>
+</head>
+<body>
+
+    <div id="app-workspace" class="app-container" style="display: none;">
+        
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="topbar-container"></div>
+
+            <div class="dashboard-body">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: var(--text-dark);">Centro de Administración del Sistema</h2>
+                    <p style="font-size: 13px; color: var(--text-light); margin-top: 2px;">Consola maestra de personalización paramétrica y gobierno de datos del Workspace</p>
+                </div>
+                
+                <div class="admin-panel-workspace-grid">
+                    
+                    <aside class="admin-sidebar-menu-card">
+                        <ul class="admin-config-menu-list">
+                            <li class="config-menu-item active" data-target="pane-general">⚙️ Identidad y Apariencia</li>
+                            <li class="config-menu-item" data-target="pane-portal">🌐 Portal Público (Web)</li>
+                            <li class="config-menu-item" data-target="pane-territorial">🏘️ Estructura Territorial y Concejo</li>
+                            <li class="config-menu-item" data-target="pane-solicitudes">📨 Solicitudes, Aportes y Documentos</li>
+                            <li class="config-menu-item" data-target="pane-dashboard">📊 Dashboard, Capas y Alertas</li>
+                            <li class="config-menu-item" data-target="pane-auditoria">🛡️ Seguridad, Respaldos y Auditoría</li>
+                        </ul>
+                    </aside>
+
+                    <main class="admin-content-stream">
+                        
+                        <section class="config-pane-view active" id="pane-general">
+                            <div class="section-card" style="margin-top: 0;">
+                                
+                                <h3 class="pane-section-title">Marca del Menú Lateral (Sidebar)</h3>
+                                <div style="display: flex; gap: 30px; align-items: center; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 14px; margin-bottom: 24px;">
+                                    <div class="sidebar-logo-upload" style="text-align: center;">
+                                        <label style="font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">Bloque 1: Logo/Icono</label>
+                                        <span style="font-size: 9.5px; color: #94a3b8; display: block; margin-bottom: 10px; line-height: 1.3;">Formatos: PNG (fondo transp.) o SVG.<br>Tamaño óptimo: <b>400x150 px</b>.</span>
+                                        <div class="sidebar-avatar-picker" style="margin: 0 auto; position: relative; width: 80px; height: 80px; border: 2px dashed #cbd5e1; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; overflow: hidden;" onclick="document.getElementById('cfg-sidebar-logo-file').click();">
+                                            <img id="cfg-sidebar-logo-preview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                                            <div id="cfg-sidebar-logo-placeholder" style="color: #64748b;">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                            </div>
+                                            <input type="file" id="cfg-sidebar-logo-file" accept="image/*" style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <div style="flex: 1;">
+                                        <label style="font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 8px;">Bloque 2: Identificación Escrita</label>
+                                        <div class="form-group" style="margin-bottom: 10px;">
+                                            <input type="text" id="cfg-sidebar-title" placeholder="Título Principal (Ej: SIGEV-AGUAYO)" style="font-weight: 800; font-size: 14px; width: 100%;">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" id="cfg-sidebar-subtitle" placeholder="Subtítulo (Ej: Portal Territorial Vecinal)" style="font-size: 12px; width: 100%;">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h4 class="pane-section-subtitle" style="margin-top: 24px;">Paleta de Colores de la Interfaz</h4>
+                                <div class="form-row-grid" style="display: grid; grid-template-columns: 1fr; margin-top: 12px;">
+                                    <div class="form-group">
+                                        <select id="cfg-app-theme" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; color: #1e293b;">
+                                            <option value="oscuro">Tema Oscuro Premium (Sidebar Azul Profundo / Espacio Gris)</option>
+                                            <option value="claro">Tema Claro Corporativo (Sidebar Blanco Puro / Espacio Gris Claro)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 24px;">Estilo Visual del Reloj Global</h4>
+                                <div class="form-row-grid" style="display: grid; grid-template-columns: 1fr; margin-top: 12px;">
+                                    <div class="form-group">
+                                        <select id="cfg-reloj-estilo" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; color: #1e293b;">
+                                            <option value="1">Burbuja Moderna (Azul con fondo suave)</option>
+                                            <option value="2">Minimalista Ejecutivo (Texto oscuro con subrayado)</option>
+                                            <option value="3">Digital Nocturno (Fondo oscuro, texto neón)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <button class="btn btn-primary btn-save-config-master" style="background-color: #0b438c; font-weight:700;">Guardar Identidad Visual</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="config-pane-view" id="pane-portal">
+                            <div class="section-card" style="margin-top: 0;">
+                                
+                                <h3 class="pane-section-title">Identidad y Branding Público</h3>
+                                <p style="font-size:12.5px; color:var(--text-light); margin-top:4px;">Define el logo corporativo que verán los vecinos en la página principal.</p>
+
+                                <div style="display: flex; gap: 30px; align-items: center; background: var(--bg-workspace); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 14px; margin-bottom: 32px;">
+                                    <div class="portal-logo-upload" style="text-align: center;">
+                                        <label style="font-size: 11px; font-weight: 700; color: var(--text-light); display: block; margin-bottom: 4px;">Logo Principal Web</label>
+                                        <div class="portal-avatar-picker" style="margin: 0 auto; position: relative; width: 120px; height: 120px; border: 2px dashed var(--border-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--card-bg); overflow: hidden;" onclick="document.getElementById('cfg-portal-logo-file').click();">
+                                            <img id="cfg-portal-logo-preview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                                            <div id="cfg-portal-logo-placeholder" style="color: var(--text-light);">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                            </div>
+                                            <input type="file" id="cfg-portal-logo-file" accept="image/*" style="display: none;">
+                                        </div>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <p style="font-size: 13px; color: var(--text-dark); font-weight: 700;">Subir Identidad Visual para Vecinos</p>
+                                        <p style="font-size: 12px; color: var(--text-light); margin-top: 4px;">Esta imagen aparecerá en el encabezado de la página de inicio. Se recomienda un archivo con fondo transparente (PNG) y dimensiones de 600x200px para máxima nitidez.</p>
+                                    </div>
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 0;">Contenidos del Portal Público</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px;">
+                                    
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <label style="font-weight: 700; color:var(--text-dark); font-size: 13px;">📰 Noticias Destacadas</label>
+                                            <button type="button" class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;">+ Nueva</button>
+                                        </div>
+                                        <div style="border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                                            <table class="custom-data-table" style="font-size: 11px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="padding: 8px;">Título</th>
+                                                        <th style="padding: 8px;">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="padding: 8px;"><strong>Operativo Veterinario Gratuito</strong><br><span style="color:var(--text-light);">20 May 2026</span></td>
+                                                        <td style="padding: 8px;"><span style="cursor:pointer; color:#2563eb; font-weight:bold;">Editar</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px;"><strong>Mejoras de iluminación en sector</strong><br><span style="color:var(--text-light);">18 May 2026</span></td>
+                                                        <td style="padding: 8px;"><span style="cursor:pointer; color:#2563eb; font-weight:bold;">Editar</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <label style="font-weight: 700; color:var(--text-dark); font-size: 13px;">📅 Próximas Actividades</label>
+                                            <button type="button" class="btn btn-primary" style="padding: 4px 10px; font-size: 11px; background-color: #f59e0b; border-color: #f59e0b;">+ Agendar</button>
+                                        </div>
+                                        <div style="border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                                            <table class="custom-data-table" style="font-size: 11px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="padding: 8px;">Actividad / Fecha</th>
+                                                        <th style="padding: 8px;">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="padding: 8px;"><strong>Operativo Veterinario</strong><br><span style="color:var(--text-light);">24 May • Plaza Villa La Unión</span></td>
+                                                        <td style="padding: 8px;"><span style="cursor:pointer; color:#2563eb; font-weight:bold;">Editar</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px;"><strong>Feria de Servicios Públicos</strong><br><span style="color:var(--text-light);">28 May • Plaza La Cisterna</span></td>
+                                                        <td style="padding: 8px;"><span style="cursor:pointer; color:#2563eb; font-weight:bold;">Editar</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 32px;">Configuración del Footer Público</h4>
+                                <div class="form-row-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+                                    <div class="form-group full-width" style="grid-column: span 2;">
+                                        <label>Texto de descripción (Bajo el Logo)</label>
+                                        <textarea rows="2" style="resize: vertical;">Oficina del Concejal Gonzalo Aguayo. Trabajando por y para los vecinos de La Cisterna.</textarea>
+                                    </div>
+                                    <div class="form-group"><label>Link Facebook</label><input type="text" placeholder="https://facebook.com/..."></div>
+                                    <div class="form-group"><label>Link Instagram</label><input type="text" placeholder="https://instagram.com/..."></div>
+                                </div>
+
+                                <div style="text-align: right; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <button class="btn btn-primary btn-save-config-master" style="background-color: #0b438c; font-weight:700;">Guardar Portal</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="config-pane-view" id="pane-territorial">
+                            <div class="section-card" style="margin-top: 0;">
+                                <h3 class="pane-section-title">Gobernanza Territorial Paramétrica</h3>
+                                <p style="font-size:12.5px; color:var(--text-light); margin-top:4px;">Define los sectores urbanos e hitos normativos del Concejo Municipal sin alterar el core del software.</p>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
+                                    <div class="form-group">
+                                        <label style="font-weight: 700; color:var(--text-dark);">Sectores Territoriales Habilitados</label>
+                                        <textarea id="cfg-territorio-sectores" rows="5" placeholder="Escribe un sector por línea...&#10;Sector Territorial 1&#10;Sector Territorial 2"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-weight: 700; color:var(--text-dark);">Unidades Vecinales (UV)</label>
+                                        <textarea id="cfg-territorio-uvs" rows="5" placeholder="Escribe una UV por línea...&#10;UV-1&#10;UV-2"></textarea>
+                                    </div>
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 20px;">Configuración de Sesiones Legislativas</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px;">
+                                    <div class="form-group">
+                                        <label>Tipos de Sesión Habilitadas</label>
+                                        <input type="text" id="cfg-concejo-sesiones" value="Ordinaria, Extraordinaria, Solemne">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Opciones de Voto del Concejal</label>
+                                        <input type="text" id="cfg-concejo-votos" value="A Favor, En Contra, Abstención, Ausente" readonly style="background-color:#f1f5f9; cursor:not-allowed;">
+                                    </div>
+                                </div>
+                                <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <button class="btn btn-primary btn-save-config-master" style="background-color: #0b438c; font-weight:700;">Guardar Parámetros Territoriales</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="config-pane-view" id="pane-solicitudes">
+                            <div class="section-card" style="margin-top: 0;">
+                                <h3 class="pane-section-title">Clasificación de Requerimientos y Ayudas Sociales</h3>
+                                <div class="form-group" style="margin-top: 14px;">
+                                    <label style="font-weight: 700;">Categorías Principales de Solicitudes Vecinales</label>
+                                    <input type="text" id="cfg-solicitudes-cat" value="Luminarias, Seguridad, Áreas Verdes, Basura, Tránsito, Ayuda Social">
+                                    <span style="font-size:11px; color:var(--text-light); margin-top:4px; display:block;">Separa las categorías utilizando comas jurídicas estándar.</span>
+                                </div>
+                                <div class="form-group" style="margin-top: 16px;">
+                                    <label style="font-weight: 700;">Estados Flujo del Ticket</label>
+                                    <input type="text" id="cfg-solicitudes-estados" value="Pendiente, En Gestión, Derivada, Resuelta, Cerrada">
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 24px;">Tipos de Aportes Sociales (Donaciones)</h4>
+                                <div class="form-row-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+                                    <div class="form-group"><label>Líneas de Ayuda Disponibles</label><input type="text" id="cfg-donaciones-tipos" value="Alimentos, Útiles Escolares, Medicamentos, Ropa, Subvención"></div>
+                                    <div class="form-group"><label>Campañas Territoriales Activas (2026)</label><input type="text" id="cfg-donaciones-campanas" value="Invierno 2026, Navidad 2026, Ayuda Escolar"></div>
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 24px;">Gestión Documental Concejala</h4>
+                                <div class="form-group" style="margin-top: 12px;">
+                                    <label>Tipos de Documento Admitidos en Centro Documental</label>
+                                    <input type="text" id="cfg-docs-tipos" value="Acta Concejo, Oficio, Carta, Proyecto, Minuta">
+                                </div>
+                                <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <button class="btn btn-primary btn-save-config-master" style="background-color: #0b438c; font-weight:700;">Guardar Clasificadores</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="config-pane-view" id="pane-dashboard">
+                            <div class="section-card" style="margin-top: 0;">
+                                <h3 class="pane-section-title">Control de Capas GIS y Alertas Automatizadas</h3>
+                                <h4 class="pane-section-subtitle" style="margin-top: 14px;">Visibilidad de Indicadores en Dashboard Principal</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                                    <label class="config-checkbox-row"><input type="checkbox" id="cfg-dash-chk-solicitudes" checked> <span>Mostrar Solicitudes Abiertas</span></label>
+                                    <label class="config-checkbox-row"><input type="checkbox" id="cfg-dash-chk-vecinos" checked> <span>Mostrar Vecinos Registrados</span></label>
+                                    <label class="config-checkbox-row"><input type="checkbox" id="cfg-dash-chk-donaciones" checked> <span>Mostrar Inversión en Ayuda Social</span></label>
+                                    <label class="config-checkbox-row"><input type="checkbox" id="cfg-dash-chk-actas" checked> <span>Mostrar Actas del Concejo Municipal</span></label>
+                                </div>
+
+                                <h4 class="pane-section-subtitle" style="margin-top: 24px;">Automatizaciones de Alertas de Control de Gestión</h4>
+                                <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 10px;">
+                                    <label class="config-checkbox-row"><input type="checkbox" id="cfg-auto-email-crear" checked> <span>Notificar por correo electrónico al ingresar requerimiento territorial urgente</span></label>
+                                    <label class="config-checkbox-row"><input type="checkbox" id="cfg-auto-alerta-tiempo" checked> <span>Gatillar alerta roja en panel si un ticket supera los 30 días sin resolución</span></label>
+                                </div>
+                                <div style="text-align: right; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                                    <button class="btn btn-primary btn-save-config-master" style="background-color: #0b438c; font-weight:700;">Guardar Preferencias de Control</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="config-pane-view" id="pane-auditoria">
+                            <div class="section-card" style="margin-top: 0;">
+                                <h3 class="pane-section-title">Herramientas de Respaldo de Infraestructura</h3>
+                                <p style="font-size:12.5px; color:var(--text-light); margin-top:4px;">Compila copias de seguridad de las colecciones NoSQL de terreno de forma transparente.</p>
+                                <div style="display: flex; gap: 12px; margin-top: 14px;">
+                                    <button type="button" id="btn-trigger-backup-compile" class="btn btn-primary" style="background-color:#1e293b; border-color:#0f172a;">📦 Compilar Copia de Seguridad Completa (.json)</button>
+                                </div>
+
+                                <h3 class="pane-section-title" style="margin-top: 32px;">Bitácora de Auditoría del Sistema</h3>
+                                <div class="table-responsive-container" style="margin-top: 14px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                    <table class="custom-data-table" id="tabla-config-auditoria" style="font-size: 12px;">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha / Hora</th>
+                                                <th>Funcionario Responsable</th>
+                                                <th>Acción Registrada</th>
+                                                <th>ID Registro Modificado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+
+                    </main>
+
+                </div>
+            </div>
+
+            <footer class="app-main-footer">
+                <span>© 2026 Sistema de Gestión Vecinal – Concejal Gonzalo Aguayo – La Cisterna</span>
+                <span>Versión 1.0.0</span>
+            </footer>
+        </main>
+    </div>
+
+</body>
+</html>

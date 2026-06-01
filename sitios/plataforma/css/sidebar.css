@@ -1,0 +1,130 @@
+/* ==========================================================================
+   BARRA LATERAL INDEPENDIENTE (SIDEBAR COMPONENT) - FIJADA A LA CÁMARA
+   ========================================================================== */
+.sidebar {
+    width: 260px;
+    background-color: #093570; /* Azul profundo base de administración */
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    
+    /* ANCLAJE ABSOLUTO - Se fija a la cámara, nunca se corta */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh; 
+    z-index: 1000;
+    
+    overflow-y: auto; /* Scroll interno solo si la pantalla es muy pequeña */
+    box-shadow: 4px 0 16px rgba(15, 23, 42, 0.06);
+}
+
+/* Scrollbar sutil para el sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+/* Bloque de Marca */
+.sidebar-brand {
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-brand .rayo-logo {
+    width: 32px;
+    height: 32px;
+    fill: var(--accent-yellow, #f5b913);
+    flex-shrink: 0;
+}
+
+.sidebar-brand .brand-text h1 {
+    color: #ffffff;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.sidebar-brand .brand-text p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10.5px;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+/* Perfil del Concejal */
+.sidebar-profile {
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-profile h2 {
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: #ffffff;
+}
+
+.sidebar-profile p {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 3px;
+}
+
+/* Menú de Opciones (BLINDADO CONTRA CUALQUIER ESTIRAMIENTO DE GRID U OVERFLOWS) */
+.sidebar-menu {
+    list-style: none;
+    padding: 12px 0 24px 0; 
+    display: flex;
+    flex-direction: column;
+    
+    /* 🚀 SOLUCIÓN: Limita el tamaño al contenido real. Evita que empuje el último ítem abajo */
+    height: max-content !important; 
+    flex-grow: 0 !important; 
+}
+
+.sidebar-item a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-item a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+/* Estado Activo */
+.sidebar-item.active a {
+    background-color: rgba(0, 0, 0, 0.2); 
+    color: #ffffff;
+    font-weight: 600;
+    border-left: 4px solid #ffffff;
+    padding-left: 16px;
+}
+
+.sidebar-item svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0.9;
+}
+
+/* Remueve cualquier clase residual que intente empujar el botón */
+.sidebar-menu li:last-child {
+    margin-top: 0 !important;
+}

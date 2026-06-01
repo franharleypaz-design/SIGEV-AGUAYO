@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión Vecinal - Concejal Gonzalo Aguayo</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/calendario.css"> 
+    <link rel="stylesheet" href="css/mobile.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script type="module">
+        import { inyectarEstructuraGlobal } from "./js/layout.js";
+        inyectarEstructuraGlobal();
+    </script>
+    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/dashboard.js" defer></script>
+</head>
+<body>
+
+    <div id="app-workspace" class="app-container" style="display: none;">
+        
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            
+            <div id="topbar-container"></div>
+
+            <div class="dashboard-body">
+                <div style="margin-bottom: 4px;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: var(--text-dark);">Resumen del Workspace</h2>
+                    <p style="font-size: 13px; color: var(--text-light); margin-top: 2px;">Indicadores de control territorial y actividades comunales activas</p>
+                </div>
+
+                <section class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon-box blue">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                        </div>
+                        <div class="kpi-details">
+                            <h3 id="count-total">0</h3>
+                            <p>Vecinos registrados</p>
+                            <span class="kpi-trend">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                Activo
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon-box green">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        </div>
+                        <div class="kpi-details">
+                            <h3 id="count-revision">0</h3>
+                            <p>Solicitudes abiertas</p>
+                            <a href="solicitudes.html" class="kpi-link">
+                                Ver detalles 
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon-box orange">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <div class="kpi-details">
+                            <h3 id="count-gestion">0</h3>
+                            <p>Solicitudes closures</p>
+                            <span style="font-size: 11px; color: var(--text-light);">Histórico</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon-box purple">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+                        </div>
+                        <div class="kpi-details">
+                            <h3 id="count-finalizadas">15</h3>
+                            <p>Eventos próximos</p>
+                            <a href="calendario.html" class="kpi-link">
+                                Ver calendario
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="content-layout-grid">
+                    <div class="section-card">
+                        <div class="card-header" style="margin-bottom: 10px;">
+                            <h3>Calendario de Actividades Comunitarias</h3>
+                        </div>
+                        
+                        <div class="calendar-header">
+                            <div class="calendar-nav">
+                                <button>Hoy</button>
+                                <button>&lt;</button>
+                                <button>&gt;</button>
+                                <h4>Mayo 2026</h4>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="cursor:pointer; color: var(--text-light);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                            
+                            <div class="calendar-view-toggle">
+                                <button class="view-btn active">Mes</button>
+                                <button class="view-btn">Semana</button>
+                                <button class="view-btn">Día</button>
+                            </div>
+                        </div>
+
+                        <div class="calendar-grid">
+                            <div class="calendar-day-label">Lun</div>
+                            <div class="calendar-day-label">Mar</div>
+                            <div class="calendar-day-label">Mié</div>
+                            <div class="calendar-day-label">Jue</div>
+                            <div class="calendar-day-label">Vie</div>
+                            <div class="calendar-day-label">Sáb</div>
+                            <div class="calendar-day-label">Dom</div>
+
+                            <div class="calendar-cell muted"><div class="cell-number">27</div></div>
+                            <div class="calendar-cell muted"><div class="cell-number">28</div></div>
+                            <div class="calendar-cell muted"><div class="cell-number">29</div></div>
+                            <div class="calendar-cell muted"><div class="cell-number">30</div></div>
+                            <div class="calendar-cell"><div class="cell-number">1</div></div>
+                            <div class="calendar-cell"><div class="cell-number">2</div></div>
+                            <div class="calendar-cell"><div class="cell-number">3</div></div>
+
+                            <div class="calendar-cell"><div class="cell-number">4</div></div>
+                            <div class="calendar-cell"><div class="cell-number">5</div></div>
+                            <div class="calendar-cell"><div class="cell-number">6</div></div>
+                            <div class="calendar-cell"><div class="cell-number">7</div></div>
+                            <div class="calendar-cell"><div class="cell-number">8</div></div>
+                            <div class="calendar-cell"><div class="cell-number">9</div></div>
+                            <div class="calendar-cell"><div class="cell-number">10</div></div>
+
+                            <div class="calendar-cell"><div class="cell-number">11</div></div>
+                            <div class="calendar-cell"><div class="cell-number">12</div></div>
+                            <div class="calendar-cell"><div class="cell-number">13</div></div>
+                            <div class="calendar-cell"><div class="cell-number">14</div></div>
+                            <div class="calendar-cell"><div class="cell-number">15</div></div>
+                            <div class="calendar-cell"><div class="cell-number">16</div></div>
+                            <div class="calendar-cell"><div class="cell-number">17</div></div>
+
+                            <div class="calendar-cell"><div class="cell-number">18</div></div>
+                            <div class="calendar-cell"><div class="cell-number">19</div></div>
+                            <div class="calendar-cell"><div class="cell-number">20</div></div>
+                            <div class="calendar-cell"><div class="cell-number">21</div></div>
+                            <div class="calendar-cell"><div class="cell-number">22</div></div>
+                            <div class="calendar-cell"><div class="cell-number">23</div></div>
+                            <div class="calendar-cell"><div class="cell-number">24</div></div>
+
+                            <div class="calendar-cell"><div class="cell-number">25</div></div>
+                            <div class="calendar-cell"><div class="cell-number">26</div></div>
+                            <div class="calendar-cell"><div class="cell-number">27</div></div>
+                            <div class="calendar-cell"><div class="cell-number">28</div></div>
+                            <div class="calendar-cell"><div class="cell-number">29</div></div>
+                            <div class="calendar-cell"><div class="cell-number">30</div></div>
+                            <div class="calendar-cell"><div class="cell-number">31</div></div>
+                        </div>
+
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="event-pill event-blue" style="width: 14px; height: 14px; padding: 0; margin: 0; border-radius: 3px;"></div>
+                                <span style="font-size: 11.5px; color: var(--text-dark); font-weight: 600;">Reunión / Audiencia</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="event-pill event-green" style="width: 14px; height: 14px; padding: 0; margin: 0; border-radius: 3px;"></div>
+                                <span style="font-size: 11.5px; color: var(--text-dark); font-weight: 600;">Operativo</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="event-pill event-orange" style="width: 14px; height: 14px; padding: 0; margin: 0; border-radius: 3px;"></div>
+                                <span style="font-size: 11.5px; color: var(--text-dark); font-weight: 600;">Visita a Terreno</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="event-pill event-purple" style="width: 14px; height: 14px; padding: 0; margin: 0; border-radius: 3px;"></div>
+                                <span style="font-size: 11.5px; color: var(--text-dark); font-weight: 600;">Consejo</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <div class="event-pill event-red" style="width: 14px; height: 14px; padding: 0; margin: 0; border-radius: 3px;"></div>
+                                <span style="font-size: 11.5px; color: var(--text-dark); font-weight: 600;">Urgencia</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h3>Acciones Rápidas</h3>
+                        </div>
+                        <div class="quick-actions-grid" style="grid-template-columns: 1fr; gap: 10px;">
+                            <button id="btn-quick-registrar" class="action-block-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> 
+                                Registrar nuevo vecino
+                            </button>
+                            <button id="btn-quick-solicitudes" class="action-block-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Ver solicitudes</button>
+                            <button class="action-block-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes y estadísticas</button>
+                            <button class="action-block-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Ver usuarios registrados</button>
+                            <button class="action-block-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Generar reporte</button>
+                            <button class="action-block-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> Exportar datos</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-tables-grid">
+                    <div class="section-card">
+                        <div class="table-title-row">
+                            <h3>Vecinos Recientes</h3>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <button id="btn-modal-nuevo-vecino" class="btn btn-primary" style="padding: 7px 14px; font-size: 11.5px; background-color: var(--primary-blue);">+ Registrar Vecino</button>
+                                <a href="vecinos.html" class="view-all-link">Ver todos</a>
+                            </div>
+                        </div>
+                        <div class="table-responsive-container">
+                            <table class="custom-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>RUT</th>
+                                        <th>Teléfono</th>
+                                        <th>Sector</th>
+                                        <th>Fecha Registro</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="section-card" id="card-solicitudes-recientes">
+                        <div class="table-title-row">
+                            <h3>Solicitudes Recientes</h3>
+                            <a href="solicitudes.html" class="view-all-link">Ver todas</a>
+                        </div>
+                        <div class="table-responsive-container">
+                            <table class="custom-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nº Solicitud</th>
+                                        <th>Vecino</th>
+                                        <th>Motivo</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <footer class="app-main-footer">
+                <span>© 2026 Sistema de Gestión Vecinal – Concejal Gonzalo Aguayo – La Cisterna</span>
+                <span>Versión 1.0.0</span>
+            </footer>
+        </main>
+
+        <div id="modal-ingreso-vecino" class="profile-modal-overlay" style="display: none;">
+            <div class="profile-modal-card" style="max-width: 680px;">
+                <div class="profile-modal-header" style="background: linear-gradient(135deg, var(--sidebar-blue), var(--primary-blue)); padding: 24px 32px;">
+                    <div class="profile-header-info">
+                        <h3 style="font-size: 18px;">Ingreso de Nuevo Vecino</h3>
+                        <p>SIGEV-AGUAYO · Formulario de Registro Territorial Avanzado</p>
+                    </div>
+                    <button id="btn-cerrar-ingreso" class="btn-profile-close" style="top: 16px; right: 16px;">&times;</button>
+                </div>
+
+                <div class="profile-modal-tabs" style="padding: 0 32px;">
+                    <div class="tab-item active" data-target="form-panel-basicos" style="font-size: 12.5px; padding: 12px 0;">Datos Básicos</div>
+                    <div class="tab-item" data-target="form-panel-avanzados" style="font-size: 12.5px; padding: 12px 0;">Datos Avanzados</div>
+                    <div class="tab-item" data-target="form-panel-adicional" style="font-size: 12.5px; padding: 12px 0;">Información Adicional</div>
+                    <div class="tab-item" data-target="form-panel-documentos" style="font-size: 12.5px; padding: 12px 0;">Documentos</div>
+                </div>
+
+                <div class="profile-modal-body" style="max-height: 480px; padding: 24px 32px;">
+                    <form id="form-vecino">
+                        <div class="profile-panel active" id="form-panel-basicos">
+                            <div class="form-layout-with-photo">
+                                <div class="photo-upload-container" style="height: 135px;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                        <circle cx="12" cy="13" r="4"></circle>
+                                    </svg>
+                                    <span>Subir foto</span>
+                                    <p>PNG, JPG hasta 5MB</p>
+                                </div>
+                                
+                                <div class="form-fields-side">
+                                    <div class="form-row-grid">
+                                        <div class="form-group">
+                                            <label>RUT <span class="required">*</span></label>
+                                            <input type="text" id="vecino-rut" placeholder="Ej. 18.478.241-3" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Nombre completo <span class="required">*</span></label>
+                                            <input type="text" id="vecino-nombre" placeholder="Ej. Juan Pérez" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-row-grid">
+                                        <div class="form-group">
+                                            <label>Teléfono</label>
+                                            <input type="text" id="vecino-telefono" placeholder="Ej. +56 9 1234 5678">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Fecha de nacimiento</label>
+                                            <input type="date" id="vecino-fecha-nacimiento">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group full-width">
+                                    <label>Correo electrónico</label>
+                                    <input type="email" id="vecino-correo" placeholder="ej. juan@email.com">
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group full-width">
+                                    <label>Dirección</label>
+                                    <input type="text" id="vecino-direccion" placeholder="Ej. Av. Lo Ovalle 1234">
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group full-width">
+                                    <label style="font-weight: 700; color: #0b438c;">📍 Ubicación Cartográfica (Haz clic para fijar la casa en el mapa)</label>
+                                    <div id="v-mini-mapa-picker" style="width: 100%; height: 210px; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 6px; z-index: 10; background: #e5e7eb;"></div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+                                        <div><label style="font-size: 11px; color: #64748b;">Latitud</label><input type="text" id="v-lat" readonly style="background-color: #f1f5f9; font-size: 12px; font-family: monospace;"></div>
+                                        <div><label style="font-size: 11px; color: #64748b;">Longitud</label><input type="text" id="v-lng" readonly style="background-color: #f1f5f9; font-size: 12px; font-family: monospace;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label>Sector Territorial</label>
+                                    <select id="vecino-sector-territorial">
+                                        <option value="">Seleccione Sector</option>
+                                        <option value="Sector Territorial 1">Sector Territorial 1 (UV 1)</option>
+                                        <option value="Sector Territorial 2">Sector Territorial 2 (UV 2-3)</option>
+                                        <option value="Sector Territorial 3">Sector Territorial 3 (UV 4-5)</option>
+                                        <option value="Sector Territorial 4">Sector Territorial 4 (UV 14-15)</option>
+                                        <option value="Sector Territorial 5">Sector Territorial 5 (UV 16-17)</option>
+                                        <option value="Sector Territorial 6">Sector Territorial 6 (UV 18)</option>
+                                        <option value="No Sabe / Sin Información">No Sabe / Sin Información</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Unidad Vecinal (UV)</label>
+                                    <select id="vecino-unidad-vecinal" disabled>
+                                        <option value="">Seleccione primero el sector</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-bottom: 24px;">
+                                <div class="form-group">
+                                    <label>Junta de Vecinos</label>
+                                    <select id="vecino-junta-vecinal" disabled>
+                                        <option value="">Seleccione primero la UV</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Sector / Barrio Popular (Reconocimiento manual)</label>
+                                    <input type="text" id="vecino-barrio-popular" list="barrios-populares-list" placeholder="Ej. El Parrón, Villa Los Troncos...">
+                                    
+                                    <datalist id="barrios-populares-list">
+                                        <option value="Lo Ovalle"></option>
+                                        <option value="El Parrón"></option>
+                                        <option value="Gran Avenida"></option>
+                                        <option value="Villa Los Troncos"></option>
+                                        <option value="Villa Italia"></option>
+                                        <option value="San Ramón límite"></option>
+                                        <option value="Cisterna Oriente"></option>
+                                        <option value="Villa Burgueño"></option>
+                                        <option value="Lo Espejo límite"></option>
+                                        <option value="Portal El Parrón"></option>
+                                        <option value="Intermodal La Cisterna"></option>
+                                        <option value="José Joaquín Prieto"></option>
+                                        <option value="Observatorio"></option>
+                                        <option value="Avenida Fernández Albano"></option>
+                                    </datalist>
+                                </div>
+                            </div>
+
+                            <div class="sub-section-title" style="margin-bottom: 14px;">Solicitud Territorial Municipal <span>(opcional)</span></div>
+
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label>Categoría / Motivo Principal</label>
+                                    <select id="solicitud-motivo">
+                                        <option value="">Seleccione una categoría</option>
+                                        <option value="Ayuda Social">Ayuda Social</option>
+                                        <option value="Alumbrado Público">Alumbrado Público</option>
+                                        <option value="Aseo y Basura">Aseo y Basura</option>
+                                        <option value="Áreas Verdes">Áreas Verdes</option>
+                                        <option value="Seguridad">Seguridad</option>
+                                        <option value="Mascotas y Veterinaria">Mascotas y Veterinaria</option>
+                                        <option value="Infraestructura Vial">Infraestructura Vial</option>
+                                        <option value="Vivienda">Vivienda</option>
+                                        <option value="Trámites Municipales">Trámites Municipales</option>
+                                        <option value="Adulto Mayor">Adulto Mayor</option>
+                                        <option value="Discapacidad">Discapacidad</option>
+                                        <option value="Educación">Educación</option>
+                                        <option value="Salud">Salud</option>
+                                        <option value="Niñez y Familia">Niñez y Familia</option>
+                                        <option value="Operativos Territoriales">Operativos Territoriales</option>
+                                        <option value="OIRS / Participación Ciudadana">OIRS / Participación Ciudadana</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Subcategoría específica</label>
+                                    <select id="solicitud-subcategoria" disabled>
+                                        <option value="">Seleccione primero una categoría</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label>Oficina Municipal Asignada / Derivada</label>
+                                    <input type="text" id="solicitud-oficina" placeholder="Se asignará automáticamente" readonly style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Prioridad de Gestión</label>
+                                    <select id="solicitud-prioridad">
+                                        <option value="">Seleccione prioridad</option>
+                                        <option value="Alta">Alta</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Baja">Baja</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row-grid" style="margin-bottom: 0;">
+                                <div class="form-group full-width">
+                                    <label>Descripción detallada del caso</label>
+                                    <textarea id="solicitud-descripcion" rows="2" placeholder="Detalle la gestión requerida en terreno..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="form-panel-avanzados">
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group full-width">
+                                    <label>Ocupación / Oficio</label>
+                                    <input type="text" id="vecino-ocupacion" placeholder="Ej. Técnico Electricista, Comerciante...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="form-panel-adicional">
+                            <div class="form-row-grid">
+                                <div class="form-group full-width">
+                                    <label>Observaciones Críticas y Notas Internas</label>
+                                    <textarea id="vecino-observaciones" rows="4" placeholder="Ingrese anotaciones privadas del equipo municipal..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-panel" id="form-panel-documentos">
+                            <div class="form-row-grid" style="margin-bottom: 14px;">
+                                <div class="form-group full-width">
+                                    <label>Nombre identificatorio del documento anexo</label>
+                                    <input type="text" id="vecino-documento-nombre" placeholder="Ej. Certificado de Residencia, Ficha Social...">
+                                </div>
+                            </div>
+                            <div class="form-group style-group">
+                                <label>Archivos de Respaldo</label>
+                                <div class="file-dropzone" style="padding: 24px; margin-top: 8px;">
+                                    <p style="font-size:12.5px;">Haga clic aquí para seleccionar archivos nuevos</p>
+                                    <span>Formatos autorizados: PDF, JPG, PNG (Máx. 10MB)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div style="padding: 16px 32px; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" id="btn-limpiar-ingreso" class="btn btn-secondary">Limpiar</button>
+                    <button type="button" id="btn-guardar-vecino" class="btn btn-primary" style="background-color: #0b438c;" disabled>Guardar vecino</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

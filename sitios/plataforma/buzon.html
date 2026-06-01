@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buzón Ciudadano - SIGEV</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/buzon.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    
+    <script type="module">
+        import { inyectarEstructuraGlobal } from "./js/layout.js";
+        inyectarEstructuraGlobal();
+    </script>
+    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/buzon.js" defer></script>
+</head>
+<body>
+
+    <div id="app-workspace" class="app-container" style="display: none;">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <div id="topbar-container"></div>
+
+            <div class="dashboard-body">
+                
+                <div>
+                    <h2 style="font-size: 22px; font-weight: 700; color: var(--text-dark);">Buzón Ciudadano</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Gestiona las solicitudes y mensajes enviados por la comunidad</p>
+                </div>
+
+                <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); gap: 12px;">
+                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
+                        <div class="kpi-icon-box blue" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                        <div class="kpi-details"><h3 id="stat-total" style="font-size: 18px;">148</h3><p style="font-size: 10px;">Total este mes</p></div>
+                    </div>
+                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
+                        <div class="kpi-icon-box orange" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                        <div class="kpi-details"><h3 id="stat-solicitudes" style="font-size: 18px;">85</h3><p style="font-size: 10px;">Apoyos</p></div>
+                    </div>
+                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
+                        <div class="kpi-icon-box purple" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg></div>
+                        <div class="kpi-details"><h3 id="stat-denuncias" style="font-size: 18px;">22</h3><p style="font-size: 10px;">Denuncias</p></div>
+                    </div>
+                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
+                        <div class="kpi-icon-box green" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+                        <div class="kpi-details"><h3 id="stat-sugerencias" style="font-size: 18px;">15</h3><p style="font-size: 10px;">Iniciativas</p></div>
+                    </div>
+                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
+                        <div class="kpi-icon-box blue" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
+                        <div class="kpi-details"><h3 id="stat-felicitaciones" style="font-size: 18px;">12</h3><p style="font-size: 10px;">Agradecimientos</p></div>
+                    </div>
+                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
+                        <div class="kpi-icon-box purple" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
+                        <div class="kpi-details"><h3 id="stat-otros" style="font-size: 18px;">14</h3><p style="font-size: 10px;">Otros</p></div>
+                    </div>
+                </div>
+
+                <div class="content-layout-grid" style="grid-template-columns: 1fr 400px; gap: 20px; align-items: start;">
+                    
+                    <div class="section-card" style="padding: 16px; margin: 0;">
+                        <div class="tab-navigation" style="margin-bottom: 16px;">
+                            <div class="tab-item active" data-estado="Nuevo">Nuevos <span id="badge-count-nuevo" style="background:#2563eb; color:white; padding:1px 6px; border-radius:10px; font-size:10px;">0</span></div>
+                            <div class="tab-item" data-estado="En Revisión">En revisión <span id="badge-count-revision" style="background:#cbd5e1; color:#334155; padding:1px 6px; border-radius:10px; font-size:10px;">0</span></div>
+                            <div class="tab-item" data-estado="Clasificado">Clasificados</div>
+                            <div class="tab-item" data-estado="Archivado">Archivados</div>
+                            <div class="tab-item" data-estado="Rechazado">Rechazados</div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                            <input type="text" id="buzon-search" placeholder="Buscar por nombre, asunto o descripción..." style="flex: 1; padding: 8px 12px;">
+                            
+                            <select id="buzon-filter-tipo" style="width: 160px;">
+                                <option value="Todos">Todos los tipos</option>
+                                <option value="Apoyo">🎁 Apoyo</option>
+                                <option value="Reclamo">⚠️ Reclamo</option>
+                                <option value="Iniciativa">💡 Iniciativa</option>
+                                <option value="Agradecimiento">❤️ Agradecimiento</option>
+                                <option value="Denuncia">📣 Denuncia</option>
+                                <option value="Otro">••• OTROS</option>
+                            </select>
+                        </div>
+
+                        <div class="table-responsive-container" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+                            <table class="custom-data-table" id="tabla-buzon">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Nombre</th>
+                                        <th>RUT</th>
+                                        <th>Tipo</th>
+                                        <th>Asunto</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Selecciona una pestaña o espera la sincronización de la nube...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="buzon-detail-sidebar" class="section-card" style="padding: 20px; margin: 0; display: none;">
+                        <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px;">
+                            <div style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 6px; border-radius: 6px;" id="detail-icon-zone">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </div>
+                            <div style="flex: 1;">
+                                <h3 id="detail-asunto" style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;">Cargando...</h3>
+                                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"><span id="detail-tipo">Reclamo</span> • Recibido el <span id="detail-fecha">--/--/----</span></p>
+                            </div>
+                            <button id="btn-cambiar-revision" style="background: none; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: 600; color: var(--text-dark);">👁️ Leer</button>
+                        </div>
+
+                        <hr style="border: 0; border-top: 1px solid var(--border-color); margin-bottom: 16px;">
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 8px;">Información del remitente</h4>
+                            <div style="font-size: 13px; display: grid; gap: 6px; color: var(--text-dark);">
+                                <div><span style="color: var(--text-muted); width: 75px; display: inline-block;">Nombre:</span> <strong id="detail-nombre">--</strong></div>
+                                <div>
+                                    <span style="color: var(--text-muted); width: 75px; display: inline-block;">RUT:</span> 
+                                    <strong id="detail-rut" style="font-family: monospace;">--</strong> 
+                                    <span id="detail-vecino-status"></span>
+                                </div>
+                                <div><span style="color: var(--text-muted); width: 75px; display: inline-block;">Teléfono:</span> <span id="detail-telefono">--</span></div>
+                                <div><span style="color: var(--text-muted); width: 75px; display: inline-block;">Email:</span> <span id="detail-email">--</span></div>
+                                <div><span style="color: var(--text-muted); width: 75px; display: inline-block;">Dirección:</span> <span id="detail-direccion">--</span></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 6px;">Descripción</h4>
+                            <p id="detail-descripcion" style="font-size: 12.5px; line-height: 1.5; color: var(--text-dark); background: var(--bg-workspace); padding: 10px; border-radius: 6px; margin: 0;"></p>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 8px;">Adjuntos</h4>
+                            <div id="detail-adjuntos-grid" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                        </div>
+
+                        <div style="margin-bottom: 20px; background: var(--bg-workspace); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 12px; text-align: center; font-weight: 700;">Acciones de Clasificación</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                
+                                <button type="button" class="btn" id="action-crear-vecino" style="font-size: 11px; padding: 10px; justify-content: center; background: #475569; color: white; display: none; font-weight: 700; border-radius: 6px; border:none; cursor:pointer;">👤 Crear Ficha de Vecino</button>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                    <button type="button" class="btn btn-primary" id="action-convertir-solicitud" style="font-size: 11px; padding: 10px; justify-content: center; background: #2563eb; font-weight: 700;">📝 Crear Solicitud</button>
+                                    <button type="button" class="btn" id="action-crear-donacion" style="font-size: 11px; padding: 10px; justify-content: center; background: #10b981; color: white; font-weight: 700;">💝 Crear Donación</button>
+                                </div>
+                                
+                                <button type="button" class="btn" id="action-caso-social" style="font-size: 11px; padding: 10px; justify-content: center; background: #8b5cf6; color: white; font-weight: 700;">🛡️ Convertir en Caso Social</button>
+                                
+                                <button type="button" class="btn" id="action-cambiar-clasificacion" style="font-size: 11px; padding: 10px; justify-content: center; background: #f59e0b; color: white; font-weight: 700;">🔄 Cambiar Clasificación de Origen</button>
+                                
+                                <button type="button" class="btn btn-secondary" id="action-archivar" style="font-size: 11px; padding: 10px; justify-content: center; font-weight: 600;">📥 Archivar Sin Acción</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 10px;">Historial del flujo</h4>
+                            <div id="detail-timeline" style="font-size: 11.5px; display: flex; flex-direction: column; gap: 8px; padding-left: 4px;"></div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <footer class="app-main-footer">
+                <span>© 2026 Sistema de Gestión Vecinal – Concejal Gonzalo Aguayo – La Cisterna</span>
+                <span>Versión 1.1.0</span>
+            </footer>
+        </main>
+    </div>
+
+</body>
+</html>

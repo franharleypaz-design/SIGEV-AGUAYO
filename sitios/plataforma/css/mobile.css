@@ -1,0 +1,425 @@
+/* ==========================================================================
+   SIGEV-AGUAYO - RESPONSIVIDAD MAESTRA GLOBAL (ADMIN WORKSPACE & LANDING)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   A. COMPORTAMIENTO PARA CELULARES Y DISPOSITIVOS MÓVILES (MÁX. 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    
+    /* Regla de oro: Bloquea cualquier intento de desbordamiento horizontal */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* 1. ESTRUCTURA Y CONTENEDORES MAESTROS */
+    .app-container {
+        display: block !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+
+    /* SISTEMA DRAWER: El menú lateral se vuelve un panel flotante perfecto */
+    #sidebar-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100vh !important;
+        width: 270px !important;
+        z-index: 9999 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .sidebar {
+        width: 100% !important;
+        height: 100% !important;
+        position: relative !important;
+        z-index: 100 !important;
+        left: auto !important;
+        top: auto !important;
+        box-shadow: none !important;
+    }
+
+    /* El contenido principal fluye hacia arriba de forma nativa */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 8px !important;
+        width: 100% !important;
+        display: block !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Contenedor del cuerpo del Dashboard */
+    .dashboard-body {
+        padding: 4px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Activación del botón hamburguesa */
+    #btn-toggle-sidebar-mobile {
+        display: inline-flex !important;
+    }
+
+    .sidebar-open #sidebar-container {
+        transform: translateX(0) !important; 
+    }
+
+    /* Capa oscura de desenfoque trasera */
+    .sidebar-mobile-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(15, 23, 42, 0.5) !important;
+        backdrop-filter: blur(2px) !important;
+        z-index: 50 !important;
+        display: none;
+    }
+
+    .sidebar-open .sidebar-mobile-overlay {
+        display: block !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       2. REESTRUCTURACIÓN SIMÉTRICA DE LA BARRA SUPERIOR (TOP-BAR)
+       -------------------------------------------------------------------------- */
+    .top-bar {
+        padding: 12px 14px !important;
+        height: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        position: static !important;
+    }
+
+    /* Fila 1: Hamburguesa y Título Principal */
+    .top-bar-title {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        justify-content: flex-start !important;
+        flex: none !important;
+    }
+
+    .top-bar-title h2 {
+        font-size: 16px !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+
+    .top-bar-title p { 
+        display: none !important; 
+    }
+
+    /* Fila 2: Perfil de Usuario y Notificaciones */
+    .top-bar-actions {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        order: 2 !important;
+        flex: none !important;
+    }
+
+    .user-profile {
+        gap: 8px !important;
+    }
+
+    .user-profile p { 
+        display: none !important; 
+    }
+
+    /* Fila 3: El Reloj se vuelve una cápsula limpia al fondo del Topbar */
+    .top-bar-center {
+        width: 100% !important;
+        order: 3 !important;
+        display: flex !important;
+        justify-content: center !important;
+        flex: none !important;
+        margin-top: 2px !important;
+    }
+
+    #live-clock {
+        font-size: 13px !important;
+        padding: 6px 0 !important;
+        width: 100% !important;
+        text-align: center !important;
+        display: block !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       3. REDISEÑO MÓVIL PREMIUM DE LA PESTAÑA CALENDARIO (calendario.html)
+       -------------------------------------------------------------------------- */
+    
+    /* Control de Cabecera (Título de la sección + Botón Nuevo Evento) */
+    div[style*="justify-content: space-between; align-items: flex-end;"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        margin-bottom: 16px !important;
+    }
+    div[style*="justify-content: space-between; align-items: flex-end;"] button {
+        width: 100% !important;
+        padding: 10px !important;
+    }
+
+    /* Romper el flex inline rústico que amontonaba el calendario con la leyenda */
+    div[style*="gap: 20px; align-items: flex-start;"],
+    div[style*="display: flex; gap: 20px;"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 16px !important;
+        width: 100% !important;
+    }
+
+    /* Compactar la tarjeta contenedora del calendario completo */
+    .full-calendar-card {
+        padding: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .calendar-header {
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+    }
+
+    .calendar-nav {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    .calendar-nav h4, #cal-mes-año {
+        font-size: 15px !important;
+        min-width: auto !important;
+        margin: 0 !important;
+        text-align: center;
+    }
+
+    .calendar-view-toggle {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        width: 100% !important;
+        gap: 4px !important;
+    }
+
+    .view-btn {
+        text-align: center !important;
+        padding: 6px 2px !important;
+        font-size: 12px !important;
+    }
+
+    /* Ajuste de Grillas Maestras (Estática del Dashboard y Dinámica de Calendario) */
+    .calendar-grid, .calendar-grid-full {
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 2px !important;
+        background-color: var(--border-color, #e2e8f0) !important;
+        border: 1px solid var(--border-color, #e2e8f0) !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        width: 100% !important;
+    }
+
+    .calendar-day-label {
+        font-size: 10.5px !important;
+        padding: 8px 2px !important;
+        font-weight: 700 !important;
+        background: #f8fafc !important;
+        color: var(--text-dark) !important;
+    }
+
+    /* Homologación de Celdas fijas e inyectadas dinámicamente por JS */
+    .calendar-cell, .calendar-grid-full > div {
+        min-height: 52px !important; 
+        padding: 6px 2px !important;
+        background: #fff !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important; /* Centrado simétrico de números y puntos */
+        box-sizing: border-box !important;
+    }
+
+    .cell-number {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        margin-bottom: 2px !important;
+        line-height: 1 !important;
+    }
+
+    /* PROTECCIÓN DE INTERFAZ: Esfuma el texto dinámico y mapea las barras como "dots" perfectos */
+    .calendar-cell [class*="event-"],
+    .calendar-grid-full [class*="event-"],
+    .calendar-grid-full > div > div:not(.cell-number),
+    .calendar-event,
+    .event-pill {
+        font-size: 0 !important; /* Elimina las letras que expanden la celda */
+        line-height: 0 !important;
+        color: transparent !important;
+        width: 8px !important; /* Formato punto circular nativo */
+        height: 8px !important;
+        min-width: 8px !important;
+        min-height: 8px !important;
+        border-radius: 50% !important; 
+        padding: 0 !important;
+        margin: 4px auto 0 !important; 
+        display: block !important;
+        max-width: 8px !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        transition: transform 0.15s ease;
+    }
+
+    /* Animación de pulsación táctil móvil */
+    .calendar-cell [class*="event-"]:active,
+    .calendar-grid-full [class*="event-"]:active {
+        transform: scale(1.4) !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       4. ACORDEÓN TÁCTIL PARA FILTROS EN CELULARES
+       -------------------------------------------------------------------------- */
+    .filter-mobile-header-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+    }
+
+    .filter-panel-card .filter-layout-row {
+        display: none !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-top: 14px !important;
+    }
+
+    .filter-panel-card.filters-expanded .filter-layout-row {
+        display: flex !important;
+    }
+
+    .filter-panel-card.filters-expanded .filter-arrow {
+        transform: rotate(180deg) !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       5. RESPONSIVIDAD DE GRILLAS, TARJETAS Y ELEMENTOS DEL DASHBOARD
+       -------------------------------------------------------------------------- */
+    .kpi-grid, 
+    .solicitudes-kpi-container, 
+    .bottom-tables-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    .kpi-card, .mini-kpi-card, .section-card {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .quick-actions-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .action-block-btn {
+        width: 100% !important;
+    }
+
+    .table-responsive-container {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        margin-top: 8px !important;
+        border: 1px solid var(--border-color, #e2e8f0) !important;
+        border-radius: 8px !important;
+    }
+
+    .custom-data-table {
+        width: 100% !important;
+        min-width: 680px;
+    }
+
+    /* Modales Avanzados de Fichas */
+    .profile-modal-card {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+
+    .filter-control, .form-group { width: 100% !important; }
+    .filter-buttons-group { width: 100% !important; justify-content: space-between !important; }
+    .profile-modal-tabs { overflow-x: auto !important; white-space: nowrap !important; display: flex !important; }
+    .tab-item, .profile-tab { flex-shrink: 0 !important; }
+
+    .app-main-footer {
+        flex-direction: column !important;
+        gap: 8px !important;
+        text-align: center !important;
+        padding: 16px !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       6. OPTIMIZACIÓN DE LA LANDING PAGE PÚBLICA (index.html)
+       -------------------------------------------------------------------------- */
+    .navbar {
+        flex-direction: column !important;
+        height: auto !important;
+        padding: 16px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        align-items: center !important;
+    }
+
+    .nav-links { display: none !important; }
+    .btn-access { width: 100% !important; justify-content: center !important; }
+    .hero { height: auto !important; padding: 32px 16px !important; }
+    .hero-container-flex { flex-direction: column !important; align-items: center !important; gap: 32px !important; }
+    .hero-content { width: 100% !important; text-align: center !important; }
+    .hero-title { font-size: 26px !important; }
+    .hero-buttons { flex-direction: column !important; width: 100% !important; }
+    .hero-buttons button { width: 100% !important; }
+    .features-grid { grid-template-columns: 1fr !important; padding: 16px !important; }
+    
+    .main-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 20px 16px !important;
+        gap: 40px !important;
+    }
+
+    .news-item { flex-direction: column !important; }
+    .news-thumb { width: 100% !important; height: 140px !important; }
+    .citizen-box { width: 100% !important; padding: 20px !important; }
+    .option-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* --------------------------------------------------------------------------
+   B. COMPORTAMIENTO MEDIANO PARA TABLETS (ENTRE 769px Y 1024px)
+   -------------------------------------------------------------------------- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .kpi-grid, .solicitudes-kpi-container { grid-template-columns: repeat(2, 1fr) !important; }
+    .content-layout-grid { grid-template-columns: 1fr !important; }
+    .bottom-tables-grid { grid-template-columns: 1fr !important; }
+}
