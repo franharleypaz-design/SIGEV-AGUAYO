@@ -393,15 +393,17 @@ html, body {
 }
 
 .form-fields-side { flex-grow: 1; }
+
+/* 🚀 CORRECCIÓN DEL ESPACIO BLANCO 🚀 */
 .form-row-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr); /* ANTES ERA 3, AHORA ES 2 PARA QUE NO QUEDE HUECO */
     gap: 16px;
     margin-bottom: 16px;
 }
 
 .form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group.full-width { grid-column: span 2; }
+.form-group.full-width { grid-column: span 2; } /* Ocupa las 2 columnas completas */
 
 label {
     font-size: 12px;
@@ -817,34 +819,38 @@ input:focus, select:focus, textarea:focus {
     align-items: center;
     z-index: 2500;
     padding: 20px; 
-    overflow-y: auto;
+    overflow: hidden; /* Cortamos cualquier scroll externo */
     animation: alertFadeIn 0.2s ease-out forwards;
 }
 
+/* LA CAJA PRINCIPAL ES FLEXIBLE Y NO SE CORTA */
 .profile-modal-card {
     background: var(--card-bg);
     width: 100%;
-    max-width: 680px;
-    max-height: calc(100vh - 40px); 
+    max-width: 760px;
+    max-height: 90vh; /* Nunca será más alta que el 90% de tu pantalla */
+    height: auto;     /* Crece según el contenido, hasta el límite */
     border-radius: 16px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
     border: 1px solid var(--border-color);
     display: flex; 
     flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; /* Lo que sobra adentro, se scrollea adentro */
     animation: alertScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     transition: background-color 0.4s ease, border-color 0.4s ease;
+    margin: 0;
+    padding: 0;
 }
 
 .profile-modal-header {
     background: linear-gradient(135deg, #093570, #0b438c);
-    padding: 32px;
+    padding: 24px 32px;
     color: #ffffff;
     display: flex;
     align-items: center;
     gap: 24px;
     position: relative;
-    flex-shrink: 0; 
+    flex-shrink: 0; /* Asegura que la cabecera no se encoja */
 }
 
 .profile-modal-avatar {
@@ -893,7 +899,7 @@ input:focus, select:focus, textarea:focus {
     padding: 0 32px;
     border-bottom: 1px solid var(--border-color);
     gap: 24px;
-    flex-shrink: 0; 
+    flex-shrink: 0; /* Asegura que las pestañas no se encojan */
     transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 
@@ -911,10 +917,12 @@ input:focus, select:focus, textarea:focus {
     border-bottom-color: #2563eb;
 }
 
+/* ÁREA DE SCROLL INTERNA */
 .profile-modal-body {
     padding: 32px;
-    flex: 1; 
+    flex: 1 1 auto; /* Se expande, pero permite scroll si el contenido es muy largo */
     overflow-y: auto; 
+    background-color: var(--card-bg);
 }
 
 .profile-panel { display: none; }

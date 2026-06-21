@@ -157,16 +157,17 @@
     transition: color 0.4s ease;
 }
 
-/* ANIMACIONES */
+/* 🚀 ANIMACIONES */
 @keyframes fadeInPane { 
     from { opacity: 0; transform: translateY(4px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
 
-/* DISEÑO RESPONSIVO MÓVIL */
+/* 📱 DISEÑO RESPONSIVO MÓVIL */
 @media (max-width: 768px) {
     .admin-panel-workspace-grid { grid-template-columns: 1fr; }
 }
+
 
 /* ==========================================================================
    🚀 BLINDAJE MAESTRO CORREGIDO PARA MODO OSCURO (PANEL DE CONFIGURACIÓN)
@@ -205,4 +206,39 @@ html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"
 html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="background"] p[style*="color"],
 html[style*="--bg-workspace: #0f172a"] .config-pane-view div[style*="color"] {
     color: var(--text-light) !important;
+}
+
+/* ==========================================================================
+   🚀 REGLAS ESPECÍFICAS PARA EL MÓDULO DE MIGRACIÓN (TABLAS EXCEL)
+   ========================================================================== */
+
+/* 5. Blindar tabla de previsualización Excel en Modo Oscuro */
+html[style*="--bg-workspace: #0f172a"] #preview-migracion-vecinos table {
+    background-color: #1e293b !important; /* Fondo de tabla oscuro */
+    border-color: #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] #preview-migracion-vecinos th {
+    background-color: #0f172a !important; /* Cabeceras negras */
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] #preview-migracion-vecinos td {
+    color: #f8fafc !important; /* Texto blanco para las celdas */
+    border-bottom: 1px solid #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] #preview-migracion-vecinos td[style*="color: #475569"] {
+    color: #94a3b8 !important; /* Sector en gris claro en Modo Oscuro */
+}
+
+html[style*="--bg-workspace: #0f172a"] #preview-migracion-vecinos td[colspan="4"] {
+    background-color: #0f172a !important; /* Fila inferior de resumen */
+    color: #94a3b8 !important;
+}
+
+/* 6. Blindar texto de alerta de validación de Excel en Modo Oscuro */
+html[style*="--bg-workspace: #0f172a"] #preview-count-vecinos {
+    color: #cbd5e1 !important;
 }

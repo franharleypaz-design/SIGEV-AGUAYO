@@ -21,14 +21,14 @@
         position: relative !important;
     }
 
-    /* SISTEMA DRAWER: El menú lateral se vuelve un panel flotante perfecto */
+   /* SISTEMA DRAWER: El menú lateral se posiciona al frente de todo de forma limpia */
     #sidebar-container {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         height: 100vh !important;
         width: 270px !important;
-        z-index: 9999 !important;
+        z-index: 9999 !important; /* Prioridad máxima absoluta */
         transform: translateX(-100%) !important;
         transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
         box-shadow: 5px 0 15px rgba(0, 0, 0, 0.25);
@@ -38,7 +38,7 @@
         width: 100% !important;
         height: 100% !important;
         position: relative !important;
-        z-index: 100 !important;
+        z-index: 9999 !important;
         left: auto !important;
         top: auto !important;
         box-shadow: none !important;
@@ -68,24 +68,29 @@
         display: inline-flex !important;
     }
 
-    .sidebar-open #sidebar-container {
+    /* CAPTURA DE APERTURA MULTI-ENTORNO DE MENÚ (MÁXIMA COMPATIBILIDAD) */
+    .sidebar-open #sidebar-container,
+    .app-container.sidebar-open #sidebar-container,
+    body.sidebar-open #sidebar-container {
         transform: translateX(0) !important; 
     }
 
-    /* Capa oscura de desenfoque trasera */
+    /* Capa oscura de desenfoque trasera en un nivel intermedio */
     .sidebar-mobile-overlay {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        background: rgba(15, 23, 42, 0.5) !important;
+        background: rgba(15, 23, 42, 0.4) !important;
         backdrop-filter: blur(2px) !important;
-        z-index: 50 !important;
+        z-index: 9990 !important; /* Detrás del menú (9999) pero delante del contenido */
         display: none;
     }
 
-    .sidebar-open .sidebar-mobile-overlay {
+    .sidebar-open .sidebar-mobile-overlay,
+    .app-container.sidebar-open .sidebar-mobile-overlay,
+    body.sidebar-open .sidebar-mobile-overlay {
         display: block !important;
     }
 
@@ -160,8 +165,6 @@
     /* --------------------------------------------------------------------------
        3. REDISEÑO MÓVIL PREMIUM DE LA PESTAÑA CALENDARIO (calendario.html)
        -------------------------------------------------------------------------- */
-    
-    /* Control de Cabecera (Título de la sección + Botón Nuevo Evento) */
     div[style*="justify-content: space-between; align-items: flex-end;"] {
         flex-direction: column !important;
         align-items: stretch !important;
@@ -173,7 +176,6 @@
         padding: 10px !important;
     }
 
-    /* Romper el flex inline rústico que amontonaba el calendario con la leyenda */
     div[style*="gap: 20px; align-items: flex-start;"],
     div[style*="display: flex; gap: 20px;"] {
         display: flex !important;
@@ -183,7 +185,6 @@
         width: 100% !important;
     }
 
-    /* Compactar la tarjeta contenedora del calendario completo */
     .full-calendar-card {
         padding: 12px !important;
         width: 100% !important;
@@ -223,7 +224,6 @@
         font-size: 12px !important;
     }
 
-    /* Ajuste de Grillas Maestras (Estática del Dashboard y Dinámica de Calendario) */
     .calendar-grid, .calendar-grid-full {
         grid-template-columns: repeat(7, 1fr) !important;
         gap: 2px !important;
@@ -242,7 +242,6 @@
         color: var(--text-dark) !important;
     }
 
-    /* Homologación de Celdas fijas e inyectadas dinámicamente por JS */
     .calendar-cell, .calendar-grid-full > div {
         min-height: 52px !important; 
         padding: 6px 2px !important;
@@ -250,7 +249,7 @@
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-start !important;
-        align-items: center !important; /* Centrado simétrico de números y puntos */
+        align-items: center !important;
         box-sizing: border-box !important;
     }
 
@@ -261,16 +260,15 @@
         line-height: 1 !important;
     }
 
-    /* PROTECCIÓN DE INTERFAZ: Esfuma el texto dinámico y mapea las barras como "dots" perfectos */
     .calendar-cell [class*="event-"],
     .calendar-grid-full [class*="event-"],
     .calendar-grid-full > div > div:not(.cell-number),
     .calendar-event,
     .event-pill {
-        font-size: 0 !important; /* Elimina las letras que expanden la celda */
+        font-size: 0 !important;
         line-height: 0 !important;
         color: transparent !important;
-        width: 8px !important; /* Formato punto circular nativo */
+        width: 8px !important;
         height: 8px !important;
         min-width: 8px !important;
         min-height: 8px !important;
@@ -285,7 +283,6 @@
         transition: transform 0.15s ease;
     }
 
-    /* Animación de pulsación táctil móvil */
     .calendar-cell [class*="event-"]:active,
     .calendar-grid-full [class*="event-"]:active {
         transform: scale(1.4) !important;
@@ -359,7 +356,6 @@
         min-width: 680px;
     }
 
-    /* Modales Avanzados de Fichas */
     .profile-modal-card {
         width: 100% !important;
         height: 100% !important;
@@ -422,4 +418,427 @@
     .kpi-grid, .solicitudes-kpi-container { grid-template-columns: repeat(2, 1fr) !important; }
     .content-layout-grid { grid-template-columns: 1fr !important; }
     .bottom-tables-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 768px) {
+    #nav-btn-notificaciones {
+        display: none !important;
+    }
+}
+
+/* REORDENAMIENTO DEL DASHBOARD PARA CELULARES */
+@media (max-width: 768px) {
+    .content-layout-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .quick-actions-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .quick-actions-grid .action-block-btn {
+        font-size: 11px !important;
+        padding: 14px 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        text-align: center !important;
+    }
+
+    .quick-actions-grid .action-block-btn svg {
+        margin: 0 auto !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+
+/* RESPONSIVIDAD DEL MODAL DE INGRESO VECINO Y EDICIÓN */
+@media (max-width: 768px) {
+    .profile-modal-tabs {
+        display: flex !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        padding: 0 16px !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .profile-modal-tabs .tab-item {
+        flex: 0 0 auto !important;
+        padding: 12px 14px !important;
+    }
+
+    .form-layout-with-photo {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 16px !important;
+    }
+    .photo-upload-container {
+        width: 100% !important;
+        max-width: 180px !important;
+        margin: 0 auto !important;
+    }
+
+    .form-row-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    #v-mini-mapa-picker + div {
+        grid-template-columns: 1fr !important;
+    }
+
+    .profile-modal-header,
+    .profile-modal-body,
+    .profile-modal-card > div:last-child {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    .profile-modal-card > div:last-child {
+        flex-direction: column-reverse !important;
+    }
+    .profile-modal-card > div:last-child button {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+}
+
+/* FIX DEFINITIVO: ORDENAMIENTO, CUADRÍCULA Y CENTRADO DEL EXPEDIENTE VISOR */
+@media (max-width: 768px) {
+    #v-panel-basicos > div:first-child {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 12px !important;
+    }
+    
+    #v-panel-basicos > div:first-child > div:last-child {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 160px !important; 
+        justify-content: center !important;
+        align-items: center !important;
+        margin: 0 auto !important; 
+    }
+    
+    .profile-data-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #btn-close-sidebar-mobile {
+        display: flex !important;
+        z-index: 99999 !important;
+    }
+    #btn-close-sidebar-mobile:active {
+        background: rgba(15, 23, 42, 0.9) !important;
+        transform: scale(0.92);
+    }
+}
+
+/* VISOR DE SOLICITUDES EN POP-UP REAL (MODO MÓVIL) */
+@media (max-width: 768px) {
+    .dashboard-body > div:last-child,
+    div[style*="display: flex; gap: 20px; align-items: flex-start;"] {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .section-card,
+    div[style*="flex: 2;"],
+    div[style*="flex: 1.8;"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #panel-contenido,
+    div[style*="position: sticky; top: 20px;"],
+    div[style*="flex: 1; min-width: 320px;"] {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        background: #ffffff !important;
+        z-index: 99999 !important; 
+        padding: 64px 20px 24px 20px !important; 
+        box-sizing: border-box !important;
+        overflow-y: auto !important;
+        
+        display: none !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        animation: entradaPopUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    div[style*="display: flex;"]#panel-contenido {
+        display: flex !important;
+    }
+
+    #btn-cerrar-panel-mobile {
+        display: flex !important;
+        position: absolute !important;
+        top: 16px !important;
+        right: 16px !important;
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        color: #ffffff !important;
+        cursor: pointer !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 6px !important;
+        border-radius: 50% !important;
+        width: 34px !important;
+        height: 34px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        z-index: 100000 !important;
+    }
+
+    #btn-cerrar-panel-mobile:active {
+        background: rgba(15, 23, 42, 0.9) !important;
+        transform: scale(0.92) !important;
+    }
+
+    #panel-contenido > div:first-child,
+    div[style*="display: flex; gap: 16px; align-items: center;"] {
+        flex-direction: row !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+
+    #panel-contenido .profile-data-grid,
+    #panel-contenido div[style*="display: grid;"] {
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+        gap: 12px !important;
+    }
+
+    #panel-vacio {
+        display: none !important;
+    }
+}
+
+@keyframes entradaPopUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* VISOR DE MENSAJES EN POP-UP REAL (MODO MÓVIL) */
+@media (max-width: 768px) {
+    div[style*="display: flex; gap: 20px; align-items: flex-start;"],
+    .dashboard-body > div:last-child {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #buzon-detail-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        background: #ffffff !important;
+        z-index: 99999 !important; 
+        padding: 64px 20px 24px 20px !important; 
+        box-sizing: border-box !important;
+        overflow-y: auto !important;
+        
+        display: none !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        animation: entradaPopUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    div[style*="display: block;"]#buzon-detail-sidebar {
+        display: flex !important; 
+    }
+
+    #btn-cerrar-panel-mobile {
+        display: flex !important;
+        position: absolute !important;
+        top: 16px !important;
+        right: 16px !important;
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        color: #ffffff !important;
+        cursor: pointer !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 6px !important;
+        border-radius: 50% !important;
+        width: 34px !important;
+        height: 34px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        z-index: 100001 !important;
+        pointer-events: auto !important;
+    }
+
+    #btn-cerrar-panel-mobile:active {
+        background: rgba(15, 23, 42, 0.9) !important;
+        transform: scale(0.92) !important;
+    }
+
+    #buzon-detail-sidebar div[style*="display: grid;"],
+    #buzon-detail-sidebar .profile-data-grid {
+        grid-template-columns: 1fr !important; 
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    #buzon-detail-sidebar div[style*="display: flex; gap: 10px;"] {
+        flex-direction: column !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+    #buzon-detail-sidebar div[style*="display: flex; gap: 10px;"] button,
+    #buzon-detail-sidebar div[style*="display: flex; gap: 10px;"] select {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+}
+
+/* POP-UP MÓVIL Y DESBLOQUEO DE CONTENEDOR DONACIONES */
+@media (max-width: 768px) {
+    .donaciones-split-layout {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #donaciones-detail-sidebar {
+        position: static !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        display: block !important;
+        z-index: auto !important;
+    }
+
+    #panel-contenido-donaciones {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        background: #ffffff !important;
+        z-index: 999999 !important; 
+        padding: 72px 20px 24px 20px !important;
+        box-sizing: border-box !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        animation: entradaPopUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #panel-vacio-donaciones {
+        display: none !important;
+    }
+
+    #btn-cerrar-panel-mobile {
+        display: flex !important;
+        position: fixed !important; 
+        top: 20px !important;
+        right: 20px !important;
+        z-index: 1000000 !important;
+        background: rgba(15, 23, 42, 0.7) !important;
+        color: #ffffff !important;
+        border-radius: 50% !important;
+        width: 38px !important;
+        height: 38px !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+}
+
+/* OPTIMIZACIÓN EN MÓVIL PARA EL MAPA TERRITORIAL INTELIGENTE (GIS MÓVIL) */
+@media (max-width: 768px) {
+    #pane-mapa-view.map-pane-view,
+    #pane-info-view.map-pane-view {
+        display: none !important;
+    }
+    #pane-mapa-view.map-pane-view.active { display: block !important; }
+    #pane-info-view.map-pane-view.active { display: block !important; }
+
+    .layer-card-checkbox[data-target="indices"] { display: none !important; }
+    #panel-info-sectores { display: none !important; }
+
+    .map-layer-dashboard {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    .layer-card-checkbox { padding: 10px 12px !important; gap: 8px !important; }
+    .layer-title { font-size: 11.5px !important; white-space: normal !important; line-height: 1.2 !important; overflow: visible !important; text-overflow: clip !important; }
+    .layer-desc { display: none !important; }
+
+    .map-canvas-container-card {
+        display: block !important;
+        margin-top: 16px !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+    #mapa-canvas {
+        height: 460px !important;
+        width: 100% !important;
+        border-bottom: none !important;
+        border-radius: 8px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .map-layer-dashboard { grid-template-columns: 1fr !important; }
+    #mapa-canvas { height: 380px !important; }
+}
+
+/* ==========================================================================
+   🎯 🚀 PARCHE SUPREMO: AJUSTE DE ALTURA Y DESAHOGO LOGO WEB PÚBLICO (index.html)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Desahogamos por completo la cabecera dándole aire al logo contra el borde del fono */
+    .navbar, 
+    div[style*="background: #fff; text-align: center;"] {
+        padding-top: 24px !important;
+        padding-bottom: 12px !important;
+        background: #ffffff !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    /* Forzamos a que la imagen del logo corporativo escale de manera controlada y proporcional */
+    .navbar img, 
+    div[style*="background: #fff; text-align: center;"] img {
+        max-width: 180px !important; /* Ancho ergonómico óptimo para pantallas de celular */
+        height: auto !important;
+        max-height: 60px !important;
+        object-fit: contain !important;
+        display: block !important;
+        margin: 0 auto 8px auto !important; /* Asegura un margen de despeje con la ilustración de abajo */
+    }
+
+    /* Despejamos el contenedor de la tarjeta del concejal para que no muerda el logo */
+    .hero, 
+    div[style*="background-image:"] {
+        margin-top: 0 !important;
+        padding-top: 16px !important;
+    }
 }

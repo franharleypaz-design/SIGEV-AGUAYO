@@ -1,0 +1,274 @@
+/* ==========================================================================
+   👑 CONTROL Y BLINDAJE PARA BANNER PANORÁMICO DINÁMICO
+   ========================================================================== */
+.navbar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    padding: 0 24px !important;
+    height: 80px; 
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
+}
+
+#portal-logo-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* BASE ABSOLUTA (MOBILE-FIRST) */
+#portal-logo-container img {
+    height: 100% !important;
+    width: 100% !important;
+    display: block !important;
+    object-fit: cover !important; 
+    object-position: left center !important; 
+}
+
+/* SÓLO COMPUTADOR (PANTALLAS GRANDES) */
+@media (min-width: 769px) {
+    #portal-logo-container img {
+        object-fit: contain !important;
+        object-position: left center !important;
+    }
+}
+
+#open-login-btn {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10; 
+}
+
+/* ==========================================================================
+   🚀 COMPONENTES PÚBLICOS DEL PORTAL
+   ========================================================================== */
+.split-dashboard-container {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 40px auto 60px auto;
+    padding: 0 24px;
+    box-sizing: border-box;
+    align-items: start;
+}
+
+.column-header-panel {
+    text-align: left;
+    margin-bottom: 20px;
+}
+.column-header-panel h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+}
+.column-header-panel p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.triage-double-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.option-wrapper {
+    position: relative;
+    display: flex;
+    width: 100%;
+}
+
+.option-btn {
+    width: 100%;
+    min-height: 68px; 
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 10px 34px 10px 34px !important; 
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.footer-nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+.footer-nav-link:hover {
+    color: var(--primary-blue);
+    text-decoration: underline;
+}
+
+.social-icon-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+.social-icon-link:hover {
+    background: #0b438c;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.mobile-only-footer-btn {
+    display: none;
+}
+
+.responsive-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ==========================================================================
+   🛡️ CONTROL DE MODALES (AQUÍ ESTÁ LA MAGIA DEL BOTÓN)
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 999999;
+    display: none; /* Oculto por defecto */
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* ESTA CLASE LA INYECTA EL JAVASCRIPT AL HACER CLIC EN EL BOTÓN */
+.modal-overlay.open {
+    display: flex !important;
+    opacity: 1;
+}
+
+/* Animación de entrada suave para la tarjeta interior */
+.modal-overlay.open .login-card {
+    animation: modalFadeInUp 0.3s ease forwards;
+}
+
+@keyframes modalFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==========================================================================
+   📱 ADAPTACIONES SÓLO PARA CELULARES
+   ========================================================================== */
+@media (max-width: 992px) {
+    .split-dashboard-container {
+        grid-template-columns: 1fr; 
+        gap: 48px;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 16px !important;
+        height: 72px !important; 
+    }
+    
+    #open-login-btn {
+        display: none !important;
+    }
+
+    .triage-double-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .mobile-only-footer-btn {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 20px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .responsive-grid-2 {
+        grid-template-columns: 1fr; 
+    }
+    .login-card {
+        padding: 20px 16px !important;
+        width: 92% !important;
+        max-height: 90vh; 
+        overflow-y: auto;
+    }
+    .footer-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center;
+        gap: 32px !important;
+    }
+    .footer-col .brand {
+        justify-content: center !important; 
+    }
+    .social-links-footer {
+        justify-content: center !important;
+        margin-top: 8px;
+    }
+    .footer-col ul {
+        align-items: center;
+    }
+    .hero-container-flex {
+        flex-direction: column !important;
+        text-align: center;
+    }
+    .hero-profile-zone {
+        margin-top: 32px;
+        display: flex;
+        justify-content: center;
+    }
+}

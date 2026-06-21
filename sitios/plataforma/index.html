@@ -2,28 +2,119 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIGEV-AGUAYO | Portal Territorial Vecinal</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/mobile.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SIGEV | Portal Territorial Vecinal</title>
+    
+    <link rel="stylesheet" href="css/styles.css?v=12.0">
+    <link rel="stylesheet" href="css/mobile.css?v=12.0">
+    <link rel="stylesheet" href="css/portal-custom.css?v=12.0">
     
     <style>
-        /* 🚀 BLINDAJE DE CENTRADO SIMÉTRICO Y HOMOGENEIDAD PARA LOS BOTONES */
+        .navbar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            padding: 0 24px !important;
+            height: 80px; 
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #portal-logo-container {
+            height: 56px; 
+            display: flex;
+            align-items: center;
+            max-width: 60%; 
+        }
+
+        #portal-logo-container img {
+            height: 100% !important;
+            width: auto !important; 
+            max-width: 100% !important;
+            display: block !important;
+            object-fit: contain !important; 
+            object-position: left center !important; 
+        }
+
+        #open-login-btn {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10; 
+        }
+
+        /* 🚀 CLASES DINÁMICAS PARA RESPONSIVIDAD DEL BANNER (PC) */
+        .has-dynamic-bg {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 50%, rgba(255, 255, 255, 0.4) 100%), var(--hero-dynamic-bg) !important;
+            background-size: cover !important;
+            background-position: center center !important;
+            background-repeat: no-repeat !important;
+        }
+        .no-dynamic-bg { background: #f8fafc !important; }
+
+        .has-dynamic-footer-bg {
+            background-image: var(--footer-dynamic-bg) !important;
+            background-size: cover !important;
+            background-position: center center !important;
+            background-repeat: no-repeat !important;
+        }
+        .no-dynamic-footer-bg { background-color: #f8fafc !important; }
+
+        .split-dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px; 
+            max-width: 1200px;
+            margin: 40px auto 60px auto;
+            padding: 0 24px;
+            box-sizing: border-box;
+            align-items: start;
+        }
+
+        .column-header-panel {
+            text-align: left;
+            margin-bottom: 20px;
+            height: 52px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .column-header-panel h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+        }
+        .column-header-panel p {
+            font-size: 13.5px;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .triage-double-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
         .option-wrapper {
             position: relative;
             display: flex;
             width: 100%;
         }
         
-        /* Centrado absoluto del contenido, íconos y textos multilínea */
         .option-btn {
             width: 100%;
-            min-height: 68px; /* Fuerza a que todos los botones tengan la misma altura exacta */
+            min-height: 68px; 
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             text-align: center !important;
-            padding: 10px 34px 10px 34px !important; /* Espaciado interno simétrico para proteger el '?' */
+            padding: 10px 34px 10px 34px !important; 
             font-size: 13px !important;
             font-weight: 600 !important;
             line-height: 1.3 !important;
@@ -33,327 +124,361 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
         .option-btn:hover {
             background: #f8fafc;
             border-color: #94a3b8;
         }
 
-        .btn-help-badge {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
-            background: #e2e8f0;
-            color: #475569;
-            border-radius: 50%;
+        .footer-nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            cursor: pointer;
+        }
+        .footer-nav-link:hover {
+            color: var(--primary-blue);
+            text-decoration: underline;
+        }
+
+        .social-icon-link {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: help;
-            transition: all 0.2s ease;
-            z-index: 5;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #475569;
+            transition: all 0.3s ease;
+            text-decoration: none;
         }
-        .btn-help-badge:hover {
-            background: #cbd5e1;
-            color: #0f172a;
-        }
-        
-        /* Configuración del globo flotante (Tooltip) */
-        .btn-help-badge::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 135%;
-            right: 0;
-            transform: scale(0.9);
-            background: #1e293b;
+        .social-icon-link:hover {
+            background: #0b438c;
             color: #ffffff;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.15s ease;
-            z-index: 100;
+            transform: translateY(-2px);
         }
-        
-        /* Desplegar tooltip al hacer Hover */
-        .btn-help-badge:hover::after {
-            opacity: 1;
-            visibility: visible;
-            transform: scale(1);
+
+        .mobile-only-footer-btn {
+            display: none;
+        }
+
+        .responsive-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .footer { position: relative; overflow: hidden; background-color: #f8fafc; border-top: 1px solid #e2e8f0; }
+        .footer-grid, .copyright { position: relative; z-index: 2; }
+        #portal-footer-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(248, 250, 252, 0.92); z-index: 1; pointer-events: none; }
+
+        @media (max-width: 992px) {
+            .split-dashboard-container {
+                grid-template-columns: 1fr; 
+                gap: 40px;
+            }
+            .column-header-panel {
+                height: auto; 
+                margin-bottom: 12px;
+            }
+        }
+
+        /* 📱 MAGIA RESPONSIVE PARA EL CELULAR */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 16px !important;
+                height: 72px !important; 
+                justify-content: center; 
+            }
+            #portal-logo-container {
+                max-width: 100%; 
+                width: 100%;
+                justify-content: center; 
+            }
+            #portal-logo-container img {
+                object-position: center center !important; 
+                max-height: 44px !important; 
+            }
+            #open-login-btn {
+                display: none !important;
+            }
+            
+            /* 🚀 ENCUADRE DE IMAGEN PARA CELULAR: Desplaza la imagen a la esquina inferior derecha */
+            .has-dynamic-bg {
+                background-position: 85% 100% !important; /* Desliza a la derecha (85%) y la pega abajo (100%) */
+                /* Degradado más transparente abajo (0.05) para que las líneas de colores luzcan perfectas */
+                background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 45%, rgba(255, 255, 255, 0.05) 100%), var(--hero-dynamic-bg) !important;
+            }
+
+            .triage-double-grid {
+                grid-template-columns: 1fr !important; 
+            }
+            .mobile-only-footer-btn {
+                display: inline-flex !important;
+                align-items: center;
+                gap: 8px;
+                background: #f1f5f9;
+                border: 1px solid #cbd5e1;
+                color: #475569;
+                padding: 10px 16px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                margin-top: 20px;
+                width: 100%;
+                justify-content: center;
+            }
+            .responsive-grid-2 {
+                grid-template-columns: 1fr; 
+            }
+            .login-card {
+                padding: 20px 16px !important;
+                width: 92% !important;
+                max-height: 90vh; 
+                overflow-y: auto;
+            }
+            .footer-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center;
+                gap: 32px !important;
+            }
+            .footer-col .brand {
+                justify-content: center !important; 
+            }
+            .social-links-footer {
+                justify-content: center !important;
+                margin-top: 8px;
+            }
+            .footer-col ul {
+                align-items: center;
+            }
+            .hero-container-flex {
+                flex-direction: column !important;
+                text-align: center;
+            }
+            .hero-profile-zone {
+                margin-top: 32px;
+                display: flex;
+                justify-content: center;
+            }
         }
     </style>
     
-    <script type="module" src="js/login.js" defer></script>
+    <script>
+        function abrirModalG(id) {
+            const m = document.getElementById(id);
+            if(m) {
+                m.style.display = 'flex';
+                m.classList.add('open');
+            }
+        }
+        function cerrarModalG(id) {
+            const m = document.getElementById(id);
+            if(m) {
+                m.classList.remove('open');
+                setTimeout(() => m.style.display = 'none', 200);
+            }
+        }
+        
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.classList.remove('open');
+                setTimeout(() => e.target.style.display = 'none', 200);
+            }
+        });
+        
+        // Failsafe: Si Firebase demora mucho, revela la página después de 1.5s de todas formas
+        setTimeout(() => { document.body.style.opacity = "1"; }, 1500);
+    </script>
+
+    <script type="module" src="js/login.js?v=12.0" defer></script>
+    <script type="module" src="js/portal.js?v=12.0" defer></script>
 </head>
-<body>
+
+<body style="opacity: 0; transition: opacity 0.5s ease-in-out;">
 
     <nav class="navbar">
-        <a href="#" class="brand" id="portal-logo-container">
-            <svg class="rayo-logo" viewBox="0 0 24 24">
-                <path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/>
-            </svg>
-            <div class="brand-text">
-                <h1>SIGEV-AGUAYO</h1>
-                <p>Portal Territorial Vecinal</p>
-            </div>
-        </a>
-
-        <button class="btn-access" id="open-login-btn">
+        <a href="#" class="brand" id="portal-logo-container"></a>
+        <button class="btn-access" id="open-login-btn" onclick="abrirModalG('login-modal')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            Acceso Equipo Territorial
+            <span style="margin-left: 6px;">Acceso Equipo Territorial</span>
         </button>
     </nav>
 
-    <header class="hero">
+    <header class="hero" id="portal-hero-header">
         <div class="hero-container-flex">
-            
             <div class="hero-content">
-                <h1 class="hero-title">Conectando con los Vecinos</h1>
-                <p class="hero-subtitle">Trabajando juntos por una comuna más segura, limpia, solidaria y participativa.</p>
-                <div class="hero-buttons">
-                    <button class="btn-primary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-                        Ingresar solicitud
-                    </button>
-                    <button class="btn-secondary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        Ver actividades
-                    </button>
-                </div>
+                <h1 class="hero-title" id="portal-hero-title">--</h1>
+                <p class="hero-subtitle" id="portal-hero-subtitle">--</p>
             </div>
 
             <div class="hero-profile-zone">
                 <div class="profile-card">
                     <div class="profile-img-container">
                         <div class="profile-img-frame">
-                            <img src="img/gonzalo.png" alt="Concejal Gonzalo Aguayo" class="profile-image">
+                            <img src="" alt="Concejal" class="profile-image" id="hero-concejal-img">
                         </div>
-                        <div class="profile-badge-ray">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f5b913">
+                        
+                        <div class="profile-badge-ray" id="hero-badge-container">
+                            <svg id="hero-badge-svg" width="14" height="14" viewBox="0 0 24 24" fill="#f5b913" style="display:none;">
                                 <path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/>
                             </svg>
+                            <img id="hero-badge-img" src="" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: none;">
                         </div>
+                        
                     </div>
                     <div class="profile-info-text">
-                        <h2 class="profile-name">GONZALO AGUAYO GAJARDO</h2>
-                        <p class="profile-title">Concejal de La Cisterna</p>
+                        <h2 class="profile-name" id="hero-concejal-nombre">--</h2>
+                        <p class="profile-title" id="hero-concejal-cargo">--</p>
                     </div>
                 </div>
             </div>
-
         </div>
     </header>
 
-    <section class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon-box card-yellow-bg">
-                <svg width="20" height="20" fill="#d97706" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
-            </div>
-            <div class="feature-info">
-                <h3>Noticias y anuncios</h3>
-                <p>Entérate de las últimas informaciones de la comuna</p>
-            </div>
-            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-
-        <div class="feature-card">
-            <div class="feature-icon-box card-green-bg">
-                <svg width="20" height="20" fill="#059669" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
-            </div>
-            <div class="feature-info">
-                <h3>Calendario de actividades</h3>
-                <p>Revisa las actividades y operativos próximos</p>
-            </div>
-            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-
-        <div class="feature-card">
-            <div class="feature-icon-box card-purple-bg">
-                <svg width="20" height="20" fill="#7c3aed" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-            </div>
-            <div class="feature-info">
-                <h3>Operativos y ayudas</h3>
-                <p>Conoce los operativos vigentes y programas de apoyo</p>
-            </div>
-            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-
-        <div class="feature-card">
-            <div class="feature-icon-box card-blue-bg">
-                <svg width="20" height="20" fill="#2563eb" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            </div>
-            <div class="feature-info">
-                <h3>Contacto directo</h3>
-                <p>Comunícate con nuestro equipo territorial</p>
-            </div>
-            <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-    </section>
-
-    <main class="main-layout">
-        <section class="layout-column">
-            <div class="column-title-row">
-                <h2>Noticias destacadas</h2>
-                <a href="#" class="column-link">Ver todas</a>
+    <main class="split-dashboard-container" id="seccion-buzon-ciudadano">
+        
+        <div class="dashboard-panel-left">
+            <div class="column-header-panel">
+                <h2>Buzón Ciudadano</h2>
+                <p>Selecciona el tipo de requerimiento que deseas ingresar a la concejalía</p>
             </div>
             
-            <div class="news-item">
-                <div class="news-thumb"></div>
-                <div class="news-details">
-                    <h3>Operativo Veterinario Gratuito</h3>
-                    <p>Este sábado 24 de mayo estaremos en Villa La Unión con operativos veterinarios gratuitos.</p>
-                    <div class="news-meta">📅 20 de mayo, 2026</div>
-                </div>
-            </div>
-
-            <div class="news-item">
-                <div class="news-thumb"></div>
-                <div class="news-details">
-                    <h3>Mejoras de iluminación en el sector</h3>
-                    <p>Seguimos trabajando por barrios más seguros. Nueva instalación de luminarias LED.</p>
-                    <div class="news-meta">📅 18 de mayo, 2026</div>
-                </div>
-            </div>
-
-            <div class="news-item">
-                <div class="news-thumb"></div>
-                <div class="news-details">
-                    <h3>Reunión con juntas de vecinos</h3>
-                    <p>Agradecemos la participación de las juntas de vecinos en la reunión territorial.</p>
-                    <div class="news-meta">📅 15 de mayo, 2026</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="layout-column">
-            <div class="column-title-row">
-                <h2>Próximas actividades</h2>
-                <a href="#" class="column-link">Ver calendario completo</a>
-            </div>
-
-            <div class="activity-item">
-                <div class="date-badge"><span class="day">24</span><span class="month">May</span></div>
-                <div class="activity-details">
-                    <h3>Operativo Veterinario Villa La Unión</h3>
-                    <div class="activity-meta"><span>🕒 10:00 hrs.</span><span>📍 Plaza Villa La Unión</span></div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="date-badge"><span class="day">28</span><span class="month">May</span></div>
-                <div class="activity-details">
-                    <h3>Feria de Servicios Públicos Plaza La Cisterna</h3>
-                    <div class="activity-meta"><span>🕒 09:00 hrs.</span><span>📍 Plaza La Cisterna</span></div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="date-badge"><span class="day">02</span><span class="month">Jun</span></div>
-                <div class="activity-details">
-                    <h3>Audiencia Ciudadana Sede Social El Parrón</h3>
-                    <div class="activity-meta"><span>🕒 18:30 hrs.</span><span>📍 Sede Social El Parrón</span></div>
-                </div>
-            </div>
-
-            <button class="btn-view-activities">Ver todas las actividades</button>
-        </section>
-
-        <section class="layout-column">
-            <div class="citizen-box">
-                <h2>Haz tu solicitud ciudadana</h2>
-                <p>Cuéntanos tu petición, reclamo, sugerencia, reconocimiento o denuncia.</p>
-                
-                <div class="option-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-                    <div class="option-wrapper">
-                        <button type="button" class="option-btn">🎁 Solicitar Apoyo Solidario</button>
-                        <span class="btn-help-badge" data-tooltip="Necesito ayuda o colaboración.">?</span>
+            <div class="triage-double-grid">
+                <div class="feature-card text-triage-btn" onclick="abrirModalBuzon('reclamo')" style="cursor: pointer;" title="Abrir formulario de reclamos">
+                    <div class="feature-icon-box card-yellow-bg">
+                        <svg width="20" height="20" fill="#d97706" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
                     </div>
-                    <div class="option-wrapper">
-                        <button type="button" class="option-btn">⚠️ Reportar un Problema o Reclamo</button>
-                        <span class="btn-help-badge" data-tooltip="Algo no está funcionando correctamente.">?</span>
+                    <div class="feature-info">
+                        <h3>Reportar Problema</h3>
+                        <p>Ingresa un reclamo sobre lo que no funciona en tu sector.</p>
                     </div>
-                    <div class="option-wrapper">
-                        <button type="button" class="option-btn">💡 Enviar una Idea o Iniciativa Vecinal</button>
-                        <span class="btn-help-badge" data-tooltip="Tengo una propuesta.">?</span>
+                    <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+
+                <div class="feature-card text-triage-btn" onclick="abrirModalBuzon('iniciativa')" style="cursor: pointer;" title="Abrir formulario de iniciativas">
+                    <div class="feature-icon-box card-green-bg">
+                        <svg width="20" height="20" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21h6"></path><path d="M12 22v-1"></path><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path></svg>
                     </div>
-                    <div class="option-wrapper">
-                        <button type="button" class="option-btn">❤️ Enviar un mensaje de agradecimiento</button>
-                        <span class="btn-help-badge" data-tooltip="Quiero destacar algo positivo.">?</span>
+                    <div class="feature-info">
+                        <h3>Enviar Iniciativa</h3>
+                        <p>Comparte una sugerencia o idea para mejorar la comuna.</p>
                     </div>
-                    <div class="option-wrapper">
-                        <button type="button" class="option-btn">📣 Realizar una Denuncia Ciudadana</button>
-                        <span class="btn-help-badge" data-tooltip="Quiero informar una situación irregular.">?</span>
+                    <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+
+                <div class="feature-card text-triage-btn" onclick="abrirModalBuzon('agradecimiento')" style="cursor: pointer;" title="Abrir formulario de agradecimientos">
+                    <div class="feature-icon-box card-purple-bg">
+                        <svg width="20" height="20" fill="#7c3aed" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                     </div>
-                    <div class="option-wrapper">
-                        <button type="button" class="option-btn">••• Otro Asunto o Consulta</button>
-                        <span class="btn-help-badge" data-tooltip="Necesito ayuda o gestión.">?</span>
+                    <div class="feature-info">
+                        <h3>Agradecimiento</h3>
+                        <p>Destaca algo positivo o envía un mensaje de apoyo al equipo.</p>
+                    </div>
+                    <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+
+                <div class="feature-card text-triage-btn" onclick="abrirModalBuzon('otro')" style="cursor: pointer;" title="Abrir formulario general">
+                    <div class="feature-icon-box card-blue-bg">
+                        <svg width="20" height="20" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                    </div>
+                    <div class="feature-info">
+                        <h3>Otra Consulta</h3>
+                        <p>Comunícate por cualquier otro tema o gestión territorial.</p>
+                    </div>
+                    <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel-right">
+            <div class="column-header-panel">
+                <h2>Consulta tu Solicitud</h2>
+                <p>Revisa el avance y respuestas ingresando tus llaves de control.</p>
+            </div>
+            
+            <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 10px -2px rgba(15,23,42,0.06); border: 1px solid #e2e8f0; box-sizing: border-box; min-height: 152px;">
+                <div class="responsive-grid-2" style="margin-bottom: 16px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Tu RUN *</label>
+                        <input type="text" id="inp-consulta-rut" placeholder="Ej: 12345678-9" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; box-sizing: border-box;" maxlength="10">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Código de Solicitud *</label>
+                        <input type="text" id="inp-consulta-codigo" placeholder="Ej: SIG-260611-0004" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; box-sizing: border-box;" maxlength="15">
                     </div>
                 </div>
-
-                <button class="btn-send-request">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    Enviar solicitud
+                <button id="btn-ejecutar-consulta" style="width: 100%; padding: 12px; border: none; font-weight: 700; background-color: #0b438c; color: white; border-radius: 6px; cursor: pointer; font-size: 13.5px; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    Buscar Requerimiento Oficial
                 </button>
-                <p class="citizen-footer-text">Tu solicitud será recibida y gestionada a la brevedad posible</p>
             </div>
-        </section>
+        </div>
+        
     </main>
 
-    <footer class="footer">
+    <footer class="footer" id="portal-footer-container">
+        <div id="portal-footer-overlay"></div> 
+        
         <div class="footer-grid">
             <div class="footer-col">
-                <a href="#" class="brand" style="margin-bottom: 12px;">
-                    <svg class="rayo-logo" viewBox="0 0 24 24" width="24" height="24"><path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/></svg>
+                <a href="#" class="brand" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg id="footer-logo-svg" class="rayo-logo" viewBox="0 0 24 24" width="24" height="24" fill="#f5b913" style="display:none;"><path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/></svg>
+                    <img id="footer-logo-img" src="" style="width: 28px; height: 28px; object-fit: contain; display: none;">
+                    
                     <div class="brand-text">
-                        <h1 style="font-size:16px;">SIGEV-AGUAYO</h1>
+                        <h1 id="footer-brand-text" style="font-size:16px; margin: 0; color: #0f172a; font-weight: 800;">--</h1>
                     </div>
                 </a>
-                <p style="font-size:12.5px; color:var(--text-muted); line-height:1.4;">Oficina del Concejal Gonzalo Aguayo. Trabajando por y para los vecinos de La Cisterna.</p>
+                <p id="portal-footer-mensaje" style="font-size:12.5px; color:var(--text-muted); line-height:1.4;">--</p>
             </div>
             
             <div class="footer-col">
-                <h3>Servicios</h3>
-                <ul>
-                    <li><a href="#">Solicitudes</a></li>
-                    <li><a href="#">Contacto</a></li>
+                <h3 style="font-size: 12px; color: #0f172a; margin-bottom: 12px; text-transform: uppercase;">Servicios</h3>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <li><a href="#seccion-buzon-ciudadano" class="footer-nav-link scroll-link" id="link-scroll-buzon">Buzón Ciudadano</a></li>
+                    <li><a href="#" class="footer-nav-link" id="link-abrir-contacto" onclick="abrirModalG('contact-modal')">Contacto</a></li>
                 </ul>
             </div>
             
             <div class="social-links-footer" style="align-items: center; display: flex; gap: 10px;">
-                <div class="social-icon" style="display: flex; align-items: center; justify-content: center;">
+                <a href="#" target="_blank" class="social-icon-link" title="Facebook" id="portal-link-fb" style="display:none;">
                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/></svg>
-                </div>
-                <div class="social-icon" style="display: flex; align-items: center; justify-content: center;">
+                </a>
+                <a href="#" target="_blank" class="social-icon-link" title="Instagram" id="portal-link-ig" style="display:none;">
                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
-                </div>
-                <div class="social-icon" style="display: flex; align-items: center; justify-content: center;">
-                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.455L0 24zm6.59-3.559c1.614.956 3.197 1.467 4.821 1.468 5.482 0 9.944-4.461 9.947-9.95.002-2.659-1.023-5.159-2.889-7.028A9.88 9.88 0 0 0 12.008 2.01c-5.492 0-9.957 4.463-9.96 9.953-.001 1.689.454 3.333 1.317 4.826l-.999 3.647 3.734-.979zM17.486 14.4c-.3-.149-1.774-.875-2.048-.974-.274-.1-.474-.149-.674.149-.2.299-.774.974-.949 1.173-.175.199-.349.224-.649.075-.3-.149-1.266-.466-2.41-1.487-.891-.795-1.492-1.777-1.667-2.076-.175-.299-.019-.461.13-.61.135-.133.3-.349.45-.523.15-.174.2-.299.3-.498.1-.199.05-.374-.025-.523-.075-.149-.674-1.62-.924-2.222-.244-.588-.492-.51-.674-.519-.174-.009-.374-.01-.574-.01-.2 0-.524.075-.798.374-.274.299-1.048 1.025-1.048 2.5 0 1.475 1.073 2.897 1.223 3.096.15.199 2.112 3.226 5.116 4.526.715.31 1.273.495 1.709.634.718.228 1.37.196 1.887.119.577-.087 1.774-.725 2.023-1.424.249-.699.249-1.299.175-1.424-.075-.125-.275-.199-.575-.349z"/></svg>
-                </div>
+                </a>
+                <a href="#" target="_blank" class="social-icon-link" title="TikTok" id="portal-link-tiktok" style="display:none;">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                </a>
+                <a href="#" target="_blank" class="social-icon-link" title="Sitio Web" id="portal-link-web" style="display:none;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                </a>
             </div>
         </div>
+        
         <div class="copyright">
-            © 2026 SIGEV-AGUAYO - Todos los derechos reservados.
+            <div>© 2026 SIGEV - Plataforma de Inteligencia Territorial. Todos los derechos reservados.</div>
+            <button class="mobile-only-footer-btn" id="open-login-btn-mobile" onclick="abrirModalG('login-modal')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Panel de Administración Territorial
+            </button>
         </div>
     </footer>
 
-    <div class="modal-overlay" id="login-modal">
+    <div class="modal-overlay" id="login-modal" style="display: none;">
         <div class="login-card">
-            <button class="close-modal" id="close-login-btn">&times;</button>
+            <button class="close-modal" id="close-login-btn" onclick="cerrarModalG('login-modal')">&times;</button>
             <div class="login-logo-zone">
                 <svg width="75" height="75" viewBox="0 0 24 24" fill="#f5b913" style="filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.15));">
                     <path d="M11 21h-1l1-7H5.5L14 3h1l-1 7h5.5L14 21z"/>
                 </svg>
             </div>
-            <h2 class="login-title-modal">SIGEV-AGUAYO</h2>
+            <h2 class="login-title-modal">SIGEV</h2>
             <p class="login-subtitle-modal">Acceso exclusivo para el Equipo Territorial</p>
             <button id="btn-google-login" class="btn-google">
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -368,74 +493,210 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="citizen-modal">
-        <div class="login-card" style="max-width: 500px; text-align: left; padding: 26px;">
-            <button class="close-modal" id="close-citizen-btn">&times;</button>
-            <h2 style="color: var(--navy-blue); font-size: 19px; font-weight: 800; margin-bottom: 2px;" id="citizen-modal-title">Ingresar Solicitud Ciudadana</h2>
-            <p style="color: var(--text-muted); font-size: 12.5px; margin-bottom: 18px;">Completa tus antecedentes para despachar el caso al Buzón Territorial.</p>
+    <div class="modal-overlay" id="contact-modal" style="display: none;">
+        <div class="login-card" style="max-width: 400px; padding: 32px 24px; text-align: center; position: relative;">
+            <button class="close-modal" id="close-contact-btn" style="top: 16px; right: 16px;" onclick="cerrarModalG('contact-modal')">&times;</button>
+            <div style="width: 86px; height: 86px; margin: 0 auto 16px auto; border-radius: 50%; overflow: hidden; border: 4px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <img src="" alt="Concejal" style="width: 100%; height: 100%; object-fit: cover;" id="modal-contact-img">
+            </div>
+            <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px;" id="modal-contact-name">--</h3>
+            <p style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 24px;" id="modal-contact-title">--</p>
+            <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+                <div style="display: flex; align-items: center; gap: 14px; background: #fdf2f8; padding: 14px; border-radius: 8px; border: 1px solid #fce7f3;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #fbcfe8; color: #db2777; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div style="overflow: hidden;">
+                        <p style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin:0 0 2px 0;">Dirección Oficina</p>
+                        <p style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin:0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="modal-contact-dir">--</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11z"></path></svg>
+                    </div>
+                    <div>
+                        <p style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin:0 0 2px 0;">Teléfono Institucional</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #1e293b; margin:0;" id="modal-contact-phone">--</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #f0fdf4; padding: 14px; border-radius: 8px; border: 1px solid #bbf7d0;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.004 2c-5.518 0-9.998 4.493-9.998 9.997 0 1.908.536 3.715 1.48 5.27L2 22l4.868-1.253a9.913 9.913 0 0 0 5.132 1.411c5.518 0 10-4.493 10-9.996C22.004 6.493 17.522 2 12.004 2zm5.72 13.56c-.244.415-1.22.812-1.666.86-.445.047-.991.074-2.825-.66a10.02 10.02 0 0 1-4.227-3.725c-.394-.537-.678-1.157-.678-1.808 0-1.246.78-1.854 1.066-2.128.286-.274.63-.343.83-.343.2 0 .399.004.57.014.183.01.41.006.63.53.226.54.773 1.884.84 2.022.067.137.112.298.02.484-.092.186-.14.298-.276.455-.136.156-.285.347-.407.466-.134.13-.274.272-.116.543.158.271.7 1.15 1.503 1.861.688.61 1.27.8 1.554.916.284.116.45.093.617-.099.167-.193.714-.83.906-1.116.192-.285.385-.238.648-.14.264.097 1.674.789 1.958.93.284.14.474.21.543.33.069.12.069.697-.175 1.112z"/></svg>
+                    </div>
+                    <div>
+                        <p style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin:0 0 2px 0;">Contacto Whatsapp</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #14532d; margin:0;" id="modal-contact-wsp">--</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </div>
+                    <div style="overflow: hidden;">
+                        <p style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin:0 0 2px 0;">Correo Electrónico</p>
+                        <p style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin:0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="modal-contact-email">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-buzon" class="modal-overlay" style="display: none;">
+        <div class="modal-card login-card" style="max-width: 500px; padding: 26px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="lbl-buzon-titulo" style="color: #0f172a; font-size: 19px; font-weight: 800; margin: 0;">Ingresar Solicitud</h3>
+                <button class="close-modal" onclick="cerrarModalBuzon()" style="position: static;">&times;</button>
+            </div>
             
-            <form id="form-solicitud-ciudadana" style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <form id="form-buzon-publico" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="responsive-grid-2">
                     <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Nombre Completo *</label>
-                        <input type="text" id="cit-nombre" placeholder="Ej: Juan Soto" style="padding: 8px 10px;" required>
+                        <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Nombre Completo <span style="color: red;">*</span></label>
+                        <input type="text" id="buzon-nombre" placeholder="Ej. Juan Pérez" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required>
                     </div>
                     <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">RUT *</label>
-                        <input type="text" id="cit-rut" placeholder="Ej: 12.345.678-9" style="padding: 8px 10px;" required>
+                        <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">RUT <span style="color: red;">*</span></label>
+                        <input type="text" id="buzon-rut" placeholder="12345678-9" maxlength="10" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required oninput="this.value = this.value.replace(/[^0-9kK-]/g, '')">
                     </div>
                 </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+                <div class="responsive-grid-2">
                     <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Teléfono *</label>
-                        <input type="text" id="cit-telefono" placeholder="Ej: +56 9 1234 5678" style="padding: 8px 10px;" required>
+                        <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Teléfono Móvil <span style="color: red;">*</span></label>
+                        <div style="display: flex; align-items: stretch; gap: 8px;">
+                            <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; display: flex; align-items: center; font-weight: 700; color: #475569; white-space: nowrap; flex-shrink: 0;">
+                                +56 9
+                            </div>
+                            <input type="tel" id="buzon-telefono" placeholder="12345678" required maxlength="8" pattern="[0-9]{8}" style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        </div>
                     </div>
                     <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Dirección (Opcional)</label>
-                        <input type="text" id="cit-direccion" placeholder="Ej: Lo Ovalle 1234" style="padding: 8px 10px;">
+                        <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Correo Electrónico</label>
+                        <input type="email" id="buzon-correo" placeholder="ejemplo@correo.com" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
                     </div>
                 </div>
 
                 <div>
-                    <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Asunto del Requerimiento *</label>
-                    <input type="text" id="cit-asunto" placeholder="Ej: Luminaria apagada" style="padding: 8px 10px;" required>
+                    <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Dirección Residencial</label>
+                    <input type="text" id="buzon-direccion" placeholder="Ej: Av. Central 1234" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
                 </div>
 
                 <div>
-                    <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Descripción del Problema *</label>
-                    <textarea id="cit-descripcion" rows="3" placeholder="Detalla la petición o denuncia aquí..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12.5px; resize: none; outline:none;" required></textarea>
+                    <label id="lbl-buzon-asunto" style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Asunto <span style="color: red;">*</span></label>
+                    <input type="text" id="buzon-asunto" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required>
                 </div>
 
                 <div>
-                    <label style="font-size: 11px; font-weight: 700; color: var(--navy-blue); display:block; margin-bottom:4px; text-transform: uppercase;">Adjuntar Imágenes (Máx. 4 - PNG o JPG)</label>
-                    <input type="file" id="cit-adjuntos" accept=".png, .jpg, .jpeg" multiple style="font-size: 12px; width: 100%;">
-                    <div id="cit-adjuntos-preview" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;"></div>
+                    <label id="lbl-buzon-detalle" style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Detalle <span style="color: red;">*</span></label>
+                    <textarea id="buzon-detalle" rows="4" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
                 </div>
 
-                <div style="background: #fffdf0; border: 1px solid #fef08a; padding: 12px; border-radius: 8px; font-size: 11.5px; color: #475569; line-height: 1.45;">
-                    ℹ️ Toda la información proporcionada será utilizada exclusivamente para gestionar lo que se solicita. Recuerda que entre más antecedentes entregues, mucho mejor. Tu número de contacto debe ser viable, ya que por este medio serás contactado a la brevedad posible.
+                <div>
+                    <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Adjuntar Evidencia <small style="font-weight: 400; color: #64748b; text-transform: none;">(Máx. 5 fotos, hasta 4MB c/u)</small></label>
+                    <input type="file" id="buzon-archivos" accept="image/*" multiple style="width: 100%; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
+                    <div id="error-archivos" style="color: #ef4444; font-size: 11.5px; font-weight: 600; margin-top: 6px; display: none;"></div>
                 </div>
-                
-                <button type="button" class="btn-send-request" id="btn-submit-citizen-form" style="margin-top: 4px; padding: 12px;">
-                    🚀 Despachar Caso Oficial al Buzón
-                </button>
+
+                <div style="background: #fffdf0; border: 1px solid #fef08a; padding: 12px; border-radius: 8px; font-size: 11.5px; color: #475569; line-height: 1.45; margin-top: 4px;">
+                    ℹ️ Toda la información proporcionada será utilizada exclusivamente para gestionar lo que se solicita. Recuerda que entre más antecedentes entregues, mucho mejor. Tu número de contacto debe ser válido, ya que por este medio serás contactado a la brevedad posible.
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" id="btn-submit-buzon" style="flex: 1; padding: 12px; border: none; font-weight: 700; background-color: #0b438c; color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        Enviar Solicitud
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    <script>
-        const openBtn = document.getElementById('open-login-btn');
-        const closeBtn = document.getElementById('close-login-btn');
-        const modal = document.getElementById('login-modal');
+    <div class="modal-overlay" id="modal-resultado-busqueda" style="display: none;">
+        <div class="login-card" style="max-width: 540px; text-align: left; padding: 28px 24px; border-radius: 12px; position: relative;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;" id="res-codigo">SIG-XXXXXX-XXXX</h2>
+                    <p style="font-size: 13px; color: #2563eb; font-weight: 600; margin: 0;" id="res-rut-header">RUT: --</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="res-estado" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">CARGANDO</span>
+                    <button class="close-modal" style="position: static; font-size: 24px; color: #94a3b8; background: none; border: none; cursor: pointer; padding: 0 4px;" onclick="cerrarModalG('modal-resultado-busqueda')">&times;</button>
+                </div>
+            </div>
 
-        if (openBtn && closeBtn && modal) {
-            openBtn.addEventListener('click', () => modal.classList.add('open'));
-            closeBtn.addEventListener('click', () => modal.classList.remove('open'));
-            window.addEventListener('click', (e) => {
-                if (e.target === modal) modal.classList.remove('open');
-            });
-        }
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;">
+
+            <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
+                <div>
+                    <label style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Vecino Solicitante:</label>
+                    <span style="font-size: 14px; font-weight: 600; color: #1e293b;" id="res-solicitante">--</span>
+                </div>
+                <div>
+                    <label style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Tipo de Requerimiento:</label>
+                    <span style="font-size: 14px; font-weight: 600; color: #1e293b;" id="res-asunto">--</span>
+                </div>
+                <div>
+                    <label style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Detalle Ingresado:</label>
+                    <span style="font-size: 13.5px; color: #334155; line-height: 1.4; display: block;" id="res-descripcion">--</span>
+                </div>
+            </div>
+
+            <div id="res-contenedor-estado-dinamico" style="display: none; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+            </div>
+
+            <button type="button" style="width: 100%; background-color: #0b438c; font-size: 13.5px; padding: 12px; color: white; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onclick="cerrarModalG('modal-resultado-busqueda')">Cerrar Consulta</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Formateador inteligente de RUT (Agrega guion automáticamente)
+            const inpRutConsulta = document.getElementById('inp-consulta-rut');
+            if (inpRutConsulta) {
+                inpRutConsulta.addEventListener('input', function() {
+                    let val = this.value.replace(/[^0-9kK]/g, '').toUpperCase();
+                    if (val.length > 1) {
+                        this.value = val.slice(0, -1) + '-' + val.slice(-1);
+                    } else {
+                        this.value = val;
+                    }
+                });
+            }
+
+            // 2. Formateador inteligente de Código SIGEV
+            const inpCodigoConsulta = document.getElementById('inp-consulta-codigo');
+            if (inpCodigoConsulta) {
+                inpCodigoConsulta.addEventListener('input', function() {
+                    let val = this.value.toUpperCase();
+                    val = val.replace(/[^A-Z0-9-]/g, '');
+                    if (val.length > 0 && /^[0-9]/.test(val)) {
+                        val = 'SIG-' + val;
+                    }
+                    if (val.startsWith('SIG-SIG-')) val = val.replace('SIG-SIG-', 'SIG-');
+                    else if (val.startsWith('SIGSIG')) val = val.replace('SIGSIG', 'SIG-');
+                    this.value = val;
+                });
+
+                inpCodigoConsulta.addEventListener('blur', function() {
+                    let val = this.value.toUpperCase();
+                    let raw = val.replace(/^SIG-?/, '').replace(/[^A-Z0-9]/g, '');
+                    
+                    if (raw.length > 0) {
+                        let formatted = 'SIG-';
+                        if (raw.length > 6) {
+                            formatted += raw.substring(0, 6) + '-' + raw.substring(6, 10);
+                        } else {
+                            formatted += raw;
+                        }
+                        this.value = formatted;
+                    } else {
+                        this.value = ''; 
+                    }
+                });
+            }
+        });
     </script>
 
 </body>

@@ -4,180 +4,710 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIGEV - Sistema Integrado de Gestión Vecinal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
-        /* Cuadrícula técnica sutil de fondo para el Hero */
-        .bg-grid {
-            background-image: 
-                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-            background-size: 24px 24px;
+        body { font-family: 'Montserrat', sans-serif !important; }
+        
+        /* 🛠️ Ajuste de Scroll para que el menú no tape los títulos */
+        html { 
+            scroll-behavior: smooth; 
+            scroll-padding-top: 100px; 
+        }
+        
+        .bg-grid-spacer { background-color: #ffffff; }
+        
+        body.modal-open { overflow: hidden; }
+
+        /* Estilo personalizado para la tabla del modal para evitar desbordes */
+        .modal-table-container {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
         }
     </style>
 </head>
-<body class="bg-[#F5F5F5] text-slate-800 font-sans antialiased">
+<body class="bg-[#F5F5F5] text-slate-800 font-sans antialiased relative">
 
-    <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-100 h-32 w-full relative flex items-center justify-end overflow-hidden px-4 sm:px-6 lg:px-8">
-        
+    <nav class="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-100 h-20 md:h-24 w-full relative flex items-center justify-end overflow-hidden px-4 sm:px-6 lg:px-8">
         <img src="img/banner_x150.jpg" alt="SIGEV Banner" class="absolute inset-0 w-full h-full object-cover object-left mix-blend-multiply z-0">
         
         <div class="relative z-10 flex items-center gap-6 lg:gap-8 h-full">
-            
-            <div class="hidden md:flex items-center gap-6 lg:gap-8 font-black text-slate-800 text-sm whitespace-nowrap">
-                <a href="#problema" class="hover:text-[#2E7D32] transition-colors">El Desafío</a>
-                <a href="#solucion" class="hover:text-[#2E7D32] transition-colors">La Solución</a>
-                <a href="#modulos" class="hover:text-[#2E7D32] transition-colors">Módulos</a>
-                <a href="#modelo" class="hover:text-[#2E7D32] transition-colors">Modelo Comercial</a>
+            <div class="hidden md:flex items-center gap-8 font-semibold text-slate-600 text-sm tracking-wide whitespace-nowrap">
+                <a href="#problema" class="relative py-2 hover:text-[#2E7D32] transition-colors after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2E7D32] hover:after:w-full after:transition-all after:duration-300">El Desafío</a>
+                <a href="#solucion" class="relative py-2 hover:text-[#2E7D32] transition-colors after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2E7D32] hover:after:w-full after:transition-all after:duration-300">La Solución</a>
+                <a href="#modelo" class="relative py-2 hover:text-[#2E7D32] transition-colors after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#2E7D32] hover:after:w-full after:transition-all after:duration-300">Crecimiento</a>
             </div>
-            
-            <div class="flex-shrink-0">
-                <a href="https://aguayo.sigev.cl" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-6 py-3 rounded-xl font-black transition-all shadow-md shadow-green-100 text-sm whitespace-nowrap inline-block">
-                    Ingresar a la App
-                </a>
-            </div>
-            
         </div>
     </nav>
 
-    <header class="relative bg-white border-b border-slate-100 overflow-hidden bg-grid w-full pt-3 pb-16 md:pt-4 md:pb-24 flex flex-col justify-start items-start">
-        <div class="absolute inset-0 bg-[url('img/sigev2.jpg')] bg-contain bg-no-repeat bg-center md:bg-right opacity-15 md:opacity-100 pointer-events-none transition-all"></div>
+    <header class="relative bg-white border-b border-slate-100 overflow-hidden w-full pt-8 pb-12 md:py-20 flex flex-col justify-start items-start">
         
-        <div class="absolute inset-0 bg-gradient-to-r from-white via-white/95 md:via-white/80 to-transparent"></div>
+        <div class="absolute -top-24 -left-20 w-96 h-96 bg-green-100/40 rounded-full blur-3xl pointer-events-none z-0"></div>
+        <div class="absolute top-16 -left-16 w-80 h-80 bg-yellow-100/30 rounded-full blur-3xl pointer-events-none z-0"></div>
 
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-0 pt-0">
-            <div class="max-w-xl md:max-w-2xl space-y-6 mt-0 pt-0">
-                <div class="inline-flex items-center gap-2 bg-green-50 text-[#2E7D32] px-3 py-1 rounded-full text-xs font-bold border border-green-200">
-                    <i data-lucide="shield" class="w-3.5 h-3.5 text-[#C9A227]"></i> Innovación y Gestión Territorial
-                </div>
-                
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-                    Plataforma Digital para la <span class="text-[#2E7D32]">Gestión Municipal Moderna.</span>
+        <div class="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
+            <img src="img/sigev2.jpg" alt="Ecosistema Digital SIGEV" class="w-full h-full object-cover object-center mix-blend-multiply opacity-20">
+        </div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 flex flex-col items-center md:items-start text-center md:text-left">
+            
+            <div class="flex flex-col gap-3 order-1 text-left w-full md:w-1/2">
+                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+                    Plataforma Digital para la <span class="text-[#2E7D32]">Gestión Territorial Inteligente.</span>
                 </h1>
                 
-                <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-                    La primera arquitectura SaaS diseñada para centralizar los requerimientos de los vecinos, optimizar los tiempos de respuesta de las autoridades y automatizar el trabajo en terreno.
+                <p class="text-sm sm:text-lg text-slate-700 font-medium leading-relaxed max-w-xl pt-2">
+                    Una plataforma digital que conecta ciudadanos, organizaciones y autoridades en un solo ecosistema, permitiendo gestionar requerimientos, generar trazabilidad y tomar decisiones basadas en datos reales del territorio.
                 </p>
                 
-                <div class="flex flex-wrap gap-4 pt-2">
-                    <a href="#contacto" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-6 py-4 rounded-xl font-bold transition-all shadow-lg shadow-green-100 text-center w-full sm:w-auto text-sm">
+                <div class="flex flex-wrap gap-4 pt-4">
+                    <button onclick="document.getElementById('contacto').scrollIntoView({ behavior: 'smooth' });" class="bg-[#2E7D32] hover:bg-[#235f26] text-white px-6 py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-green-100 text-center w-full sm:w-auto text-sm cursor-pointer">
                         🚀 Solicitar Demostración
-                    </a>
-                    <a href="#solucion" class="bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 px-6 py-4 rounded-xl font-bold transition-all text-center w-full sm:w-auto text-sm">
-                        📊 Ver Módulos
-                    </a>
+                    </button>
                 </div>
             </div>
+
+            <div class="hidden md:block w-1/2 pointer-events-none"></div>
+
         </div>
     </header>
 
-    <section id="problema" class="py-20 bg-[#F5F5F5]">
-        <div class="max-w-4xl mx-auto px-4 text-center space-y-4">
-            <h2 class="text-xs uppercase tracking-widest font-black text-[#C9A227]">El Desafío</h2>
-            <p class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Gestión municipal lenta y desorganizada</p>
-            <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">Hoy en día, la comunicación entre las juntas de vecinos, concejales y alcaldías está rota debido a procesos obsoletos.</p>
+    <div class="bg-grid-spacer h-8 md:h-10 w-full relative z-10"></div>
+
+    <section id="problema" class="relative pt-10 pb-10 md:pt-14 bg-white w-full overflow-hidden">
+        
+        <img src="img/desafio.png" alt="Ilustración El Desafío" class="absolute inset-0 w-full h-full object-cover object-center z-0">
+        
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 flex flex-col items-center text-center">
             
-            <div class="grid sm:grid-cols-2 gap-6 pt-8 text-left">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex gap-4">
-                    <div class="text-red-500 bg-red-50 p-3 rounded-lg h-fit"><i data-lucide="file-text"></i></div>
+            <h2 class="text-xs uppercase tracking-widest font-black text-[#C9A227] mb-3">El Desafío</h2>
+            
+            <h3 class="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight max-w-3xl leading-tight mb-5">
+                Cuando la información se dispersa, las <span class="text-[#2E7D32]">soluciones se retrasan</span>
+            </h3>
+            
+            <div class="mb-10 md:mb-14 max-w-3xl mx-auto px-2">
+                <p class="text-xs sm:text-base text-slate-800 font-normal leading-relaxed bg-white/90 backdrop-blur-xs px-5 py-4 rounded-2xl shadow-md border border-slate-100 inline-block">
+                    Solicitudes, reclamos y necesidades comunitarias ingresan a través de múltiples canales, dificultando el seguimiento, la coordinación y la entrega de respuestas oportunas a la ciudadanía.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl w-full mx-auto text-left items-stretch">
+                
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-red-500 bg-red-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
                     <div>
-                        <h4 class="font-bold text-slate-900 mb-1 text-sm sm:text-base">Cartas y Carpetas Físicas</h4>
-                        <p class="text-xs sm:text-sm text-slate-500">Solicitudes ciudadanas que se traspapelan en archivadores, sin posibilidad de hacer un seguimiento real del estado del caso.</p>
+                        <h4 class="font-bold text-slate-900 mb-1.5 text-base sm:text-lg tracking-tight">Información dispersa</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-semibold">
+                            Solicitudes ingresadas por formularios, correos, llamadas o documentos físicos dificulten el seguimiento y la gestión eficiente de los casos.
+                        </p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex gap-4">
-                    <div class="text-red-500 bg-red-50 p-3 rounded-lg h-fit"><i data-lucide="alert-triangle"></i></div>
+                
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-red-500 bg-red-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
                     <div>
-                        <h4 class="font-bold text-slate-900 mb-1 text-sm sm:text-base">Informalidad y Datos Perdidos</h4>
-                        <p class="text-xs sm:text-sm text-slate-500">Reclamos que entran por WhatsApp o de palabra en la calle que nunca se digitalizan ni se transforman en soluciones.</p>
+                        <h4 class="font-bold text-slate-900 mb-1.5 text-base sm:text-lg tracking-tight">Falta de trazabilidad</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-semibold">
+                            Muchas solicitudes no cuentan con seguimiento ni historial, dificultando conocer su estado y asegurar una respuesta oportuna.
+                        </p>
                     </div>
                 </div>
+                
             </div>
+        </div>
+
+        <div class="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-green-50 text-[#2E7D32] px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold border border-green-200 w-fit shadow-sm z-20">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-[#C9A227]"></i> 📍 Realidad Territorial
         </div>
     </section>
 
-    <section id="solucion" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto space-y-3 mb-12">
-                <h2 class="text-xs uppercase tracking-widest font-black text-[#2E7D32]">La Solución</h2>
-                <p class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Una plataforma integral y escalable</p>
-                <p class="text-sm sm:text-base text-slate-600">SIGEV moderniza la administración territorial dándole superpoderes digitales a las autoridades públicas.</p>
-            </div>
+    <div class="bg-grid-spacer h-8 md:h-10 w-full relative z-10"></div>
 
-            <div id="modulos" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="p-6 bg-[#F5F5F5] rounded-xl border border-slate-200/60 space-y-3">
-                    <div class="bg-[#2E7D32] text-white p-2.5 rounded-lg w-fit shadow-md"><i data-lucide="smartphone" class="w-5 h-5"></i></div>
-                    <h3 class="font-bold text-base sm:text-lg text-slate-900">Buzón Ciudadano Digital</h3>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">Permite a cualquier vecino reportar incidentes (luminarias, microbasurales, baches) directamente desde su celular en segundos.</p>
-                </div>
-                <div class="p-6 bg-[#F5F5F5] rounded-xl border border-slate-200/60 space-y-3">
-                    <div class="bg-[#2E7D32] text-white p-2.5 rounded-lg w-fit shadow-md"><i data-lucide="users" class="w-5 h-5"></i></div>
-                    <h3 class="font-bold text-base sm:text-lg text-slate-900">CRM Clínico de Vecinos</h3>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">Ficha social centralizada para conocer el historial completo de requerimientos de cada vecino y segmentar la ayuda social por sectores.</p>
-                </div>
-                <div class="p-6 bg-[#F5F5F5] rounded-xl border border-slate-200/60 space-y-3">
-                    <div class="bg-[#2E7D32] text-white p-2.5 rounded-lg w-fit shadow-md"><i data-lucide="calendar" class="w-5 h-5"></i></div>
-                    <h3 class="font-bold text-base sm:text-lg text-slate-900">Agenda Territorial Inteligente</h3>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">Planificación automatizada de visitas a terreno, reuniones de comités de seguridad y operativos médicos municipales.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="modelo" class="py-20 bg-slate-900 text-white border-b-4 border-[#C9A227]">
-        <div class="max-w-4xl mx-auto px-4 text-center space-y-6">
-            <h2 class="text-xs uppercase tracking-widest font-black text-[#C9A227]">Arquitectura Multi-Tenant (SaaS)</h2>
-            <p class="text-2xl sm:text-3xl font-black tracking-tight">Software de Alta Escalabilidad Comercial</p>
-            <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-                SIGEV no requiere instalaciones costosas ni servidores locales. Operamos bajo un modelo de suscripción mensual donde cada municipio o concejalía cuenta con un entorno en la nube privado, seguro y personalizado en minutos.
-            </p>
+    <section id="solucion" class="relative pt-10 pb-10 md:pt-14 bg-white w-full overflow-hidden">
+        
+        <img src="img/solucion.png" alt="Ilustración La Solución" class="absolute inset-0 w-full h-full object-cover object-center z-0">
+        
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 flex flex-col items-center text-center">
             
-            <div class="grid sm:grid-cols-2 gap-4 pt-4 text-left text-xs text-slate-300 max-w-2xl mx-auto">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-start gap-3">
-                    <i data-lucide="lock" class="text-[#C9A227] w-5 h-5 shrink-0"></i>
-                    <p><strong>Privacidad de Datos:</strong> Muros de seguridad de Firebase. Los datos de un municipio jamás se mezclan con otros.</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-start gap-3">
-                    <i data-lucide="refresh-cw" class="text-[#C9A227] w-5 h-5 shrink-0"></i>
-                    <p><strong>Actualización Global:</strong> Mejoras automáticas desde GitHub ejecutando un solo despliegue para toda la red de clientes.</p>
-                </div>
+            <h2 class="text-xs uppercase tracking-widest font-black text-[#2E7D32] mb-3">La Solución</h2>
+            
+            <h3 class="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight max-w-4xl leading-tight mb-5">
+                Una plataforma integral para la <span class="text-[#2E7D32]">gestión territorial</span>
+            </h3>
+            
+            <div class="mb-10 md:mb-14 max-w-4xl mx-auto px-2">
+                <p class="text-xs sm:text-base text-slate-800 font-normal leading-relaxed bg-white/90 backdrop-blur-xs px-6 py-4 rounded-2xl shadow-md border border-slate-100 inline-block">
+                    SIGEV centraliza la comunicación entre ciudadanos, organizaciones y autoridades, permitiendo gestionar requerimientos, fortalecer la participación comunitaria y tomar decisiones basadas en información real del territorio.
+                </p>
             </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl w-full mx-auto text-left items-stretch">
+                
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 mb-1.5 text-base sm:text-lg tracking-tight">Portal Ciudadano Digital</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            Permite a la comunidad ingresar solicitudes, reclamos, denuncias, iniciativas vecinales y requerimientos de apoyo desde cualquier dispositivo, facilitando una comunicación directa y organizada.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 mb-1.5 text-base sm:text-lg tracking-tight">Gestión Integral de Vecinos</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            Centraliza el historial de interacción de cada persona, permitiendo realizar seguimiento de casos, conocer requerimientos anteriores y mejorar la coordinación de acciones comunitarias y sociales.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 mb-1.5 text-base sm:text-lg tracking-tight">Gestión y Seguimiento de Casos</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            Permite clasificar, derivar, priorizar y monitorear cada requerimiento mediante flujos de trabajo digitales, asegurando trazabilidad y control durante todo el proceso de atención.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 mb-1.5 text-base sm:text-lg tracking-tight">Inteligencia Territorial</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            Genera indicadores, métricas e historial consolidado de las necesidades del territorio, apoyando la toma de decisiones mediante información centralizada y actualizada.
+                        </p>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-green-50 text-[#2E7D32] px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold border border-green-200 w-fit shadow-sm z-20">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-[#2E7D32]"></i> 💡 Innovación Digital
         </div>
     </section>
 
-    <section id="contacto" class="py-20 bg-white">
-        <div class="max-w-md mx-auto px-4 space-y-6">
+    <div class="bg-grid-spacer h-8 md:h-10 w-full relative z-10"></div>
+
+    <section id="modelo" class="relative pt-10 pb-20 md:pt-14 bg-white w-full overflow-hidden">
+        
+        <img src="img/solucion.png" alt="Ilustración Crecimiento y Escalabilidad" class="absolute inset-0 w-full h-full object-cover object-center z-0">
+        
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10 flex flex-col items-center text-center">
+            
+            <h2 class="text-xs uppercase tracking-widest font-black text-[#1E40AF] mb-3">Crecimiento y Escalabilidad</h2>
+            
+            <h3 class="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight max-w-4xl leading-tight mb-5">
+                Plataforma <span class="text-[#2E7D32]">Escalable y Segura</span>
+            </h3>
+            
+            <div class="mb-10 md:mb-14 max-w-4xl mx-auto px-2">
+                <p class="text-xs sm:text-base text-slate-800 font-normal leading-relaxed bg-white/90 backdrop-blur-xs px-6 py-4 rounded-2xl shadow-md border border-slate-100 inline-block">
+                    SIGEV está diseñado para adaptarse a distintas organizaciones territoriales, permitiendo una implementación rápida, acceso desde cualquier lugar y una gestión segura de la información.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl w-full mx-auto text-left items-stretch">
+                
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="cloud" class="w-5 h-5"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-900 text-base sm:text-lg tracking-tight">☁️ Entorno en la Nube</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            SIGEV funciona completamente en la nube, permitiendo acceder a la plataforma desde cualquier lugar sin instalaciones complejas.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-900 text-base sm:text-lg tracking-tight">🔒 Información Protegida</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            Cada organización gestiona sus datos en un entorno seguro e independiente, garantizando privacidad y control de la información.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-900 text-base sm:text-lg tracking-tight">🚀 Evolución Continua</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            La plataforma incorpora mejoras y nuevas funcionalidades de forma permanente, manteniéndose siempre actualizada.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-2xl shadow-slate-950/10 border border-slate-200/80 flex gap-4 transition-all hover:translate-y-[-4px]">
+                    <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                        <i data-lucide="server" class="w-5 h-5"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-900 text-base sm:text-lg tracking-tight">🌐 Gestión e Infraestructura</h4>
+                        <p class="text-xs sm:text-sm text-black leading-relaxed font-medium">
+                            Solución en la nube que centraliza la información y facilita la gestión eficiente del territorio.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="pt-14 text-center">
+                <p class="text-xs text-slate-900 max-w-2xl mx-auto leading-relaxed italic font-bold bg-white/90 backdrop-blur-xs px-5 py-3 rounded-xl shadow-md inline-block border border-slate-200/60 relative z-10">
+                    Arquitectura cloud moderna desarrollada con tecnologías escalables que permiten crecer desde organizaciones comunitarias hasta administraciones territoriales de mayor tamaño.
+                </p>
+            </div>
+        </div>
+
+        <div class="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-green-50 text-[#2E7D32] px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold border border-green-200 w-fit shadow-sm z-20">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-[#C9A227]"></i> 📈 Impacto Escalable
+        </div>
+    </section>
+
+    <section id="contacto" class="relative py-16 md:py-20 bg-white border-t border-slate-100/60 overflow-hidden">
+        
+        <img src="img/sigev2.jpg" alt="Fondo de modernización territorial SIGEV" class="absolute inset-0 w-full h-full object-cover object-center mix-blend-multiply opacity-20 z-0 pointer-events-none">
+
+        <div class="relative max-w-md mx-auto px-4 space-y-6 z-10">
             <div class="text-center space-y-2">
-                <h3 class="text-2xl font-black text-slate-900 tracking-tight">Moderniza tu gestión hoy</h3>
-                <p class="text-slate-500 text-xs sm:text-sm">Agenda una demostración en vivo del sistema adaptada a los desafíos de tu comuna.</p>
+                <h3 class="text-2xl font-black text-slate-900 tracking-tight">Cotiza con nosotros la modernización de tu gestión</h3>
+                <p class="text-slate-950 font-medium text-xs sm:text-sm bg-white/60 backdrop-blur-xs px-4 py-2 rounded-xl inline-block border border-slate-100 shadow-sm">Déjanos tus datos y te contactaremos a la brevedad para mostrarte cómo SIGEV se adapta a los desafíos de tu comuna.</p>
             </div>
             
-            <form class="space-y-4 bg-[#F5F5F5] p-6 sm:p-8 rounded-2xl border border-slate-200/60" onsubmit="event.preventDefault(); alert('¡Solicitud registrada con éxito!');">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nombre de la Autoridad</label>
-                    <input type="text" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
+            <form id="formDemoCorporativo" class="space-y-4 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/60 shadow-lg relative">
+                
+                <div id="mensajeExito" class="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center p-6 text-center opacity-0 pointer-events-none transition-all duration-500 z-50">
+                    <div class="bg-green-50 p-4 rounded-full text-[#2E7D32] mb-3 animate-bounce">
+                        <i data-lucide="check-circle-2" class="w-12 h-12"></i>
+                    </div>
+                    <h4 class="text-lg font-black text-slate-900 tracking-tight">¡Solicitud Enviada!</h4>
+                    <p class="text-xs text-slate-500 font-medium leading-relaxed max-w-[240px] mt-1">Hemos registrado tus datos con éxito. Revisaremos los antecedentes y nos contactaremos contigo a la brevedad.</p>
+                    <button type="button" onclick="document.getElementById('mensajeExito').classList.add('opacity-0','pointer-events-none'); document.getElementById('mensajeExito').classList.remove('opacity-100');" class="mt-4 text-xs font-bold text-[#2E7D32] hover:underline cursor-pointer">Cerrar aviso</button>
                 </div>
+
+                <input type="hidden" name="_subject" value="🚀 Nueva solicitud de Demo - SIGEV">
+                <input type="hidden" name="_captcha" value="false">
+                <input type="hidden" name="_template" value="box">
+                <input type="hidden" name="_next" value="https://sigev.cl">
+                
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Municipio / Comuna</label>
-                    <input type="text" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nombre y Apellido</label>
+                    <input type="text" name="Nombre" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Correo Institucional</label>
-                    <input type="email" required class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Teléfono</label>
+                        <input type="text" name="Telefono" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Correo Electrónico</label>
+                        <input type="email" name="Correo_Cliente" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#2E7D32]">
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-[#2E7D32] hover:bg-[#235f26] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-100 text-sm mt-2">
-                    Solicitar Demo de SIGEV
+                
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Plan de Interés</label>
+                        <select id="formPlanPrincipal" name="Plan_Seleccionado" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-2.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#2E7D32]">
+                            <option value="Solo Demo">Solo Demo de Plataforma</option>
+                            <option value="basico">Plan Básico</option>
+                            <option value="pro">Plan PRO (Líder)</option>
+                            <option value="pro_plus">Plan PRO+ (Colectivo)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Periodo</label>
+                        <select id="formDurationPrincipal" name="Periodo_Seleccionado" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-2.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#2E7D32]">
+                            <option value="demo">Consultar</option>
+                            <option value="mensual">Mensual</option>
+                            <option value="trimestral">3 Meses</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" id="btnEnviarForm" class="w-full bg-[#2E7D32] hover:bg-[#235f26] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-100 text-sm mt-3 cursor-pointer flex items-center justify-center gap-2">
+                    <span>Solicitar Propuesta / Demo</span>
                 </button>
             </form>
         </div>
     </section>
 
-    <footer class="bg-[#F5F5F5] border-t border-slate-200/60 py-6 text-center text-[11px] text-slate-400">
-        <p>&copy; 2026 SIGEV. Todos los derechos reservados. Tecnología GovTech con impacto social.</p>
+    <footer class="bg-[#F5F5F5] border-t border-slate-200/60 pt-10 pb-28 md:pb-8 px-4 w-full">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            
+            <div class="text-center md:text-left">
+                <p class="text-xs font-black text-slate-700 uppercase tracking-widest mb-1">&copy; 2026 SIGEV</p>
+                <p class="text-[11px] text-slate-500 font-medium">Tecnología GovTech con impacto social y territorial.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <a href="mailto:contacto@sigev.cl" class="hover:text-[#2E7D32] transition-colors flex items-center gap-1.5">
+                    <i data-lucide="mail" class="w-4 h-4"></i> contacto@sigev.cl
+                </a>
+                <span class="hidden sm:block text-slate-300">|</span>
+                <a href="#" class="hover:text-slate-800 transition-colors">Privacidad</a>
+                <span class="hidden sm:block text-slate-300">|</span>
+                <a href="#" class="hover:text-slate-800 transition-colors">Términos</a>
+            </div>
+
+        </div>
     </footer>
+
+    <div id="pricingModal" class="fixed inset-0 z-[100] hidden bg-slate-900/70 backdrop-blur-sm overflow-y-auto opacity-0 transition-opacity duration-300 overflow-x-hidden">
+        <div class="min-h-screen px-2 text-center flex items-center justify-center p-4 sm:p-6 overflow-x-hidden">
+            
+            <div class="bg-white rounded-3xl shadow-2xl relative w-full max-w-5xl overflow-hidden text-left transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" id="modalContent">
+                
+                <button onclick="toggleModal('pricingModal')" class="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 rounded-full z-50 text-slate-600 transition-colors cursor-pointer focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+
+                <div class="p-6 sm:p-8 border-b border-slate-100 flex-shrink-0">
+                    <div class="text-center space-y-1">
+                        <h2 class="text-[10px] sm:text-xs uppercase tracking-widest font-black text-[#2E7D32]">Estructura de Cobertura</h2>
+                        <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Compara y Elige tu Plan</h3>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-6 lg:p-8 overflow-y-auto modal-table-container flex-grow overflow-x-hidden space-y-6">
+
+                    <div class="md:hidden flex items-center justify-center gap-2 mb-3 text-[#2E7D32] animate-pulse">
+                        <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                        <span class="text-[10px] font-bold uppercase tracking-wider">Desliza hacia la derecha para ver más</span>
+                    </div>
+
+                    <div class="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                        <div class="min-w-[700px] overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-[11px]">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                                        <th class="px-4 py-4 w-4/12">¿Qué incluye la plataforma?</th>
+                                        <th class="px-3 py-4 text-center border-l border-slate-100 w-[18%]">Básico</th>
+                                        <th class="px-3 py-4 text-center text-[#2E7D32] bg-green-50/20 border-l border-slate-100 w-[22%] shadow-inner">PRO (Líder)</th>
+                                        <th class="px-3 py-4 text-center border-l border-slate-100 w-[18%]">PRO+ (Colectivo)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr class="bg-slate-50/50">
+                                        <td class="px-4 py-3 font-bold text-slate-900">Seleccionar Convenio</td>
+                                        <td class="px-3 py-3 text-center border-l border-slate-100">
+                                            <button onclick="seleccionarPlan('basico')" class="w-full ctx-btn bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg transition-all cursor-pointer text-[10px]">Cotizar Plan</button>
+                                        </td>
+                                        <td class="px-3 py-3 text-center bg-green-50/20 border-l border-green-100/50 shadow-inner">
+                                            <button onclick="seleccionarPlan('pro')" class="w-full ctx-btn bg-[#2E7D32] hover:bg-[#235f26] text-white font-bold py-2.5 rounded-xl shadow-sm transition-all cursor-pointer text-[11px]">Cotizar PRO</button>
+                                        </td>
+                                        <td class="px-3 py-3 text-center border-l border-slate-100">
+                                            <button onclick="seleccionarPlan('pro_plus')" class="w-full ctx-btn bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 rounded-lg transition-all cursor-pointer text-[10px]">Cotizar Plan</button>
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 font-semibold text-slate-700">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Descarga de reportes a Excel</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Con un clic puedes descargar toda tu base de vecinos y casos a Excel. Tu información es 100% tuya.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 font-semibold text-slate-700">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Mapa Inteligente del Territorio</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Visualiza en tiempo real los 'puntos calientes' de tu comuna para saber dónde se concentran las solicitudes.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-300 border-l border-slate-100">—</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 font-semibold text-slate-700">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Módulo de reportes al Concejo Municipal</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Centraliza la información de tus sesiones. Sube fácilmente los puntos en tabla y ten acceso rápido a las actas, historial de votaciones e indicadores de tu gestión.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-300 border-l border-slate-100">—</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="bg-green-50/10">
+                                        <td class="px-4 py-3 font-bold text-[#2E7D32]">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Soporte Técnico de Emergencia 24/7</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Asistencia técnica fuera del horario hábil para resolver urgencias de la plataforma mientras estás en terreno.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-400 border-l border-slate-100">—</td>
+                                        <td class="px-3 py-3 text-center text-green-700 font-bold bg-green-50/30 border-l border-green-100/50 shadow-inner">✓ Add-on</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 font-semibold text-slate-700">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Almacenamiento Cloud (Fotos, Tickets y Actas)</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Espacio seguro en la nube para guardar documentos, archivos PDF, actas y fotos adjuntas a los casos.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-700 border-l border-slate-100 font-medium">10 GB</td>
+                                        <td class="px-3 py-3 text-center text-slate-900 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">50 GB</td>
+                                        <td class="px-3 py-3 text-center text-blue-900 font-bold border-l border-slate-100">Ilimitado</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 font-semibold text-slate-700">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Bolsa de Ampliación de Registros Flexible</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Si superas tu límite de vecinos, puedes adquirir capacidad extra sin necesidad de subir a un plan más costoso.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-400 border-l border-slate-100">—</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 text-slate-600">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Gestión de Expedientes y Tickets de Casos</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Cada requerimiento genera un ticket digital con número de seguimiento. Así nunca se pierde un caso.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors">
+                                        <td class="px-4 py-3 text-slate-600">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Dominio Autónomo Dedicado (`.sigev.cl`)</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Dirección web exclusiva y profesional para tu plataforma (ejemplo: concejal-perez.sigev.cl).
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">✓</td>
+                                        <td class="px-3 py-3 text-center text-green-600 font-bold border-l border-slate-100">✓</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/30 transition-colors border-t border-slate-200">
+                                        <td class="px-4 py-3 font-semibold text-slate-900">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Límite de vecinos registrados</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Cantidad máxima de vecinos o contactos que puedes almacenar en tu base de datos territorial.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-700 border-l border-slate-100 font-medium">Hasta 1.500</td>
+                                        <td class="px-3 py-3 text-center text-slate-900 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">Hasta 5.000</td>
+                                        <td class="px-3 py-3 text-center text-blue-900 font-black border-l border-slate-100">Ilimitado</td>
+                                    </tr>
+                                    <tr class="bg-slate-50/50 hover:bg-slate-50 transition-colors border-t border-slate-200">
+                                        <td class="px-4 py-3 font-semibold text-slate-900">
+                                            <div class="group relative inline-flex items-center gap-1.5 cursor-help w-fit">
+                                                <span class="border-b border-dashed border-slate-300">Usuarios de tu equipo de trabajo</span>
+                                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2E7D32] transition-colors"></i>
+                                                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-[240px] sm:w-[280px] max-w-[85vw] bg-slate-800 text-white text-[10px] sm:text-[11px] p-3 rounded-xl shadow-xl z-[150] font-normal leading-relaxed pointer-events-none break-words whitespace-normal before:content-[''] before:absolute before:top-full before:left-4 before:-mt-1 before:border-4 before:border-transparent before:border-t-slate-800">
+                                                    Cantidad de cuentas de acceso simultáneas para que tu equipo (secretarios o asesores) gestione el sistema.
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-center text-slate-700 border-l border-slate-100 font-medium">3 usuarios <span class="block text-[9px] font-normal text-slate-400 mt-0.5">(1 Concejal + 2 Sec.)</span></td>
+                                        <td class="px-3 py-3 text-center text-slate-900 font-bold bg-green-50/20 border-l border-green-100/50 shadow-inner">Máximo 5 usuarios</td>
+                                        <td class="px-3 py-3 text-center text-blue-900 font-black border-l border-slate-100">Ilimitados</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-left flex-shrink-0">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex gap-3 items-start shadow-xs">
+                            <div class="text-[#2E7D32] bg-green-50 p-2 rounded-lg border border-green-100 shrink-0">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-xs tracking-tight">Migración sin Costo</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed font-semibold mt-0.5">Recibimos tus archivos Excel actuales, depuramos registros duplicados y precargamos tu historial territorial en 48 horas.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex gap-3 items-start shadow-xs">
+                            <div class="text-[#2E7D32] bg-green-50 p-3 rounded-xl h-fit shrink-0">
+                                <i data-lucide="lock" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-xs tracking-tight">Entornos Aislados</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed font-semibold mt-0.5">Cada líder gestiona sus datos sobre nubes independientes y blindadas, garantizando privacidad absoluta de su red.</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex gap-3 items-start shadow-xs">
+                            <div class="text-[#2E7D32] bg-green-50 p-2 rounded-lg border border-green-100 shrink-0">
+                                <i data-lucide="database" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-xs tracking-tight">Propiedad de los Datos</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed font-semibold mt-0.5">La base de datos es 100% tuya. Si decides dar término al bloque de cobertura contratado, exportamos tu red a Excel sin deudas.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="floatingBtnContainer" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[100] transition-opacity duration-300">
+        <button onclick="toggleModal('pricingModal')" class="bg-[#2E7D32] hover:bg-[#1b4b1e] text-white px-8 py-4 rounded-full font-bold transition-all shadow-xl shadow-green-900/20 border border-[#235f26] text-xs cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95 antialiased whitespace-nowrap">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            <span>Ver Planes y Cobertura</span>
+        </button>
+    </div>
 
     <script>
         lucide.createIcons();
+
+        const modal = document.getElementById('pricingModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function toggleModal(modalID) {
+            const body = document.body;
+            
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                body.classList.add('modal-open');
+                document.getElementById('floatingBtnContainer').classList.add('opacity-0', 'pointer-events-none');
+                
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95');
+                }, 10);
+            } else {
+                modal.classList.add('opacity-0');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    body.classList.remove('modal-open');
+                    document.getElementById('floatingBtnContainer').classList.remove('opacity-0', 'pointer-events-none');
+                }, 300);
+            }
+        }
+
+        function seleccionarPlan(codigoPlan) {
+            toggleModal('pricingModal');
+            
+            const planSelect = document.getElementById('formPlanPrincipal');
+            if (planSelect) {
+                planSelect.value = codigoPlan;
+            }
+            
+            const durationSelect = document.getElementById('formDurationPrincipal');
+            if (durationSelect) {
+                durationSelect.value = 'trimestral';
+            }
+
+            setTimeout(() => {
+                document.getElementById('contacto').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+
+        // 🌟 LÓGICA AJAX: Evita recargas raras, congela la posición y levanta el cartel flotante de éxito
+        document.getElementById('formDemoCorporativo').addEventListener('submit', function(e) {
+            e.preventDefault(); // Bloquea la recarga nativa del navegador
+            
+            const form = this;
+            const btn = document.getElementById('btnEnviarForm');
+            const originalText = btn.innerHTML;
+            
+            // Estado visual de carga del botón
+            btn.innerHTML = '<span>Procesando solicitud...</span>';
+            btn.disabled = true;
+
+            const formData = new FormData(form);
+
+            // Envío AJAX silencioso usando el endpoint especial de FormSubmit
+            fetch('https://formsubmit.co/ajax/contacto@sigev.cl', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Muestra el popup flotante sobre el formulario con una linda animación
+                    const successPopup = document.getElementById('mensajeExito');
+                    successPopup.classList.remove('opacity-0', 'pointer-events-none');
+                    successPopup.classList.add('opacity-100');
+                    
+                    // Resetea los campos limpiamente
+                    form.reset();
+                } else {
+                    alert('Ocurrió un problema en el servidor. Por favor, reintenta el envío.');
+                }
+            })
+            .catch(error => {
+                alert('Error de red. Revisa tu conexión de internet e inténtalo nuevamente.');
+            })
+            .finally(() => {
+                // Restaura el botón a su diseño original
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        });
     </script>
 </body>
 </html>

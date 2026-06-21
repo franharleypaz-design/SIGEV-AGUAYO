@@ -1,0 +1,254 @@
+/* ==========================================================================
+   📊 SIGEV - HOJA DE ESTILOS PARA EL CENTRO DE ANALÍTICA Y REPORTES
+   ========================================================================== */
+
+/* 1. Lienzo Principal y Distribución de Rejillas */
+.report-grid-canvas {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 8px;
+    width: 100%;
+}
+
+/* 2. Tarjetas de Gráficos (Cards Analíticas) */
+.chart-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.015), 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.chart-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 12px;
+    transition: border-color 0.4s ease;
+}
+
+.chart-card-header h3 {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.4s ease;
+}
+
+/* 3. Estructura de las Barras de Distribución Nativas */
+.chart-bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chart-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chart-bar-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: color 0.4s ease;
+}
+
+.chart-bar-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
+}
+
+/* Riel o pista de la barra */
+.chart-bar-track {
+    height: 10px;
+    background-color: var(--bg-workspace);
+    border-radius: 20px;
+    overflow: hidden;
+    width: 100%;
+    transition: background-color 0.4s ease;
+}
+
+/* Relleno animado dinámicamente desde JS */
+.chart-bar-fill {
+    height: 100%;
+    border-radius: 20px;
+    width: 0%; 
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 4. Paleta de Colores Corporativa para Reportes (Identidad Visual) */
+.chart-bar-fill.fill-blue   { background-color: #2563eb; }
+.chart-bar-fill.fill-purple { background-color: #8b5cf6; }
+.chart-bar-fill.fill-orange { background-color: #f59e0b; }
+.chart-bar-fill.fill-green  { background-color: #10b981; }
+
+/* 5. Adaptabilidad Responsiva (Media Queries) */
+@media (max-width: 1024px) {
+    .report-grid-canvas {
+        grid-template-columns: 1fr; /* Pasa a una sola columna en pantallas medianas/pequeñas */
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-card {
+        padding: 16px;
+    }
+    
+    .chart-bar-info {
+        font-size: 12px;
+    }
+}
+
+/* ==========================================================================
+   🚀 BLINDAJE PARA MODO OSCURO (SOPORTE PREMIUM AUTOMÁTICO)
+   ========================================================================== */
+html[style*="--bg-workspace: #0f172a"] .chart-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] .chart-card-header {
+    border-bottom-color: #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] .chart-bar-track {
+    background-color: #0f172a !important;
+}
+
+/* ==========================================================================
+   📊 SIGEV - CONTROLADOR DE COMPONENTES GRÁFICOS Y CANVAS DE REPORTES
+   ========================================================================== */
+
+/* Contenedor de Gráficos e Indicadores */
+.report-grid-canvas {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+.chart-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.015), 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.chart-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 12px;
+}
+
+.chart-card-header h3 {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Gráficos de Barra Horizontales Proporcionales */
+.chart-bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chart-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.chart-bar-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.chart-bar-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-dark);
+}
+
+.chart-bar-track {
+    height: 8px;
+    background-color: var(--bg-workspace);
+    border-radius: 20px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.chart-bar-fill {
+    height: 100%;
+    border-radius: 20px;
+    width: 0%; /* Manejado de forma elástica por JS */
+    transition: width 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Colores de las Barras Analíticas */
+.chart-bar-fill.fill-blue   { background-color: #2563eb; }
+.chart-bar-fill.fill-purple { background-color: #8b5cf6; }
+.chart-bar-fill.fill-orange { background-color: #f59e0b; }
+.chart-bar-fill.fill-green  { background-color: #10b981; }
+
+/* Anillo Donut Gráfico CSS3 Puro */
+.donut-chart-native::after {
+    content: "";
+    position: absolute;
+    width: 75px;
+    height: 75px;
+    background-color: var(--card-bg); /* Cambia con el tema */
+    border-radius: 50%;
+    z-index: 2;
+    transition: background-color 0.4s ease;
+}
+
+/* ==========================================================================
+   🚀 COMPATIBILIDAD DINÁMICA CON MODO OSCURO MUNICIPAL
+   ========================================================================== */
+html[style*="--bg-workspace: #0f172a"] .chart-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] .chart-card-header {
+    border-bottom-color: #334155 !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] .chart-bar-track {
+    background-color: #0f172a !important;
+}
+
+html[style*="--bg-workspace: #0f172a"] .donut-chart-native::after {
+    background-color: #1e293b !important;
+}

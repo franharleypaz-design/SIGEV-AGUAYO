@@ -14,10 +14,11 @@ let usuariosMemory = [];
 let archivoFotoPendiente = null; // Almacena el binario de la nueva foto seleccionada
 const modalUsuario = document.getElementById("modal-editar-usuario");
 
-// ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
+// ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo con Pasaporte Global
 const subdominioDetectado = window.location.hostname.split('.')[0];
-const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
 
+// Inyección de la estructura base nativa de tu sistema
 inyectarEstructuraGlobal();
 
 auth.onAuthStateChanged(async (user) => {
@@ -91,7 +92,7 @@ function mostrarConsolaJuicioInframundo(usuario, onOportunidad, onDestierro) {
             <div class="custom-alert-icon" style="background-color: rgba(220, 38, 38, 0.1); color: #dc2626; font-size: 24px; padding: 4px; box-shadow: 0 4px 10px rgba(220,38,38,0.15);">☠️</div>
             <div class="custom-alert-title" style="color: var(--text-dark); font-size: 16px; margin-top: 10px;">Juicio del Inframundo ☠️</div>
             <div class="custom-alert-message" style="line-height: 1.5; margin-bottom: 22px; font-size: 13.5px; color: var(--text-dark);">
-                Estás a punto de procesar el alma de <b>${usuario.nombre || 'Humita CooCoo'}</b>. ¡Decide si otorgarle una nueva oportunidad o dejarlo aqui para siempre en el infierno de los desterrados!
+                Recibiendo el alma de <b>${usuario.nombre || 'Humita CooCoo'}</b>. ¡Decide si otorgarle una nueva oportunidad o dejarlo aquí para siempre en el infierno de los desterrados!
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
                 <button class="btn-oportunidad-ui" style="background-color: #10b981; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; flex: 1; transition: background 0.2s;" onmouseenter="this.style.background='#059669'" onmouseleave="this.style.background='#10b981'">Nueva Oportunidad</button>
@@ -152,7 +153,6 @@ function inicializarComponentesUsuarios() {
         });
     }
 
-    // --- NUEVO: ESCUCHADOR PARA PREVISUALIZACIÓN INSTANTÁNEA DE FOTO LOCAL ---
     const fileInput = document.getElementById("mu-foto-file");
     if (fileInput) {
         fileInput.addEventListener("change", (e) => {
@@ -299,7 +299,7 @@ function renderizarTablaUsuarios(lista) {
         }
 
         html += `
-            <tr class="user-row-click" data-id="${u.id}" style="cursor:pointer;">
+            <tr data-id="${u.id}">
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <img src="${fotoSrc}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;">
@@ -323,9 +323,6 @@ function renderizarTablaUsuarios(lista) {
     conectarManejadoresEdicion();
 }
 
-// ==============================================================================
-// 📋 CONFIGURACIÓN Y DESPLIEGUE DEL CONTENEDOR FOTOGRÁFICO DE ALTA RESOLUCIÓN
-// ==============================================================================
 function abrirModalFormularioUsuarioConActivacion(usuario) {
     const currentLoggedUid = auth.currentUser ? auth.currentUser.uid : "";
     const esMiPropioPerfil = (usuario.id === currentLoggedUid);
@@ -337,7 +334,6 @@ function abrirModalFormularioUsuarioConActivacion(usuario) {
 
     document.getElementById("mu-id-val").value = usuario.id;
     
-    // --- NUEVO: CONTROL DEL AVATAR PREVIEW EN MODAL ---
     const imgPreview = document.getElementById("mu-avatar-preview");
     const placeholder = document.getElementById("mu-avatar-placeholder");
     const fotoUrlActual = usuario.foto || usuario.photoURL || usuario.fotoPerfil || "";
@@ -414,8 +410,9 @@ function abrirModalFormularioUsuarioConActivacion(usuario) {
 }
 
 function conectarManejadoresEdicion() {
-    document.querySelectorAll(".user-row-click, .u-edit").forEach(elemento => {
+    document.querySelectorAll(".u-edit").forEach(elemento => {
         elemento.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             const id = elemento.getAttribute("data-id");
             const usuario = usuariosMemory.find(u => u.id === id);
@@ -445,6 +442,7 @@ function conectarManejadoresEdicion() {
 
     document.querySelectorAll(".u-ban-fast").forEach(btn => {
         btn.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             const id = btn.getAttribute("data-id");
             const usuario = usuariosMemory.find(u => u.id === id);
@@ -494,7 +492,6 @@ async function guardarCambiosUsuarioFirestore() {
             tenantId: CURRENT_TENANT_ID
         };
 
-        // --- NUEVO: ACOPLAMIENTO DE CARGA DE IMAGEN REAL A STORAGE ---
         if (archivoFotoPendiente) {
             const storageRef = ref(storage, `fotos_usuarios/${id}`);
             await uploadBytes(storageRef, archivoFotoPendiente);

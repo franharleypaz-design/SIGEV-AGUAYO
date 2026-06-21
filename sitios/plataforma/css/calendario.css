@@ -10,7 +10,7 @@
     min-height: calc(100vh - 180px);
 }
 
-/* Tarjeta lateral de la leyenda de colores (CORREGIDO: Sincronizado con var(--card-bg)) */
+/* Tarjeta lateral de la leyenda de colores */
 .legend-card {
     width: 250px;
     padding: 24px;
@@ -42,7 +42,7 @@
     transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 
-/* Encabezados de días (CORREGIDO: Utiliza el fondo del Workspace y color de texto adaptativo) */
+/* Encabezados de días */
 .calendar-day-header {
     background-color: var(--bg-workspace);
     padding: 12px;
@@ -60,7 +60,7 @@
     border-right: none;
 }
 
-/* Celdas de la Grilla Completa (CORREGIDO: Eliminado fondo blanco estático, usa var(--card-bg)) */
+/* Celdas de la Grilla Completa */
 .calendar-cell-full {
     min-height: 120px;
     padding: 8px;
@@ -127,7 +127,7 @@
 }
 
 /* ==========================================================================
-   COLORES PARA TIPOS DE EVENTO (CORREGIDOS CONTRASTES PARA MODO OSCURO)
+   COLORES PARA TIPOS DE EVENTO
    ========================================================================== */
 .event-blue   { background-color: rgba(37, 99, 235, 0.18); color: #3b82f6; border-left: 3px solid #2563eb; }
 .event-green  { background-color: rgba(16, 185, 129, 0.18); color: #10b981; border-left: 3px solid #10b981; }
@@ -135,10 +135,10 @@
 .event-purple { background-color: rgba(139, 92, 246, 0.18); color: #a78bfa; border-left: 3px solid #8b5cf6; }
 .event-red    { background-color: rgba(239, 68, 68, 0.18); color: #f87171; border-left: 3px solid #ef4444; }
 
-/* Hacer que la vista sea responsiva para pantallas de notebook pequeñas o tablets */
+/* Hacer que la vista sea responsiva */
 @media (max-width: 1024px) {
     div[style*="display: flex; gap: 20px; align-items: flex-start;"] {
-        flex-direction: column; /* Apila el calendario y la leyenda */
+        flex-direction: column; 
     }
     
     .legend-card {
@@ -152,4 +152,247 @@
         flex-wrap: wrap;
         gap: 15px !important;
     }
+}
+
+/* ==========================================================================
+   🛠️ FIX VISUAL: BOTONES DEL CALENDARIO (+ NUEVO EVENTO Y REVISAR TODOS)
+   ========================================================================== */
+   
+/* 1. Botón Principal: + Nuevo Evento */
+#btn-abrir-modal-evento {
+    background-color: #0b438c !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#btn-abrir-modal-evento:hover {
+    background-color: #1e3a8a !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 2. Botón Secundario: Revisar Todos */
+#btn-gestionar-eventos, 
+#btn-revisar-todos, 
+.legend-btn {
+    background-color: #ffffff !important;
+    color: #0b438c !important; 
+    font-weight: 700 !important;
+    border: 2px solid #0b438c !important; 
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transition: all 0.2s ease !important;
+    margin-top: 15px !important;
+    box-sizing: border-box !important;
+}
+
+#btn-gestionar-eventos:hover, 
+#btn-revisar-todos:hover, 
+.legend-btn:hover {
+    background-color: #0b438c !important;
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   🛠️ FIX VISUAL: MODAL AGENDAR ACTIVIDAD 
+   ========================================================================== */
+   
+#modal-evento .profile-modal-header {
+    background: linear-gradient(135deg, #0b438c, #1e293b) !important;
+}
+
+#modal-evento .btn-primary {
+    background-color: #0b438c !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+#modal-evento .btn-primary:hover {
+    background-color: #1e3a8a !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15) !important;
+}
+
+#modal-evento .profile-modal-header .btn-profile-close,
+#modal-evento .profile-modal-header button {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+#modal-evento .profile-modal-header .btn-profile-close:hover,
+#modal-evento .profile-modal-header button:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ==========================================================================
+   🛠️ FIX VISUAL: MODAL "REVISAR TODOS" (LISTA DE EVENTOS)
+   ========================================================================== */
+
+#modal-lista-eventos .profile-modal-card {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+}
+
+#modal-lista-eventos .profile-modal-card::before {
+    content: "Agenda Territorial";
+    background: linear-gradient(135deg, #0b438c, #1e293b);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 20px 24px;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#modal-lista-eventos > div > div {
+    padding: 24px !important;
+    background: #f8fafc !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+}
+
+#modal-lista-eventos .btn-close-modal,
+#modal-lista-eventos button[id="btn-cerrar-lista-top"] {
+    position: absolute !important;
+    top: 16px !important;
+    right: 16px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: none !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    font-size: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    transition: background 0.2s !important;
+}
+
+#modal-lista-eventos .btn-close-modal:hover,
+#modal-lista-eventos button[id="btn-cerrar-lista-top"]:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+#modal-lista-eventos > div > div h2,
+#modal-lista-eventos > div > div h3,
+#modal-lista-eventos > div > div h4,
+#modal-lista-eventos > div > div p,
+#modal-lista-eventos > div > div span {
+    color: #1e293b !important;
+}
+
+#modal-lista-eventos label {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+/* ==========================================================================
+   🛠️ FIX VISUAL: MODAL "VER EVENTO COMPLETO" (VISOR DE EVENTOS)
+   ========================================================================== */
+
+#modal-visor-evento .profile-modal-card {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+/* 1. Cabecera Azul Premium REAL */
+#modal-visor-evento .profile-modal-header {
+    background: linear-gradient(135deg, #0b438c, #1e293b) !important;
+    padding: 20px 24px !important;
+}
+
+/* Forzar textos a BLANCO en la cabecera */
+#v-ev-titulo,
+#v-ev-tipo-texto,
+#modal-visor-evento .profile-modal-header h3,
+#modal-visor-evento .profile-modal-header p {
+    color: #ffffff !important;
+    margin: 0 !important;
+}
+
+#v-ev-tipo-texto {
+    opacity: 0.85 !important;
+    font-size: 13px !important;
+    margin-top: 4px !important;
+}
+
+/* 2. Cuerpo interno del visor (Fondo blanco asegurado) */
+#modal-visor-evento .profile-modal-body {
+    padding: 24px !important;
+    background: #ffffff !important;
+}
+
+/* 3. Textos oscuros y definidos SOLO en el cuerpo */
+#modal-visor-evento .profile-modal-body label,
+#modal-visor-evento .profile-modal-body h6,
+#modal-visor-evento .profile-modal-body div[style*="font-size: 10px"] {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+#modal-visor-evento .profile-modal-body p,
+#modal-visor-evento .profile-modal-body span {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    margin-top: 4px !important;
+}
+
+/* 4. Botón X superior en la cabecera azul */
+#modal-visor-evento .btn-profile-close,
+#btn-cerrar-visor-evento {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: none !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    font-size: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: 0.2s !important;
+    position: absolute !important;
+    top: 16px !important;
+    right: 16px !important;
+}
+
+#modal-visor-evento .btn-profile-close:hover,
+#btn-cerrar-visor-evento:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 5. OCULTAR Footer Gris Claro y Botón inferior "Cerrar Visor" por ser redundante */
+#modal-visor-evento .profile-modal-card > div:last-child {
+    display: none !important;
 }

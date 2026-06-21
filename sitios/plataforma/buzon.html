@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/solicitudes.css"> <!-- Reutiliza analytic-kpi-container -->
     <link rel="stylesheet" href="css/buzon.css">
     <link rel="stylesheet" href="css/mobile.css">
     
@@ -16,6 +17,14 @@
     </script>
     <script type="module" src="js/app.js" defer></script>
     <script type="module" src="js/buzon.js" defer></script>
+    <style>
+        /* 🌟 CORRECCIÓN DE SCROLL DOBLE */
+        html, body { overflow: hidden; height: 100vh; }
+        .app-container { display: flex; height: 100vh; overflow: hidden; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; height: 100vh; }
+        .dashboard-body { flex: 1; padding-bottom: 40px; }
+        .table-responsive-container { overflow-x: auto !important; overflow-y: visible !important; }
+    </style>
 </head>
 <body>
 
@@ -27,47 +36,72 @@
 
             <div class="dashboard-body">
                 
-                <div>
+                <div style="margin-bottom: 4px;">
                     <h2 style="font-size: 22px; font-weight: 700; color: var(--text-dark);">Buzón Ciudadano</h2>
                     <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Gestiona las solicitudes y mensajes enviados por la comunidad</p>
                 </div>
 
-                <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr); gap: 12px;">
-                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
-                        <div class="kpi-icon-box blue" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
-                        <div class="kpi-details"><h3 id="stat-total" style="font-size: 18px;">148</h3><p style="font-size: 10px;">Total este mes</p></div>
+                <!-- 📊 NUEVA CUADRÍCULA DE INDICADORES DIGITALES (4 COLUMNAS SIMÉTRICAS) -->
+                <section class="analytic-kpi-container">
+                    <!-- KPI 1: Nuevos Ingresos Digitales -->
+                    <div class="analytic-kpi-card">
+                        <div class="analytic-kpi-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        </div>
+                        <div class="analytic-kpi-details">
+                            <p>Ingresos Digitales</p>
+                            <h3 id="stat-ingresos-hoy">0</h3>
+                            <span>Nuevos casos hoy</span>
+                        </div>
                     </div>
-                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
-                        <div class="kpi-icon-box orange" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
-                        <div class="kpi-details"><h3 id="stat-solicitudes" style="font-size: 18px;">85</h3><p style="font-size: 10px;">Apoyos</p></div>
+                    
+                    <!-- KPI 2: Tipo de Mensaje Predominante -->
+                    <div class="analytic-kpi-card">
+                        <div class="analytic-kpi-icon yellow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4l3 3"></path></svg>
+                        </div>
+                        <div class="analytic-kpi-details">
+                            <p>Canal Más Frecuente</p>
+                            <h3 id="kpi-digital-tipo-top">Cargando...</h3>
+                            <span id="kpi-digital-tipo-sub">Evaluando flujo</span>
+                        </div>
                     </div>
-                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
-                        <div class="kpi-icon-box purple" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg></div>
-                        <div class="kpi-details"><h3 id="stat-denuncias" style="font-size: 18px;">22</h3><p style="font-size: 10px;">Denuncias</p></div>
+                    
+                    <!-- KPI 3: Tasa de Triage Exitoso -->
+                    <div class="analytic-kpi-card">
+                        <div class="analytic-kpi-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </div>
+                        <div class="analytic-kpi-details">
+                            <p>Tasa de Clasificación</p>
+                            <h3 id="kpi-digital-tasa">0%</h3>
+                            <span id="kpi-digital-tasa-sub">0 de 0 revisados</span>
+                        </div>
                     </div>
-                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
-                        <div class="kpi-icon-box green" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
-                        <div class="kpi-details"><h3 id="stat-sugerencias" style="font-size: 18px;">15</h3><p style="font-size: 10px;">Iniciativas</p></div>
+                    
+                    <!-- KPI 4: Escaneos de QR Vecinal -->
+                    <div class="analytic-kpi-card">
+                        <div class="analytic-kpi-icon red">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><path d="M14 14h3v3h-3z"></path></svg>
+                        </div>
+                        <div class="analytic-kpi-details">
+                            <p>Escaneos QR Portal</p>
+                            <h3 id="stat-qr-scans">0</h3>
+                            <span>Visitas al formulario público</span>
+                        </div>
                     </div>
-                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
-                        <div class="kpi-icon-box blue" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
-                        <div class="kpi-details"><h3 id="stat-felicitaciones" style="font-size: 18px;">12</h3><p style="font-size: 10px;">Agradecimientos</p></div>
-                    </div>
-                    <div class="kpi-card" style="padding: 14px; gap: 10px;">
-                        <div class="kpi-icon-box purple" style="width: 36px; height: 36px;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
-                        <div class="kpi-details"><h3 id="stat-otros" style="font-size: 18px;">14</h3><p style="font-size: 10px;">Otros</p></div>
-                    </div>
-                </div>
+                </section>
 
                 <div class="content-layout-grid" style="grid-template-columns: 1fr 400px; gap: 20px; align-items: start;">
                     
                     <div class="section-card" style="padding: 16px; margin: 0;">
-                        <div class="tab-navigation" style="margin-bottom: 16px;">
-                            <div class="tab-item active" data-estado="Nuevo">Nuevos <span id="badge-count-nuevo" style="background:#2563eb; color:white; padding:1px 6px; border-radius:10px; font-size:10px;">0</span></div>
-                            <div class="tab-item" data-estado="En Revisión">En revisión <span id="badge-count-revision" style="background:#cbd5e1; color:#334155; padding:1px 6px; border-radius:10px; font-size:10px;">0</span></div>
-                            <div class="tab-item" data-estado="Clasificado">Clasificados</div>
-                            <div class="tab-item" data-estado="Archivado">Archivados</div>
-                            <div class="tab-item" data-estado="Rechazado">Rechazados</div>
+                        <div class="tab-navigation">
+                            <div class="tab-item active" data-estado="Nuevo">Nuevos <span id="badge-count-nuevo" class="badge" style="background:#2563eb; color:white; border-radius:50%; padding:2px 6px; font-size:10px;">0</span></div>
+                            <div class="tab-item" data-estado="En revisión">En Revisión <span id="badge-count-revision" class="badge" style="background:#e2e8f0; color:#475569; border-radius:50%; padding:2px 6px; font-size:10px;">0</span></div>
+                            <div class="tab-item" data-estado="En gestión">En Gestión <span id="badge-count-gestion" class="badge" style="background:#e2e8f0; color:#475569; border-radius:50%; padding:2px 6px; font-size:10px;">0</span></div>
+                            <div class="tab-item" data-estado="Por Responder" style="color: #b45309; font-weight: bold;">Por Responder <span id="badge-count-por-responder" class="badge" style="background:#fef3c7; color:#b45309; border-radius:50%; padding:2px 6px; font-size:10px;">0</span></div>
+                            <div class="tab-item" data-estado="Finalizados">Finalizados</div>
+                            <div class="tab-item" data-estado="Archivados">Archivados</div>
                         </div>
 
                         <div style="display: flex; gap: 12px; margin-bottom: 16px;">
@@ -106,15 +140,31 @@
                     </div>
 
                     <div id="buzon-detail-sidebar" class="section-card" style="padding: 20px; margin: 0; display: none;">
+                        
                         <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px;">
                             <div style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 6px; border-radius: 6px;" id="detail-icon-zone">
                                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             </div>
                             <div style="flex: 1;">
-                                <h3 id="detail-asunto" style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0;">Cargando...</h3>
-                                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"><span id="detail-tipo">Reclamo</span> • Recibido el <span id="detail-fecha">--/--/----</span></p>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span id="detail-codigo" style="font-family: monospace; font-size: 11px; font-weight: 800; color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">S/N</span>
+                                    <span id="detail-estado-badge" style="font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569;">Nuevo</span>
+                                </div>
+                                <h3 id="detail-asunto" style="font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px 0; line-height: 1.2;">Cargando...</h3>
+                                <p style="font-size: 11px; color: var(--text-muted); margin: 0;"><span id="detail-tipo">Reclamo</span> • <span id="detail-fecha">--/--/----</span></p>
                             </div>
-                            <button id="btn-cambiar-revision" style="background: none; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: 600; color: var(--text-dark);">👁️ Leer</button>
+                        </div>
+
+                        <div id="detail-clasificacion-box" style="display: none; margin-bottom: 16px; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; border-radius: 6px;">
+                            <h4 style="font-size: 10px; text-transform: uppercase; color: #166534; margin: 0 0 6px 0; font-weight: 800; display: flex; align-items: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Requerimiento Clasificado
+                            </h4>
+                            <div style="font-size: 12px; color: #14532d; display: flex; flex-direction: column; gap: 4px;">
+                                <div><b style="opacity: 0.8;">ID Interno:</b> <span id="detail-clasif-id" style="font-family: monospace; font-weight: 700;">--</span></div>
+                                <div><b style="opacity: 0.8;">Derivado a:</b> <span id="detail-clasif-dep" style="font-weight: 600;">--</span></div>
+                                <div><b style="opacity: 0.8;">Responsable:</b> <span id="detail-clasif-resp" style="font-weight: 600;">--</span></div>
+                            </div>
                         </div>
 
                         <hr style="border: 0; border-top: 1px solid var(--border-color); margin-bottom: 16px;">
@@ -145,27 +195,19 @@
                         </div>
 
                         <div style="margin-bottom: 20px; background: var(--bg-workspace); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 12px; text-align: center; font-weight: 700;">Acciones de Clasificación</h4>
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 12px; text-align: center; font-weight: 700;">Acciones Operativas</h4>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                
                                 <button type="button" class="btn" id="action-crear-vecino" style="font-size: 11px; padding: 10px; justify-content: center; background: #475569; color: white; display: none; font-weight: 700; border-radius: 6px; border:none; cursor:pointer;">👤 Crear Ficha de Vecino</button>
-                                
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                    <button type="button" class="btn btn-primary" id="action-convertir-solicitud" style="font-size: 11px; padding: 10px; justify-content: center; background: #2563eb; font-weight: 700;">📝 Crear Solicitud</button>
-                                    <button type="button" class="btn" id="action-crear-donacion" style="font-size: 11px; padding: 10px; justify-content: center; background: #10b981; color: white; font-weight: 700;">💝 Crear Donación</button>
-                                </div>
-                                
-                                <button type="button" class="btn" id="action-caso-social" style="font-size: 11px; padding: 10px; justify-content: center; background: #8b5cf6; color: white; font-weight: 700;">🛡️ Convertir en Caso Social</button>
-                                
-                                <button type="button" class="btn" id="action-cambiar-clasificacion" style="font-size: 11px; padding: 10px; justify-content: center; background: #f59e0b; color: white; font-weight: 700;">🔄 Cambiar Clasificación de Origen</button>
-                                
-                                <button type="button" class="btn btn-secondary" id="action-archivar" style="font-size: 11px; padding: 10px; justify-content: center; font-weight: 600;">📥 Archivar Sin Acción</button>
+                                <button type="button" class="btn btn-primary" id="action-clasificar-ticket" style="font-size: 13px; padding: 12px; justify-content: center; background: #2563eb; color: white; font-weight: 800; border-radius: 6px; border:none; cursor:pointer; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">📊 CLASIFICAR REQUERIMIENTO</button>
+                                <button type="button" class="btn btn-secondary" id="action-archivar" style="font-size: 12px; padding: 10px; justify-content: center; font-weight: 700;">📥 Archivar Sin Acción</button>
                             </div>
                         </div>
 
                         <div>
-                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 10px;">Historial del flujo</h4>
-                            <div id="detail-timeline" style="font-size: 11.5px; display: flex; flex-direction: column; gap: 8px; padding-left: 4px;"></div>
+                            <button type="button" class="btn btn-secondary" id="btn-ver-historial" style="width: 100%; font-size: 12px; padding: 12px; justify-content: center; font-weight: 700; display: flex; gap: 6px; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; color: #475569; cursor: pointer; transition: background 0.2s;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                Ver Historial de Trazabilidad
+                            </button>
                         </div>
 
                     </div>

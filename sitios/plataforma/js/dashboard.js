@@ -35,14 +35,9 @@ let archivoFotoSeleccionado = null;
 let archivoDocSeleccionado = null; 
 let estaGuardando = false; 
 
-// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL DASHBOARD
-// Si estás localmente en localhost o 127.0.0.1 forzará el entorno de la prueba ("paz"). En internet leerá la URL real.
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL DASHBOARD CON RESPALDO DE SESIÓN GLOBAL (PASAPORTE)
 const subdominioDetectado = window.location.hostname.split('.')[0];
-const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
-
-// Variables para el Mini-Calendario del Dashboard
-let fechaActualDashboard = new Date();
-let eventosDashboardMemory = [];
+const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
 
 // Controles globales para la instancia del mapa interno del Dashboard
 let miniMapaDashboard = null;
@@ -69,20 +64,119 @@ auth.onAuthStateChanged(async (user) => {
         actualizarPerfilLayout(user);
         inicializarManejadorFormularioEstatico();
         inicializarAccionesRapidasGrid();
-        inicializarNavegacionMiniCalendario();
         inicializarRelojMundial();
+
+        // 🚀 INICIALIZACIÓN DEL GENERADOR DE CÓDIGO QR MUNICIPAL EN EL DASHBOARD
+        inicializarGeneradorQRConcejal();
 
         await Promise.all([
             renderizarMetricasKPI(),
-            cargarTablasDinamicas(),
-            cargarEventosDashboard() // Cargamos los eventos de Firebase
+            cargarTablasDinamicas()
         ]);
-        
-        renderizarMiniCalendario(); // Dibujamos la grilla y los eventos reales
     }
 });
 
-// --- NUEVO: MOTOR CARTOGRÁFICO DE ASIGNACIÓN INTERNA DEL DASHBOARD ---
+// --- GENERADOR REAL DE CÓDIGOS QR DE CAPTACIÓN TERRITORIAL ---
+function inicializarGeneradorQRConcejal() {
+    const aliasConcejal = CURRENT_TENANT_ID;
+    const urlDestinoBuzon = `https://${CURRENT_TENANT_ID}.sigev.cl/index.html?c=${aliasConcejal}`;
+    const urlApiQR = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(urlDestinoBuzon)}`;
+    
+    const imgQR = document.getElementById("img-qr-oficial");
+    const inputURL = document.getElementById("input-url-qr");
+    const btnCopiar = document.getElementById("btn-copiar-link-qr");
+    const btnDescargar = document.getElementById("btn-descargar-qr");
+    
+    if (imgQR) imgQR.src = urlApiQR;
+    if (inputURL) inputURL.value = urlDestinoBuzon;
+    
+    if (btnCopiar) {
+        btnCopiar.onclick = (e) => {
+            e.preventDefault();
+            navigator.clipboard.writeText(urlDestinoBuzon);
+            mostrarAlertaPersonalizada("¡Enlace de captación territorial copiado al portapapeles con éxito!", "success");
+        };
+    }
+    
+    if (btnDescargar) {
+        btnDescargar.onclick = async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch(urlApiQR);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const linkDescarga = document.createElement("a");
+                linkDescarga.href = blobUrl;
+                linkDescarga.download = `QR_SIGEV_${aliasConcejal.toUpperCase()}.png`;
+                document.body.appendChild(linkDescarga);
+                linkDescarga.click();
+                
+                document.body.removeChild(linkDescarga);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                window.open(urlApiQR, '_blank');
+            }
+        };
+    }
+}
+
+// --- MOTOR GEOMÉTRICO LIGERO PARA AUTODETECCIÓN DE SECTORES (Calibración Absoluta de 12 Puntos) ---
+function autoDetectarSector(lat, lng) {
+    const poligonos = [
+        { 
+            id: "Sector Territorial 1", 
+            coords: [
+                [-33.514685, -70.658115], [-33.517251, -70.644833], [-33.528565, -70.647510], [-33.526514, -70.661431]
+            ] 
+        },
+        { 
+            id: "Sector Territorial 2", 
+            coords: [
+                [-33.526514, -70.661431], [-33.528565, -70.647510], [-33.539865, -70.651231], [-33.537272, -70.664437]
+            ] 
+        },
+        { 
+            id: "Sector Territorial 3", 
+            coords: [
+                [-33.537272, -70.664437], [-33.539865, -70.651231], [-33.548759, -70.652888], [-33.545409, -70.668255], [-33.543457, -70.666568]
+            ] 
+        },
+        { 
+            id: "Sector Territorial 4", 
+            coords: [
+                [-33.510680, -70.671022], [-33.514685, -70.658115], [-33.526514, -70.661431], [-33.521247, -70.676092]
+            ] 
+        },
+        { 
+            id: "Sector Territorial 5", 
+            coords: [
+                [-33.521247, -70.676092], [-33.526514, -70.661431], [-33.537272, -70.664437], [-33.531880, -70.681551]
+            ] 
+        },
+        { 
+            id: "Sector Territorial 6", 
+            coords: [
+                [-33.531880, -70.681551], [-33.537272, -70.664437], [-33.543457, -70.666568], [-33.545409, -70.668255], [-33.539123, -70.685379]
+            ] 
+        }
+    ];
+
+    let x = Number(lat), y = Number(lng);
+    for (let p of poligonos) {
+        let inside = false;
+        for (let i = 0, j = p.coords.length - 1; i < p.coords.length; j = i++) {
+            let xi = p.coords[i][0], yi = p.coords[i][1];
+            let xj = p.coords[j][0], yj = p.coords[j][1];
+            let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        if (inside) return p.id;
+    }
+    return "Sin Información"; 
+}
+
+// --- MOTOR CARTOGRÁFICO DE ASIGNACIÓN INTERNA DEL DASHBOARD ---
 function despertarMapaDashboard() {
     const mapContainer = document.getElementById("v-mini-mapa-picker");
     if (!mapContainer) return;
@@ -96,7 +190,6 @@ function despertarMapaDashboard() {
             className: 'leaflet-marker-custom', iconSize: [28, 38], iconAnchor: [14, 38]
         });
 
-        // Geocodificación Inversa: Clic en mapa -> Captura Coordenadas y escribe Dirección
         miniMapaDashboard.on('click', async (e) => {
             const { lat, lng } = e.latlng;
             const inputLat = document.getElementById("v-lat");
@@ -110,7 +203,15 @@ function despertarMapaDashboard() {
                 pinMarcadorDashboard = L.marker(e.latlng, { icon: SVG_MARKER_TEMPLATE }).addTo(miniMapaDashboard); 
             }
 
-            // Integración de geocodificación inversa con Nominatim OpenStreetMap
+            const sectorDetectado = autoDetectarSector(lat, lng);
+            if (sectorDetectado) {
+                const sSector = document.getElementById("vecino-sector-territorial");
+                if (sSector) {
+                    sSector.value = sectorDetectado;
+                    sSector.dispatchEvent(new Event('change')); 
+                }
+            }
+
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
                 const dataRes = await response.json();
@@ -123,7 +224,6 @@ function despertarMapaDashboard() {
             } catch (err) { console.error("Error en geocodificación inversa Nominatim:", err); }
         });
 
-        // Geocodificación Directa: Escribe Dirección -> Mueve el marcador y actualiza Coordenadas
         const inputDireccion = document.getElementById("vecino-direccion");
         if (inputDireccion) {
             inputDireccion.addEventListener("blur", async () => {
@@ -152,6 +252,15 @@ function despertarMapaDashboard() {
                             pinMarcadorDashboard.setLatLng(nuevaPosicionLatLng);
                         } else {
                             pinMarcadorDashboard = L.marker(nuevaPosicionLatLng, { icon: SVG_MARKER_TEMPLATE }).addTo(miniMapaDashboard);
+                        }
+
+                        const sectorDetectado = autoDetectarSector(latGeocodificada, lngGeocodificada);
+                        if (sectorDetectado) {
+                            const sSector = document.getElementById("vecino-sector-territorial");
+                            if (sSector) {
+                                sSector.value = sectorDetectado;
+                                sSector.dispatchEvent(new Event('change')); 
+                            }
                         }
                     }
                 } catch (err) {
@@ -188,7 +297,7 @@ function mostrarAlertaPersonalizada(mensaje, tipo = "success") {
         titleText = "¡Operación Exitosa!";
         iconStyles = "background-color: rgba(16, 185, 129, 0.1); color: #10b981;";
     } else if (tipo === "info") {
-        iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="12" x2="12" y2="16"></line><line x1="12" y1="12" x2="12" y2="16"></line></svg>`;
+        iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="12" x2="12" y2="16"></line></svg>`;
         titleText = "Notificación del Sistema";
         iconStyles = "background-color: rgba(37, 99, 235, 0.1); color: #2563eb;";
     } else {
@@ -208,105 +317,6 @@ function mostrarAlertaPersonalizada(mensaje, tipo = "success") {
     const btnAceptar = overlay.querySelector(".btn-alert-confirm");
     if (btnAceptar) btnAceptar.focus();
     btnAceptar.addEventListener("click", () => overlay.remove());
-}
-
-// --- LÓGICA DE LECTURA DE LA COLECCIÓN DE EVENTOS FILTRADA POR TENANT ---
-async function cargarEventosDashboard() {
-    try {
-        const q = query(collection(db, "eventos"), where("tenantId", "==", CURRENT_TENANT_ID));
-        const snap = await getDocs(q);
-        eventosDashboardMemory = [];
-        snap.forEach(doc => {
-            eventosDashboardMemory.push({ id: doc.id, ...doc.data() });
-        });
-
-        // Actualizamos el KPI de "Eventos próximos"
-        const hoy = new Date();
-        const hoyFormateado = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
-        const eventosProximos = eventosDashboardMemory.filter(ev => ev.fecha >= hoyFormateado);
-        
-        const kpiEventos = document.getElementById("count-finalizadas"); 
-        if (kpiEventos) kpiEventos.innerText = eventosProximos.length;
-
-    } catch (error) {
-        console.error("Error cargando eventos para el dashboard:", error);
-    }
-}
-
-function inicializarNavegacionMiniCalendario() {
-    const navBotones = document.querySelectorAll(".calendar-nav button");
-    if (navBotones.length >= 3) {
-        navBotones[0].addEventListener("click", () => { fechaActualDashboard = new Date(); renderizarMiniCalendario(); });
-        navBotones[1].addEventListener("click", () => { fechaActualDashboard.setMonth(fechaActualDashboard.getMonth() - 1); renderizarMiniCalendario(); });
-        navBotones[2].addEventListener("click", () => { fechaActualDashboard.setMonth(fechaActualDashboard.getMonth() + 1); renderizarMiniCalendario(); });
-    }
-}
-
-function renderizarMiniCalendario() {
-    const contenedor = document.querySelector(".calendar-grid");
-    const tituloMes = document.querySelector(".calendar-nav h4");
-    if (!contenedor) return;
-
-    const año = fechaActualDashboard.getFullYear();
-    const mes = fechaActualDashboard.getMonth();
-
-    const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    if (tituloMes) tituloMes.innerText = `${nombresMeses[mes]} ${año}`;
-
-    const primerDiaMes = new Date(año, mes, 1);
-    const ultimoDiaMes = new Date(año, mes + 1, 0);
-    const totalDias = ultimoDiaMes.getDate();
-    
-    let diaInicioSemana = primerDiaMes.getDay();
-    diaInicioSemana = diaInicioSemana === 0 ? 6 : diaInicioSemana - 1;
-
-    const diasPrevios = new Date(año, mes, 0).getDate();
-
-    let html = `
-        <div class="calendar-day-label">Lun</div>
-        <div class="calendar-day-label">Mar</div>
-        <div class="calendar-day-label">Mié</div>
-        <div class="calendar-day-label">Jue</div>
-        <div class="calendar-day-label">Vie</div>
-        <div class="calendar-day-label">Sáb</div>
-        <div class="calendar-day-label">Dom</div>
-    `;
-
-    for (let i = diaInicioSemana - 1; i >= 0; i--) {
-        html += `<div class="calendar-cell muted"><div class="cell-number">${diasPrevios - i}</div></div>`;
-    }
-
-    const hoy = new Date();
-    for (let dia = 1; dia <= totalDias; dia++) {
-        const esHoy = (dia === hoy.getDate() && mes === hoy.getMonth() && año === hoy.getFullYear());
-        
-        const fechaStr = `${año}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-        const eventosDelDia = eventosDashboardMemory.filter(ev => ev.fecha === fechaStr);
-        
-        let htmlEventos = "";
-        eventosDelDia.forEach(ev => {
-            const horaTooltip = ev.hora ? `\n${ev.hora}` : '';
-            htmlEventos += `<div class="calendar-event ${ev.tipo}" title="${ev.titulo}${horaTooltip}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size: 10.5px;">${ev.titulo}</div>`;
-        });
-
-        const styleCeldaHoy = esHoy ? 'background-color: rgba(37, 99, 235, 0.05);' : '';
-        const styleNumeroHoy = esHoy ? 'background-color: var(--primary-blue); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px auto;' : '';
-
-        html += `
-            <div class="calendar-cell" style="${styleCeldaHoy}">
-                <div class="cell-number" style="${styleNumeroHoy}">${dia}</div>
-                ${htmlEventos}
-            </div>
-        `;
-    }
-
-    const celdasTotales = diaInicioSemana + totalDias;
-    const celdasFaltantes = (7 - (celdasTotales % 7)) % 7;
-    for (let i = 1; i <= celdasFaltantes; i++) {
-        html += `<div class="calendar-cell muted"><div class="cell-number">${i}</div></div>`;
-    }
-
-    contenedor.innerHTML = html;
 }
 
 // --- ACTIVADOR DEL PANEL DE ACCIONES RÁPIDAS ---
@@ -369,7 +379,6 @@ async function abrirVisorVecino(id) {
         const data = docSnap.data(); const fotoSrc = data.fotoPerfil || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100";
         const fNacimientoFormatted = data.fechaNacimiento ? data.fechaNacimiento.split("-").reverse().join("/") : "No registrada";
 
-        // Filtro Tenant integrado en las solicitudes históricas del visor
         const qSols = query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("idVecino", "==", id));
         const snapSolicitudes = await getDocs(qSols);
         let solicitudesLista = []; snapSolicitudes.forEach(sDoc => { solicitudesLista.push({ id: sDoc.id, ...sDoc.data() }); });
@@ -422,20 +431,13 @@ async function abrirVisorVecino(id) {
                         </div>
                     </div>
                     <div class="profile-panel" id="v-panel-solicitudes">${solicitudesHTML}</div>
-                    
-                    <div class="profile-panel" id="v-panel-avanzados">
-                        <div class="profile-data-grid">
-                            <div class="profile-data-item full-width"><label>Ocupación / Oficio</label><p>${data.ocupacion || "No registrada"}</p></div>
-                        </div>
-                    </div>
-                    
+                    <div class="profile-panel" id="v-panel-avanzados"><div class="profile-data-grid"><div class="profile-data-item full-width"><label>Ocupación / Oficio</label><p>${data.ocupacion || "No registrada"}</p></div></div></div>
                     <div class="profile-panel" id="v-panel-adicional">
                         <div style="padding: 10px 0;">
                             <label style="font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; display: block; margin-bottom: 6px;">Observaciones Críticas de Terreno</label>
                             <p style="font-size: 13.5px; color: var(--text-dark); line-height: 1.5; white-space: pre-wrap;">${data.observaciones || "No se registran observaciones adicionales del equipo territorial."}</p>
                         </div>
                     </div>
-                    
                     <div class="profile-panel" id="v-panel-documentos">
                         ${data.urlDocumento ? `
                             <div class="profile-solicitud-box" style="margin-top:0; border-left-color: var(--kpi-purple); display: flex; align-items: center; justify-content: space-between; padding: 14px 18px;">
@@ -443,12 +445,10 @@ async function abrirVisorVecino(id) {
                                 <a href="${data.urlDocumento}" target="_blank" style="color: var(--primary-blue); display: flex; align-items: center; font-weight: 600; font-size: 12px; text-decoration: none;" title="Ver documento">
                                     Ver archivo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-left: 4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </a>
-                            </div>
-                        ` : `
+                            </div>` : `
                             <div class="no-data-placeholder">
                                 <p>No se registran archivos PDF o documentos anexos en este expediente.</p>
-                            </div>
-                        `}
+                            </div>`}
                     </div>
                 </div>
             </div>`;
@@ -475,11 +475,9 @@ async function abrirEditorVecino(id) {
         let fotoEdicionLocal = null; let docEdicionLocal = null; let eliminarDocMarcado = false;
         const modalOverlay = document.createElement("div"); modalOverlay.className = "profile-modal-overlay";
 
-        // Preparamos las opciones para el selector de motivos municipales
         let opcionesCategoriasHTML = `<option value="">Ninguna</option>`;
         Object.keys(MAPEO_MUNICIPAL).forEach(cat => { opcionesCategoriasHTML += `<option value="${cat}">${cat}</option>`; });
 
-        // --- CONSTRUCCIÓN DINÁMICA DE LA CASCADA DE INTELIGENCIA TERRITORIAL ---
         let opcionesSectoresHTML = `<option value="">Seleccione Sector</option>`;
         Object.keys(MAPEO_TERRITORIAL).forEach(sec => {
             const labelStr = ETIQUETAS_SECTORES[sec] || sec;
@@ -500,7 +498,6 @@ async function abrirEditorVecino(id) {
             });
         }
 
-        // Cargamos todas las solicitudes filtradas por el TenantId correspondiente
         const qSolsEdit = query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("idVecino", "==", id));
         const snapSolicitudesEdit = await getDocs(qSolsEdit);
         let solicitudesListaEdit = [];
@@ -541,7 +538,7 @@ async function abrirEditorVecino(id) {
                     <div class="profile-header-info"><h3>Modificando Expediente</h3><p>RUT: ${data.rut}</p></div>
                     <button class="btn-profile-close">&times;</button>
                 </div>
-                <div class="profile-modal-tabs">
+                <div class="profile-modal-card-tabs">
                     <div class="profile-tab active" data-target="e-panel-basicos">Datos Básicos</div>
                     <div class="profile-tab" data-target="e-panel-solicitudes">Solicitud Territorial</div>
                     <div class="profile-tab" data-target="e-panel-avanzados">Datos Avanzados</div>
@@ -643,19 +640,17 @@ async function abrirEditorVecino(id) {
                     <button class="btn btn-primary btn-modal-save" style="background-color: #0b438c;">Guardar cambios</button>
                 </div>
             </div>`;
-    document.body.appendChild(modalOverlay);
+        document.body.appendChild(modalOverlay);
 
         const eMotivo = modalOverlay.querySelector("#e-solicitud-motivo"); const eSub = modalOverlay.querySelector("#e-solicitud-subcategoria"); const eOficina = modalOverlay.querySelector("#e-solicitud-oficina");
         const listContainer = modalOverlay.querySelector("#lista-solicitudes-container"); const formContainer = modalOverlay.querySelector("#editor-solicitudes-form");
         const btnNuevaSol = modalOverlay.querySelector("#btn-nueva-solicitud-tab"); const btnCancelarSol = modalOverlay.querySelector("#btn-cancelar-sol-form");
         const inputSolId = modalOverlay.querySelector("#e-solicitud-id-val"); const formTitle = modalOverlay.querySelector("#editor-solicitudes-form-title");
 
-        // Nodos Dinámicos de la Cascada Territorial en Edición
         const eSecTerr = modalOverlay.querySelector("#e-vecino-sector-territorial");
         const eUvTerr = modalOverlay.querySelector("#e-vecino-unidad-vecinal");
         const eJuntTerr = modalOverlay.querySelector("#e-vecino-junta-vecinal");
 
-        // Escuchadores Dinámicos para la Cascada Territorial del Editor
         eSecTerr.addEventListener("change", (e) => {
             const sec = e.target.value;
             eUvTerr.innerHTML = '<option value="">Seleccione UV</option>';
@@ -760,7 +755,6 @@ async function abrirEditorVecino(id) {
                     direccion: modalOverlay.querySelector("#e-vecino-direccion").value.trim(), fotoPerfil: urlFotoFinal, urlDocumento: urlDocFinal, nombreDocumento: modalOverlay.querySelector("#e-documento-nombre")?.value.trim() || "",
                     ocupacion: modalOverlay.querySelector("#e-vecino-ocupacion")?.value.trim() || "", observaciones: modalOverlay.querySelector("#e-vecino-observaciones")?.value.trim() || "",
                     
-                    // Salvaguarda Unificada de Datos Político-Territoriales
                     sectorTerritorial: eSecTerr.value || "Sin Información",
                     unidadVecinal: eUvTerr.value || "Sin Información",
                     juntaVecinos: eJuntTerr.value || "Sin Información",
@@ -786,13 +780,12 @@ async function abrirEditorVecino(id) {
                         } else {
                             await addDoc(collection(db, "solicitudes"), { 
                                 idVecino: id, nombreVecino: nuevoNombre, rutVecino: data.rut, motivo: cat, subcategoria: sub, oficinaDerivada: ofi, prioridad: prio, descripcion: desc, 
-                                estado: "En revisión", fechaCreacion: serverTimestamp(), tenantId: CURRENT_TENANT_ID, // ◄ Multi-tenant acuñado
+                                estado: "En revisión", fechaCreacion: serverTimestamp(), tenantId: CURRENT_TENANT_ID, 
                                 asignadoA: loggedName, registradaPorNombre: loggedName, registradaPorFoto: loggedPhoto
                             });
                         }
                     }
                 } else {
-                    // FIJADO DE SEGURIDAD: Añadido filtro estricto por tenantId al actualizar cascadas de nombres históricos
                     const snapSols = await getDocs(query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("idVecino", "==", id)));
                     snapSols.forEach(async (s) => {
                         if(s.data().nombreVecino !== nuevoNombre) { await updateDoc(doc(db, "solicitudes", s.id), { nombreVecino: nuevoNombre }); }
@@ -809,24 +802,60 @@ async function abrirEditorVecino(id) {
     } catch (e) { console.error(e); }
 }
 
-// Métricas calculadas en el servidor mediante getCountFromServer() filtradas por TenantId
 async function renderizarMetricasKPI() {
     try {
-        const [sV, sA, sC] = await Promise.all([
-            getCountFromServer(query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID))),
-            getCountFromServer(query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("estado", "in", ["Abierta", "En revisión", "En gestión"]))),
-            getCountFromServer(query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("estado", "==", "Finalizada")))
+        const [snapVecinos, snapSolicitudes, snapBuzon] = await Promise.all([
+            getDocs(query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID))),
+            getDocs(query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID))),
+            getDocs(query(collection(db, "buzon_ciudadano"), where("tenantId", "==", CURRENT_TENANT_ID)))
         ]);
+
+        const totalVecinos = snapVecinos.size;
+        let abiertasCount = 0;
+        let nuevosBuzonCount = 0;
+
+        snapSolicitudes.forEach(doc => {
+            const estado = doc.data().estado;
+            if (["Abierta", "En revisión", "En gestión"].includes(estado)) {
+                abiertasCount++;
+            }
+        });
+
+        snapBuzon.forEach(doc => {
+            const estado = doc.data().estado;
+            if (estado === "Pendiente" || estado === "Nuevo" || !estado) {
+                nuevosBuzonCount++;
+            }
+        });
+
         const cards = document.querySelectorAll(".kpi-card h3");
-        if (cards.length >= 3) {
-            cards[0].innerText = sV.data().count.toLocaleString();
-            cards[1].innerText = sA.data().count.toLocaleString();
-            cards[2].innerText = sC.data().count.toLocaleString();
+        if (cards.length >= 3) { 
+            cards[0].innerText = totalVecinos.toLocaleString(); 
+            cards[1].innerText = abiertasCount.toLocaleString(); 
+            cards[2].innerText = nuevosBuzonCount.toLocaleString(); 
         }
-    } catch (error) { console.error(error); }
+
+        if (cards.length >= 4) {
+            const qrTitle = cards[3];
+            let qrDocId = `ID_CONCEJAL_${CURRENT_TENANT_ID.toUpperCase()}_LC`; 
+            try {
+                const qrSnap = await getDoc(doc(db, "metricas_qr", qrDocId));
+                if (qrSnap.exists() && qrSnap.data().scans !== undefined) {
+                    qrTitle.innerText = qrSnap.data().scans.toLocaleString();
+                } else {
+                    qrTitle.innerText = "0";
+                }
+            } catch(e) {
+                console.error("Error fetching QR metric:", e);
+                qrTitle.innerText = "0";
+            }
+        }
+
+    } catch (error) { 
+        console.error("Error al renderizar métricas KPI:", error); 
+    }
 }
 
-// --- TABLAS DINÁMICAS ESTILIZADAS CON FILTRADO MAESTRO POR INQUILINO ---
 async function cargarTablasDinamicas() {
     try {
         const qV = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
@@ -918,9 +947,7 @@ async function cargarTablasDinamicas() {
     } catch (error) { console.error("Error cargando tablas:", error); }
 }
 
-function presidentialTimerMockup() {
-    // Espacio reservado para futuras implementaciones
-}
+function presidentialTimerMockup() { }
 
 function inicializarManejadorFormularioEstatico() {
     const sMotivo = document.getElementById("solicitud-motivo"); const sSub = document.getElementById("solicitud-subcategoria"); const sOficina = document.getElementById("solicitud-oficina"); const btnGuardar = document.getElementById("btn-guardar-vecino"); const inputRut = document.getElementById("vecino-rut");
@@ -939,7 +966,6 @@ function inicializarManejadorFormularioEstatico() {
         if (sJuntaVecinos) { sJuntaVecinos.innerHTML = `<option value="">Seleccione primero la UV</option>`; sJuntaVecinos.disabled = true; }
     };
 
-    // FUNCIÓN DE LIMPIEZA CARTOGRÁFICA INTERNA AL REINICIAR FORMULARIO
     const clearMapMarkerInputs = () => {
         if (pinMarcadorDashboard && miniMapaDashboard) {
             miniMapaDashboard.removeLayer(pinMarcadorDashboard);
@@ -950,6 +976,108 @@ function inicializarManejadorFormularioEstatico() {
         if (inputLat) inputLat.value = "";
         if (inputLng) inputLng.value = "";
     };
+
+    if (modalIngreso) {
+        let modalBox = modalIngreso.querySelector(".modal-card") || modalIngreso.querySelector(".profile-modal-card") || modalIngreso.firstElementChild;
+        if (modalBox) {
+            modalBox.style.padding = "0";
+            modalBox.style.maxWidth = "760px";
+            modalBox.style.width = "95%;";
+            modalBox.style.maxHeight = "90vh";
+            modalBox.style.height = "auto";
+            modalBox.style.minHeight = "0";
+            modalBox.style.display = "flex";
+            modalBox.style.flexDirection = "column";
+            modalBox.style.overflow = "hidden";
+            modalBox.style.backgroundColor = "#fff";
+
+            let header = modalBox.querySelector(".profile-modal-header") || modalBox.querySelector(".modal-header");
+            if (!header) {
+                header = document.createElement("div");
+                header.className = "profile-modal-header";
+                modalBox.insertBefore(header, modalBox.firstChild);
+            }
+            
+            header.style.background = "linear-gradient(135deg, #1e293b, #0b438c)";
+            header.style.padding = "20px 32px";
+            header.style.position = "relative";
+            header.style.borderTopLeftRadius = "8px";
+            header.style.borderTopRightRadius = "8px";
+            header.style.display = "flex";
+            header.style.alignItems = "center";
+            header.style.justifyContent = "space-between";
+            header.style.flexShrink = "0";
+            header.style.margin = "0";
+            
+            header.innerHTML = `
+                <div class="profile-header-info">
+                    <h3 style="font-size: 18px; color: #fff; font-weight: 700; margin: 0;">Ingreso de Nuevo Vecino</h3>
+                    <p style="color: rgba(255,255,255,0.8); font-weight: 500; margin: 4px 0 0 0;">SIGEV - Formulario de Registro Territorial</p>
+                </div>
+                <button type="button" id="btn-cerrar-ingreso-x" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+            `;
+            
+            const btnX = header.querySelector("#btn-cerrar-ingreso-x");
+            if (btnX) {
+                btnX.onclick = () => {
+                    modalIngreso.style.display = "none";
+                    document.getElementById("form-vecino")?.reset();
+                    clearMapMarkerInputs();
+                };
+            }
+
+            const tabsContainer = modalBox.querySelector(".profile-modal-tabs") || modalBox.querySelector(".tabs-container") || modalBox.querySelector(".modal-tabs");
+            if (tabsContainer) {
+                tabsContainer.style.padding = "0 32px";
+                tabsContainer.style.borderBottom = "1px solid var(--border-color)";
+                tabsContainer.style.flexShrink = "0";
+                tabsContainer.style.background = "#fff";
+                tabsContainer.style.margin = "0";
+                
+                if (tabsContainer.parentNode !== modalBox) {
+                    modalBox.insertBefore(tabsContainer, header.nextSibling);
+                }
+            }
+
+            const modalBody = modalBox.querySelector(".modal-body") || modalBox.querySelector(".profile-modal-body");
+            const formElement = modalBox.querySelector("form");
+            
+            const scrollArea = modalBody || formElement;
+            if (scrollArea) {
+                scrollArea.style.flex = "1 1 auto";
+                scrollArea.style.maxHeight = "calc(90vh - 150px)"; 
+                scrollArea.style.overflowY = "auto";
+                scrollArea.style.padding = "24px 32px";
+                scrollArea.style.background = "#fff";
+                scrollArea.style.display = "block"; 
+                scrollArea.style.margin = "0";
+            }
+            
+            if (formElement && formElement !== scrollArea) {
+                formElement.style.margin = "0";
+                formElement.style.padding = "0";
+                formElement.style.display = "block";
+            }
+
+            const btnContainer = modalBox.querySelector(".btn-container") || btnGuardar?.parentElement;
+            if (btnContainer) {
+                btnContainer.style.padding = "16px 32px";
+                btnContainer.style.background = "#f8fafc";
+                btnContainer.style.borderTop = "1px solid var(--border-color)";
+                btnContainer.style.display = "flex";
+                btnContainer.style.justifyContent = "flex-end";
+                btnContainer.style.gap = "12px";
+                btnContainer.style.flexShrink = "0";
+                btnContainer.style.margin = "0";
+                btnContainer.style.width = "100%";
+                btnContainer.style.boxSizing = "border-box";
+                
+                if (btnContainer.parentNode !== modalBox) {
+                    modalBox.appendChild(btnContainer);
+                }
+            }
+        }
+    }
 
     if (btnCerrarIngreso) {
         btnCerrarIngreso.onclick = () => {
@@ -1082,7 +1210,6 @@ function inicializarManejadorFormularioEstatico() {
                 const formatB = raw.length > 1 ? (raw.slice(0, -1) + "-" + raw.slice(-1)) : raw;
 
                 try {
-                    // Consulta de validación adaptada al aislamiento por Tenant
                     const qD = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID), where("rut", "in", [raw, formatB, r]));
                     const snap = await getDocs(qD);
                     if (!snap.empty) {
@@ -1101,7 +1228,6 @@ function inicializarManejadorFormularioEstatico() {
                         }
 
                         mostrarAlertaPersonalizada(`El RUT ya figura a nombre de: ${snap.docs[0].data().nombreCompleto}. Abriendo ficha...`, "info");
-                        await abrirEditorVecino(snap.docs[0].id);
                     } else {
                         mostrarAlertaPersonalizada("El RUT no se encuentra en el sistema. Puede proceder a completar la información territorial.", "success");
                         btnGuardar.disabled = false;
@@ -1120,7 +1246,6 @@ function inicializarManejadorFormularioEstatico() {
 
             estaGuardando = true; btnGuardar.disabled = true; btnGuardar.innerText = "Sincronizando...";
 
-            // Rescate dinámico de las casillas de latitud y longitud numéricas
             const latVal = document.getElementById("v-lat")?.value;
             const lngVal = document.getElementById("v-lng")?.value;
 
@@ -1139,9 +1264,9 @@ function inicializarManejadorFormularioEstatico() {
                     nombreCompleto: nom, rut: rut, telefono: document.getElementById("vecino-telefono").value.trim(), 
                     fechaNacimiento: document.getElementById("vecino-fecha-nacimiento").value, correoElectronico: document.getElementById("vecino-correo").value.trim(),
                     direccion: document.getElementById("vecino-direccion").value.trim(),
-                    lat: latVal ? Number(latVal) : "", // ◄ Inserción de latitud permanente
-                    lng: lngVal ? Number(lngVal) : "", // ◄ Inserción de longitud permanente
-                    fotoPerfil: urlFotoFinal, urlDocumento: urlDocFinal, nombreDocumento: document.getElementById("vecino-documento-nombre")?.value.trim() || "",
+                    lat: latVal ? Number(latVal) : "", 
+                    lng: lngVal ? Number(lngVal) : "", 
+                    fotoPerfil: urlFotoFinal, urlDocumento: urlDocFinal, SheepDocumento: document.getElementById("vecino-documento-nombre")?.value.trim() || "",
                     fechaRegistro: serverTimestamp(),
                     tenantId: CURRENT_TENANT_ID, 
                     
@@ -1173,7 +1298,7 @@ function inicializarManejadorFormularioEstatico() {
                         asignadoA: loggedName, 
                         registradaPorNombre: loggedName, 
                         registradaPorFoto: loggedPhoto,
-                        lat: latVal ? Number(latVal) : "", // Amarra las coordenadas a la solicitud inicial
+                        lat: latVal ? Number(latVal) : "", 
                         lng: lngVal ? Number(lngVal) : ""
                     });
                 }
@@ -1187,7 +1312,6 @@ function inicializarManejadorFormularioEstatico() {
                 
                 archivoFotoSeleccionado = null; archivoDocSeleccionado = null;
                 await renderizarMetricasKPI(); cargarTablasDinamicas();
-                await cargarEventosDashboard(); renderizarMiniCalendario();
             } catch (err) { console.error(err); } 
             finally { estaGuardando = false; btnGuardar.disabled = false; btnGuardar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Guardar vecino`; }
         });

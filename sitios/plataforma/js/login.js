@@ -27,10 +27,9 @@ const db = initializeFirestore(app, {
     experimentalForceLongPolling: true
 });
 
-// 🕵️‍♂️ DETECTOR MULTI-TENANT INTELIGENTE
-// Si estás programando localmente usa por defecto el entorno "paz". En internet leerá la URL automáticamente.
+// 🕵️‍♂️ DETECTOR MULTI-TENANT INTELIGENTE CON RESPALDO DE SESIÓN GLOBAL (PASAPORTE)
 const subdominioDetectado = window.location.hostname.split('.')[0];
-const tenantActual = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+const tenantActual = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
@@ -206,23 +205,60 @@ function validarRutAlgoritmoChileno(rut) {
 // 6. CONTROL DEL FORMULARIO CON ADJUNTOS Y TÍTULOS DINÁMICOS ADAPTATIVOS
 // ==============================================================================
 function inicializarFormularioBuzonCiudadano() {
-    let tipoSeleccionado = "Solicitar Apoyo Solidario"; 
+    let tipoSeleccionado = "Reclamo"; // Carga por defecto limpia
     let archivosAdjuntosList = [];
-    const botonesOpcion = document.querySelectorAll('.option-btn');
     
-    // Capturar la selección de categoría pública removiendo emojis para las llaves lógicas
+    // Captura los clics de las 4 tarjetas de Triage (En index.html ahora se llaman ".text-triage-btn")
+    const botonesOpcion = document.querySelectorAll('.text-triage-btn');
+    
     botonesOpcion.forEach(btn => {
         btn.addEventListener('click', () => {
-            botonesOpcion.forEach(b => b.style.cssText = "");
-            btn.style.cssText = "border-color: var(--navy-blue); background: #f0f7ff; box-shadow: 0 0 0 2px rgba(15,54,97,0.1);";
-            tipoSeleccionado = btn.innerText.replace(/[^\w\sñáéíóúÁÉÍÓÚ]/g, '').trim();
+            tipoSeleccionado = btn.getAttribute("data-tipo") || "Otro";
+            const configCampos = {
+                "Reclamo": {
+                    titulo: "⚠️ Reportar un Problema o Reclamo",
+                    lblAsunto: "Asunto del Reclamo *", phAsunto: "Ej. Luminaria apagada en mi pasaje",
+                    lblDesc: "Descripción del Problema / Reclamo *", phDesc: "Detalla el inconveniente técnico detectado en terreno aquí..."
+                },
+                "Sugerencia": {
+                    titulo: "💡 Enviar una Idea o Iniciativa Vecinal",
+                    lblAsunto: "Título de tu Idea o Iniciativa *", phAsunto: "Ej. Implementar nuevos puntos limpios de reciclaje comunitarios",
+                    lblDesc: "Cuéntanos en detalle tu propuesta *", phDesc: "Explica aquí cómo visualizas esta idea y cómo podemos impulsarla juntos en el territorio..."
+                },
+                "Felicitación": {
+                    titulo: "Enviar un mensaje de agradecimiento ❤️",
+                    lblAsunto: "Motivo del agradecimiento *", phAsunto: "Ej. Excelente gestión en el operativo veterinario",
+                    lblDesc: "Tu mensaje de agradecimiento *", phDesc: "¡Escribe aquí tu mensaje para el equipo! Nos motiva mucho leerte..."
+                },
+                "Otro": {
+                    titulo: "Enviar Consulta o Requerimiento General •••",
+                    lblAsunto: "Asunto de tu Consulta *", phAsunto: "Ej. Consulta sobre las fechas de postulación a fondos concursables",
+                    lblDesc: "Detalle de tu Consulta *", phDesc: "Escribe tu duda de forma libre aquí para poder derivarla rápidamente al departamento correspondiente..."
+                }
+            };
+
+            const currentConfig = configCampos[tipoSeleccionado] || configCampos["Otro"];
+            const modalTitle = document.getElementById('citizen-modal-title');
+            const inputAsunto = document.getElementById('cit-asunto');
+            const inputDesc = document.getElementById('cit-descripcion');
+            
+            if (modalTitle) modalTitle.innerText = currentConfig.titulo;
+            
+            if (inputAsunto) {
+                inputAsunto.placeholder = currentConfig.phAsunto;
+                const labelAsunto = inputAsunto.previousElementSibling;
+                if (labelAsunto) labelAsunto.innerHTML = currentConfig.lblAsunto;
+            }
+            if (inputDesc) {
+                inputDesc.placeholder = currentConfig.phDesc;
+                const labelDesc = inputDesc.previousElementSibling;
+                if (labelDesc) labelDesc.innerHTML = currentConfig.lblDesc;
+            }
         });
     });
 
-    const btnEnviarTrigger = document.querySelector('.btn-send-request');
     const citizenModal = document.getElementById('citizen-modal');
     const closeCitizenBtn = document.getElementById('close-citizen-btn');
-    const modalTitle = document.getElementById('citizen-modal-title');
     const fileInput = document.getElementById('cit-adjuntos');
     const previewContainer = document.getElementById('cit-adjuntos-preview');
     const inputCitRut = document.getElementById('cit-rut');
@@ -267,77 +303,6 @@ function inicializarFormularioBuzonCiudadano() {
         });
     }
 
-    if (btnEnviarTrigger && citizenModal) {
-        btnEnviarTrigger.addEventListener('click', () => {
-            const opcionesValidas = [
-                "Solicitar Apoyo Solidario", 
-                "Reportar un Problema o Reclamo", 
-                "Realizar una Denuncia Ciudadana", 
-                "Enviar una Idea o Iniciativa Vecinal", 
-                "Enviar un mensaje de agradecimiento", 
-                "Otro Asunto o Consulta"
-            ];
-            
-            if (opcionesValidas.includes(tipoSeleccionado)) {
-                
-                const configCampos = {
-                    "Solicitar Apoyo Solidario": {
-                        titulo: "🎁 Solicitar Apoyo Solidario",
-                        lblAsunto: "Ayuda o Insumo Requerido *", phAsunto: "Ej. Canasta de alimentos, pañales, materiales de construcción, silla de ruedas...",
-                        lblDesc: "Detalle de tu situación y requerimiento *", phDesc: "Por favor, describe detalladamente tu situación familiar o de salud y el apoyo específico que necesitas aquí..."
-                    },
-                    "Reportar un Problema o Reclamo": {
-                        titulo: "⚠️ Reportar un Problema o Reclamo",
-                        lblAsunto: "Asunto del Reclamo *", phAsunto: "Ej. Luminaria apagada en mi pasaje",
-                        lblDesc: "Descripción del Problema / Reclamo *", phDesc: "Detalla el inconveniente técnico detectado en terreno aquí..."
-                    },
-                    "Enviar una Idea o Iniciativa Vecinal": {
-                        titulo: "💡 Enviar una Idea o Iniciativa Vecinal",
-                        lblAsunto: "Título de tu Idea o Iniciativa", phAsunto: "Ej. Implementar nuevos puntos limpios de reciclaje comunitarios",
-                        lblDesc: "Cuéntanos en detalle tu propuesta", phDesc: "Explica aquí cómo visualizas esta idea y cómo podemos impulsarla juntos en el territorio..."
-                    },
-                    "Enviar un mensaje de agradecimiento": {
-                        titulo: "Enviar un mensaje de agradecimiento ❤️",
-                        lblAsunto: "Motivo del agradecimiento", phAsunto: "Ej. Excelente gestión en el operativo veterinario",
-                        lblDesc: "Tu mensaje de agradecimiento", phDesc: "¡Escribe aquí tu mensaje para el equipo! Nos motiva mucho leerte..."
-                    },
-                    "Realizar una Denuncia Ciudadana": {
-                        titulo: "Ingresar Denuncia Territorial Segura 📣",
-                        lblAsunto: "Asunto de la Denuncia *", phAsunto: "Ej. Acopio ilegal de escombros o ruidos molestos reiterados en la vía pública",
-                        lblDesc: "Descripción detallada de los hechos *", phDesc: "Por favor, detalla los hechos con precisión, incluyendo fechas u horarios estimados para agilizar la fiscalización aquí..."
-                    },
-                    "Otro Asunto o Consulta": {
-                        titulo: "Enviar Consulta o Requerimiento General •••",
-                        lblAsunto: "Asunto de tu Consulta *", phAsunto: "Ej. Consulta sobre las fechas de postulación a fondos concursables",
-                        lblDesc: "Detalle de tu Consulta *", phDesc: "Escribe tu duda de forma libre aquí para poder derivarla rápidamente al departamento correspondiente..."
-                    }
-                };
-
-                const currentConfig = configCampos[tipoSeleccionado] || configCampos["Otro Asunto o Consulta"];
-                
-                if (modalTitle) modalTitle.innerText = currentConfig.titulo;
-                
-                const inputAsunto = document.getElementById('cit-asunto');
-                const inputDesc = document.getElementById('cit-descripcion');
-                
-                if (inputAsunto) {
-                    inputAsunto.placeholder = currentConfig.phAsunto;
-                    const labelAsunto = inputAsunto.previousElementSibling;
-                    if (labelAsunto) labelAsunto.innerHTML = currentConfig.lblAsunto;
-                }
-                if (inputDesc) {
-                    inputDesc.placeholder = currentConfig.phDesc;
-                    const labelDesc = inputDesc.previousElementSibling;
-                    if (labelDesc) labelDesc.innerHTML = currentConfig.lblDesc;
-                }
-
-                citizenModal.classList.add('open');
-            } else {
-                alert(`El tipo '${tipoSeleccionado}' se procesa por canal automatizado interno directo.`);
-            }
-        });
-    }
-
     if (closeCitizenBtn && citizenModal) {
         closeCitizenBtn.addEventListener('click', () => {
             if (inputCitRut) {
@@ -367,23 +332,23 @@ function inicializarFormularioBuzonCiudadano() {
         });
     }
 
-    const btnSubmitForm = document.getElementById('btn-submit-citizen-form');
-    if (btnSubmitForm) {
-        btnSubmitForm.addEventListener('click', async () => {
-            const nombre = document.getElementById('cit-nombre').value.trim();
+    // Aquí evitamos chocar con el listener que pusimos en index.html.
+    // Solo manejamos las validaciones estrictas y dejamos que index.html despache.
+    const formCiudadano = document.getElementById('form-solicitud-ciudadana');
+    if (formCiudadano) {
+        formCiudadano.addEventListener('submit', async (e) => {
+            
             const rut = document.getElementById('cit-rut').value.trim();
-            const telefono = document.getElementById('cit-telefono').value.trim();
-            const direccion = document.getElementById('cit-direccion').value.trim();
-            const asunto = document.getElementById('cit-asunto').value.trim();
-            const descripcion = document.getElementById('cit-descripcion').value.trim();
-
+            
             if (!rut) {
+                e.preventDefault();
                 await mostrarAlertaPersonalizada("No se puede enviar el formulario porque el campo RUN es obligatorio para validar tu identidad. Por favor, ingrésalo para avanzar.", "error");
                 if (inputCitRut) inputCitRut.focus();
                 return;
             }
 
             if (!validarRutAlgoritmoChileno(rut)) {
+                e.preventDefault();
                 await mostrarAlertaPersonalizada("No se puede proceder con el envío de la solicitud porque el RUT ingresado no es válido. Por favor, verifica el número o el dígito verificador para avanzar.", "error");
                 if (inputCitRut) {
                     inputCitRut.focus();
@@ -392,61 +357,10 @@ function inicializarFormularioBuzonCiudadano() {
                 }
                 return;
             }
-
-            // Canales con validación flexible libres de campos obligatorios
-            const esBuzonFlexible = ["Enviar una Idea o Iniciativa Vecinal", "Enviar un mensaje de agradecimiento"].includes(tipoSeleccionado);
-            if (!esBuzonFlexible) {
-                if (!nombre || !telefono || !asunto || !descripcion) {
-                    await mostrarAlertaPersonalizada("Por favor complete todos los campos obligatorios (*) marcados en el formulario.", "error");
-                    return;
-                }
-            }
-
-            btnSubmitForm.disabled = true;
-            btnSubmitForm.innerText = "Subiendo adjuntos y despachando...";
-
-            try {
-                let urlsCargadasStorage = [];
-
-                for (let i = 0; i < archivosAdjuntosList.length; i++) {
-                    const file = archivosAdjuntosList[i];
-                    const storageRef = ref(storage, `buzon_ciudadano_adjuntos/${Date.now()}_${file.name}`);
-                    await uploadBytes(storageRef, file);
-                    const downloadUrl = await getDownloadURL(storageRef);
-                    urlsCargadasStorage.push(downloadUrl);
-                }
-
-                const formularioPayload = {
-                    tenantId: tenantActual,
-                    nombre: nombre || "Vecino Identificado",
-                    rut: rut,
-                    telefono: telefono || "No proporcionado",
-                    direccion: direccion || "No proporcionada",
-                    tipo: tipoSeleccionado,
-                    asunto: asunto || `${tipoSeleccionado} Ciudadana Directa`,
-                    descripcion: descripcion || `Ingreso de ${tipoSeleccionado.toLowerCase()} procesada de forma rápida sin texto complementario.`,
-                    estado: "Nuevo",
-                    prioridad: "Alta",
-                    fecha: serverTimestamp(),
-                    adjuntos: urlsCargadasStorage
-                };
-
-                await addDoc(collection(db, "buzon_ciudadano"), formularioPayload);
-                
-                // 🚀 PAUSA ASÍNCRONA BLINDADA: Espera obligatoriamente a que el usuario presione "Aceptar" para continuar
-                await mostrarAlertaPersonalizada(`¡Tu requerimiento ha sido enviado con éxito! Nuestro equipo revisará los antecedentes y serás contactado a la brevedad.`, "success");
-                
-                citizenModal.classList.remove('open');
-                document.getElementById('form-solicitud-ciudadana').reset();
-                if (previewContainer) previewContainer.innerHTML = "";
-                window.location.reload();
-
-            } catch (error) {
-                console.error("Error crítico al despachar al buzón con adjuntos:", error);
-                await mostrarAlertaPersonalizada("Ocurrió un inconveniente al conectar con el servidor. Valida los permisos e inténtalo de nuevo.", "error");
-                btnSubmitForm.disabled = false;
-                btnSubmitForm.innerText = "🚀 Despachar Caso Oficial al Buzón";
-            }
+            
+            // Si todo está correcto, NO hacemos e.preventDefault(),
+            // de este modo, el evento fluye libremente y es procesado 
+            // por el index.html para guardarse de forma aislada.
         });
     }
 }

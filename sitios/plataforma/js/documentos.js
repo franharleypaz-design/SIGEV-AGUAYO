@@ -6,8 +6,9 @@ import {
     collection, getDocs, doc, getDoc, query, where 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO CON OVERRIDE DE SESIÓN GLOBAL (PASAPORTE SUPREMO)
 const subdominioDetectado = window.location.hostname.split('.')[0];
-const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
 
 // Caché global del módulo documental
 let vecinosDocumentalMemory = [];
@@ -159,7 +160,7 @@ function abrirVentanaFlotanteCarpeta(id) {
     vecinoSeleccionadoCargado = vecino;
     const shortIdExposed = vecino.id.substring(0, 6).toUpperCase();
 
-    modalTitle.innerText = `Expediente: ${vecino.nombreCompleto}`;
+    modalTitle.innerText = `Ficha de Vecino: ${vecino.nombreCompleto}`;
     modalSubtitle.innerText = `RUN: ${vecino.rut || 'No registrado'} | Código: #${shortIdExposed}`;
 
     if (vecino.fotoPerfil && vecino.fotoPerfil.trim() !== "") {
@@ -193,7 +194,7 @@ function abrirVentanaFlotanteCarpeta(id) {
 }
 
 // ==============================================================================
-// 📋 EXPEDIENTES COMPLETO VINCULADO AL EXPEDIENTE DE VECINOS CON ID CORTO BLINDADO
+// 📋 RÉPLICA FIEL Y CLONACIÓN INTEGRAL DEL VISOR DE VECINOS
 // ==============================================================================
 async function abrirVisorExpedienteDigitalMaestro(id) {
     try {
@@ -238,9 +239,9 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
         };
         const sectorVisorLabel = ETIQUETAS_SECTORES_LOCAL[data.sectorTerritorial] || data.sectorTerritorial || "Sin Información";
 
-        // --- EXTRACCIÓN MAESTRA DEL CÓDIGO CORTO DE 6 CARACTERES ---
         const shortId = id.substring(0, 6).toUpperCase();
 
+        // Estructuración exacta unificada (Copia fiel del Padrón de Vecinos)
         visorOverlay.innerHTML = `
             <div class="profile-modal-card">
                 <div class="profile-modal-header" style="background-color: #0b438c; padding: 20px 32px;">
@@ -248,17 +249,18 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
                         <h3 style="font-size: 18px; color: #fff; font-weight: 700; margin: 0;">Expediente Digital</h3>
                         <p style="color: rgba(255,255,255,0.8); font-weight: 500; margin: 4px 0 0 0;">SIGEV-AGUAYO - Visualización de Hoja de Vida Territorial</p>
                     </div>
-                    <button class="btn-profile-close-visor" style="position: absolute; background: none; border: none; color: #fff; font-size: 24px; top: 16px; right: 16px; cursor: pointer;">&times;</button>
+                    <button class="btn-profile-close" style="color: #fff; font-size: 24px; top: 16px; right: 16px; position: absolute; background: none; border: none; cursor: pointer;">&times;</button>
                 </div>
                 <div class="profile-modal-tabs">
-                    <div class="profile-tab active" data-target="v-panel-basicos-visor">Datos Básicos</div>
-                    <div class="profile-tab" data-target="v-panel-solicitudes-visor">Solicitudes</div>
-                    <div class="profile-tab" data-target="v-panel-avanzados-visor">Datos Avanzados</div>
-                    <div class="profile-tab" data-target="v-panel-adicional-visor">Info Adicional</div>
-                    <div class="profile-tab" data-target="v-panel-documentos-visor">Documentos</div>
+                    <div class="profile-tab active" data-target="v-panel-basicos">Datos Básicos</div>
+                    <div class="profile-tab" data-target="v-panel-solicitudes">Solicitudes</div>
+                    <div class="profile-tab" data-target="v-panel-avanzados">Datos Avanzados</div>
+                    <div class="profile-tab" data-target="v-panel-adicional">Info Adicional</div>
+                    <div class="profile-tab" data-target="v-panel-documentos">Documentos</div>
                 </div>
                 <div class="profile-modal-body">
-                    <div class="profile-panel active" id="v-panel-basicos-visor">
+                    <div class="profile-panel active" id="v-panel-basicos">
+                        
                         <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
                             <img src="${fotoSrc}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                             <div>
@@ -272,6 +274,7 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
                                 </button>
                             </div>
                         </div>
+
                         <div class="profile-data-grid">
                             <div class="profile-data-item"><label>Teléfono</label><p>${data.telefono || "No registrado"}</p></div>
                             <div class="profile-data-item"><label>Fecha Nacimiento</label><p>${fNacimientoFormatted}</p></div>
@@ -281,25 +284,40 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
                             <div class="profile-data-item"><label>Junta de Vecinos</label><p>${data.juntaVecinos || "Sin Información"}</p></div>
                             <div class="profile-data-item"><label>Barrio / Villa Popular</label><p>${data.barrioPopular || "Sin Información"}</p></div>
                         </div>
+
                         <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
                             <label style="font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; display: block; margin-bottom: 6px;">📍 Ubicación Georreferenciada</label>
-                            <div id="v-visor-mapa-documental" style="width: 100%; height: 210px; border: 1px solid #cbd5e1; border-radius: 8px; background: #e5e7eb;"></div>
+                            <div id="v-visor-mapa" style="width: 100%; height: 210px; border: 1px solid #cbd5e1; border-radius: 8px; background: #e5e7eb;"></div>
                         </div>
                     </div>
-                    <div class="profile-panel" id="v-panel-solicitudes-visor">${solicitudesHTML}</div>
-                    <div class="profile-panel" id="v-panel-avanzados-visor"><div class="profile-data-grid"><div class="profile-data-item full-width"><label>Ocupación / Oficio</label><p>${data.ocupacion || "No registrada"}</p></div></div></div>
-                    <div class="profile-panel" id="v-panel-adicional-visor">
+                    <div class="profile-panel" id="v-panel-solicitudes">${solicitudesHTML}</div>
+                    <div class="profile-panel" id="v-panel-avanzados"><div class="profile-data-grid"><div class="profile-data-item full-width"><label>Ocupación / Oficio</label><p>${data.ocupacion || "No registrada"}</p></div></div></div>
+                    <div class="profile-panel" id="v-panel-adicional">
                         <div style="padding: 10px 0;">
                             <label style="font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; display: block; margin-bottom: 6px;">Observaciones Críticas de Terreno</label>
                             <p style="font-size: 13.5px; color: var(--text-dark); line-height: 1.5; white-space: pre-wrap;">${data.observaciones || "No se registran observaciones adicionales del equipo territorial."}</p>
                         </div>
                     </div>
-                    <div class="profile-panel" id="v-panel-documentos-visor">
-                        ${data.urlDocumento ? `<div class="profile-solicitud-box" style="margin-top:0; border-left-color: var(--kpi-purple); display: flex; align-items: center; justify-content: space-between; padding: 14px 18px;"><span style="font-size: 13.5px; font-weight: 600; color: var(--text-dark);">${data.nombreDocumento || "Documento de Respaldo"}</span><a href="${data.urlDocumento}" target="_blank" style="color: var(--primary-blue); font-weight: 600; font-size: 12px; text-decoration: none;">Ver archivo</a></div>` : `<div class="no-data-placeholder"><p>No se registran archivos PDF anexos.</p></div>`}
+                    <div class="profile-panel" id="v-panel-documentos">
+                        ${data.urlDocumento ? `
+                            <div class="profile-solicitud-box" style="margin-top:0; border-left-color: var(--kpi-purple); display: flex; align-items: center; justify-content: space-between; padding: 14px 18px;">
+                                <span style="font-size: 13.5px; font-weight: 600; color: var(--text-dark);">${data.nombreDocumento || "Documento de Respaldo"}</span>
+                                <a href="${data.urlDocumento}" target="_blank" style="color: var(--primary-blue); display: flex; align-items: center; font-weight: 600; font-size: 12px; text-decoration: none;" title="Ver documento">
+                                    Ver archivo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-left: 4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </a>
+                            </div>
+                        ` : `
+                            <div class="no-data-placeholder">
+                                <p>No se registran archivos PDF o documentos anexos en este expediente.</p>
+                            </div>
+                        `}
                     </div>
                 </div>
             </div>`;
         document.body.appendChild(visorOverlay);
+
+        const tabsVisor = visorOverlay.querySelectorAll(".profile-tab");
+        const panelsVisor = visorOverlay.querySelectorAll(".profile-panel");
 
         // --- MANEJADOR DEL EVENTO COPIAR AL PORTAPAPELES VINCULADO AL ID CORTO ---
         visorOverlay.querySelector(".btn-copy-id").onclick = (e) => {
@@ -313,7 +331,7 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
 
         if (data.lat && data.lng) {
             setTimeout(() => {
-                const mapVisorContainer = visorOverlay.querySelector("#v-visor-mapa-documental");
+                const mapVisorContainer = visorOverlay.querySelector("#v-visor-mapa");
                 if (mapVisorContainer) {
                     const mapaVisor = L.map(mapVisorContainer, { 
                         zoomControl: true,
@@ -336,12 +354,12 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
                     setTimeout(() => mapaVisor.invalidateSize(), 250);
                     
                     tabsVisor.forEach(t => t.addEventListener("click", () => {
-                        if (t.getAttribute("data-target") === "v-panel-basicos-visor") { setTimeout(() => mapaVisor.invalidateSize(), 50); }
+                        if (t.getAttribute("data-target") === "v-panel-basicos") { setTimeout(() => mapaVisor.invalidateSize(), 50); }
                     }));
                 }
             }, 150);
         } else {
-            const mapVisorContainer = visorOverlay.querySelector("#v-visor-mapa-documental");
+            const mapVisorContainer = visorOverlay.querySelector("#v-visor-mapa");
             if (mapVisorContainer) {
                 mapVisorContainer.style.display = "flex";
                 mapVisorContainer.style.alignItems = "center";
@@ -353,13 +371,11 @@ async function abrirVisorExpedienteDigitalMaestro(id) {
             }
         }
 
-        const tabsVisor = visorOverlay.querySelectorAll(".profile-tab");
-        const panelsVisor = visorOverlay.querySelectorAll(".profile-panel");
         tabsVisor.forEach(t => t.addEventListener("click", () => {
             tabsVisor.forEach(tab => tab.classList.remove("active")); panelsVisor.forEach(p => p.classList.remove("active"));
             t.classList.add("active"); visorOverlay.querySelector(`#${t.getAttribute("data-target")}`).classList.add("active");
         }));
         
-        visorOverlay.querySelector(".btn-profile-close-visor").onclick = () => visorOverlay.remove();
+        visorOverlay.querySelector(".btn-profile-close").onclick = () => visorOverlay.remove();
     } catch (error) { console.error(error); }
 }

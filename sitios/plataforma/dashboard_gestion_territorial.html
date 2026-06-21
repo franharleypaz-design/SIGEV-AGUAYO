@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEV - Gestión Territorial</title>
+    <style>
+        :root {
+            --primary: #2E7D32; /* Verde SIGEV */
+            --primary-light: #E8F5E9;
+            --secondary: #1E40AF; /* Azul SIGEV */
+            --bg-body: #F1F5F9;
+            --bg-card: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --success: #10B981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding: 24px;
+        }
+
+        .dashboard-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* --- Header & Filters --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .title p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            background-color: #fff;
+        }
+
+        .btn-filter {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-filter:hover {
+            background-color: #1b5e20;
+        }
+
+        /* --- KPI Cards Row --- */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+        }
+
+        .kpi-info h3 {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .kpi-info p {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 4px;
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .icon-blue { background-color: #EFF6FF; color: #3B82F6; }
+        .icon-green { background-color: #F0FDF4; color: #10B981; }
+        .icon-orange { background-color: #FFF7ED; color: #F59E0B; }
+        .icon-purple { background-color: #FAF5FF; color: #8B5CF6; }
+
+        /* --- Main Content Rows --- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- Heat Map Mockup --- */
+        .map-container {
+            width: 100%;
+            height: 350px;
+            background-color: #E2E8F0;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 15px var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        .marker-1 { top: 30%; left: 40%; }
+        .marker-2 { top: 60%; left: 65%; background-color: var(--warning); box-shadow: 0 0 15px var(--warning);}
+        .marker-3 { top: 50%; left: 20%; background-color: var(--primary); box-shadow: 0 0 15px var(--primary);}
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.3); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* --- Charts Mockup --- */
+        .chart-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        
+        .bar-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .bar-track {
+            width: 100%;
+            height: 8px;
+            background-color: var(--bg-body);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        /* --- Table Documents --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            background-color: var(--bg-body);
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-open { background-color: #FEF2F2; color: #DC2626; }
+        .status-closed { background-color: #ECFDF5; color: #059669; }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    
+    <!-- Header -->
+    <div class="header">
+        <div class="title">
+            <h1>Gestión Territorial</h1>
+            <p>Monitoreo en tiempo real de requerimientos y casos vecinales</p>
+        </div>
+        
+        <div class="filters">
+            <select class="filter-select">
+                <option>Todos los Sectores</option>
+                <option>Sector Norte</option>
+                <option>Sector Sur</option>
+                <option>Sector Centro</option>
+            </select>
+            <select class="filter-select">
+                <option>Últimos 7 días</option>
+                <option>Este Mes</option>
+                <option>Año Actual</option>
+            </select>
+            <button class="btn-filter">Aplicar Filtros</button>
+        </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h3>Casos Activos</h3>
+                <p>145</p>
+            </div>
+            <div class="kpi-icon icon-blue">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h3>Resueltos (Mes)</h3>
+                <p>89</p>
+            </div>
+            <div class="kpi-icon icon-green">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"></path></svg>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h3>Tiempo de Respuesta</h3>
+                <p>48 <span style="font-size: 16px; color: #64748B;">hrs</span></p>
+            </div>
+            <div class="kpi-icon icon-orange">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+        </div>
+        
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h3>Vecinos Registrados</h3>
+                <p>3,200</p>
+            </div>
+            <div class="kpi-icon icon-purple">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row 1 -->
+    <div class="content-grid">
+        
+        <!-- Mapa de Calor -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary)"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                    Mapa de Calor Territorial
+                </div>
+                <button class="filter-select" style="padding: 4px 8px;">Ampliar Mapa</button>
+            </div>
+            <div class="map-container">
+                <div class="map-marker marker-1" title="Alta concentración de requerimientos"></div>
+                <div class="map-marker marker-2" title="Concentración media"></div>
+                <div class="map-marker marker-3" title="Concentración baja"></div>
+                <p style="color: var(--text-muted); font-weight: 600; opacity: 0.5;">(Vista de Mapa API - Pudahuel)</p>
+            </div>
+        </div>
+
+        <!-- Tipos de Solicitud -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Distribución de Solicitudes</div>
+            </div>
+            <div class="chart-bars">
+                
+                <div class="bar-item">
+                    <div class="bar-label">
+                        <span>Seguridad / Luminarias</span>
+                        <span style="color: var(--danger)">40%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 40%; background-color: var(--danger);"></div>
+                    </div>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar-label">
+                        <span>Aseo y Ornato</span>
+                        <span style="color: var(--warning)">35%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 35%; background-color: var(--warning);"></div>
+                    </div>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar-label">
+                        <span>Mantenimiento Calles</span>
+                        <span style="color: #3B82F6">15%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 15%; background-color: #3B82F6;"></div>
+                    </div>
+                </div>
+
+                <div class="bar-item">
+                    <div class="bar-label">
+                        <span>Asistencia Social</span>
+                        <span style="color: var(--success)">10%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 10%; background-color: var(--success);"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row 2 -->
+    <div class="content-grid" style="grid-template-columns: 1fr 1fr;">
+        
+        <!-- Centro Documental -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    Últimas Solicitudes Ingresadas
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Corto</th>
+                            <th>Vecino / Contacto</th>
+                            <th>Asunto</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--secondary);">#VEC-1045</td>
+                            <td>María González</td>
+                            <td>Bache en Av. Principal</td>
+                            <td><span class="status-badge status-open">Pendiente</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--secondary);">#VEC-1044</td>
+                            <td>Junta Vecinal Sur</td>
+                            <td>Solicitud Corte de Árbol</td>
+                            <td><span class="status-badge status-closed">Resuelto</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--secondary);">#VEC-1043</td>
+                            <td>Pedro Rivas</td>
+                            <td>Luminaria apagada Pasaje 3</td>
+                            <td><span class="status-badge status-open">En Terreno</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Acciones Rapidas -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Acciones Rápidas del Equipo</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                <button style="width: 100%; padding: 12px; background: white; border: 1px solid var(--border); border-radius: 8px; text-align: left; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+                    <span style="background: var(--primary-light); color: var(--primary); padding: 8px; border-radius: 6px;">➕</span>
+                    Crear Nuevo Expediente Vecinal
+                </button>
+                <button style="width: 100%; padding: 12px; background: white; border: 1px solid var(--border); border-radius: 8px; text-align: left; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+                    <span style="background: #EFF6FF; color: #3B82F6; padding: 8px; border-radius: 6px;">📊</span>
+                    Descargar Reporte Semanal (Excel)
+                </button>
+                <button style="width: 100%; padding: 12px; background: white; border: 1px solid var(--border); border-radius: 8px; text-align: left; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+                    <span style="background: #FEF2F2; color: #DC2626; padding: 8px; border-radius: 6px;">📍</span>
+                    Actualizar Zonas de Riesgo en Mapa
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

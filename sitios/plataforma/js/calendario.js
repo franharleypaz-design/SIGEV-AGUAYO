@@ -15,9 +15,9 @@ import { inyectarEstructuraGlobal, actualizarPerfilLayout } from "./layout.js";
 let fechaActual = new Date();
 let eventosGlobales = [];
 
-// ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo
+// ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo con Pasaporte Global
 const subdominioDetectado = window.location.hostname.split('.')[0];
-const CURRENT_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
 
 // Diccionario para traducir la clase de color a nombre real
 const diccionarioNombresEventos = {
@@ -220,25 +220,48 @@ function inicializarGestorEventos() {
     const btnAbrirGestor = document.getElementById("btn-gestionar-eventos");
     const btnCerrarGestor = document.getElementById("btn-cerrar-lista-eventos");
 
+    // 🚀 INYECCIÓN DINÁMICA DE LA "X" DE CIERRE PARA LA LISTA DE EVENTOS
+    if (modalGestor) {
+        // Busca el contenedor principal dentro del modal
+        const cardContenedor = modalGestor.querySelector('.profile-modal-card') || modalGestor.firstElementChild || modalGestor;
+        
+        // Verificamos que no lo hayamos inyectado ya
+        if (cardContenedor && !document.getElementById("btn-cerrar-lista-top")) {
+            const btnCloseTop = document.createElement("button");
+            btnCloseTop.id = "btn-cerrar-lista-top";
+            btnCloseTop.className = "btn-close-modal";
+            btnCloseTop.innerHTML = "&times;"; // La "X" clásica de cierre
+            
+            btnCloseTop.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                modalGestor.style.display = "none";
+            };
+            
+            // Lo insertamos dentro de la tarjeta
+            cardContenedor.appendChild(btnCloseTop);
+        }
+    }
+
     const inputFiltroTitulo = document.getElementById("filtro-ev-titulo");
     const selectFiltroTipo = document.getElementById("filtro-ev-tipo");
 
     // Abrir Modal y renderizar
     btnAbrirGestor.addEventListener("click", () => {
-        inputFiltroTitulo.value = "";
-        selectFiltroTipo.value = "Todos";
+        if(inputFiltroTitulo) inputFiltroTitulo.value = "";
+        if(selectFiltroTipo) selectFiltroTipo.value = "Todos";
         modalGestor.style.display = "flex";
         renderizarTablaEventos();
     });
 
-    // Cerrar Modal
+    // Cerrar Modal (con botón de abajo si existe)
     const cerrarGestor = () => { modalGestor.style.display = "none"; };
-    btnCerrarGestor.addEventListener("click", cerrarGestor);
+    if (btnCerrarGestor) btnCerrarGestor.addEventListener("click", cerrarGestor);
     window.addEventListener("click", (e) => { if (e.target === modalGestor) cerrarGestor(); });
 
     // Escuchar filtros en tiempo real
-    inputFiltroTitulo.addEventListener("input", renderizarTablaEventos);
-    selectFiltroTipo.addEventListener("change", renderizarTablaEventos);
+    if (inputFiltroTitulo) inputFiltroTitulo.addEventListener("input", renderizarTablaEventos);
+    if (selectFiltroTipo) selectFiltroTipo.addEventListener("change", renderizarTablaEventos);
 }
 
 function renderizarTablaEventos() {
@@ -343,7 +366,8 @@ function abrirVisorEvento(id) {
     const fechaLegible = partesFecha.length === 3 ? `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}` : ev.fecha;
 
     document.getElementById("v-ev-titulo").innerText = ev.titulo;
-    document.getElementById("v-ev-tipo-texto").innerText = diccionarioNombresEventEventos[ev.tipo] || diccionarioNombresEventos[ev.tipo] || "General";
+    // Se corrige un pequeño typo en el diccionario: diccionarioNombresEventEventos -> diccionarioNombresEventos
+    document.getElementById("v-ev-tipo-texto").innerText = diccionarioNombresEventos[ev.tipo] || "General";
     document.getElementById("v-ev-fecha").innerText = fechaLegible;
     document.getElementById("v-ev-hora").innerText = ev.hora ? `${ev.hora} hrs` : "Todo el día";
     document.getElementById("v-ev-creador").innerText = ev.creadoPor || "Equipo Territorial";
@@ -377,7 +401,6 @@ async function eliminarEventoFirebase(id) {
         // Sacarlo de la memoria local
         eventosGlobales = eventosGlobales.filter(ev => ev.id !== id);
         
-        // CORRECCIÓN: Reparado el nombre de la función para refrescar la nómina del gestor sin errores catastróficos
         renderizarTablaEventos();
         renderizarCalendario();
     } catch (error) {

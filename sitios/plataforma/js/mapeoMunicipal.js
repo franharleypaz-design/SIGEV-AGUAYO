@@ -1,76 +1,56 @@
 // ==============================================================================
-// DICCIONARIO MAESTRO DE MATRICES MUNICIPALES VECINALES
+// SIGEV-AGUAYO - DICCIONARIOS MAESTROS MUNICIPALES Y ESTRUCTURA TERRITORIAL
 // ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. MAPEO DE CATEGORÍAS MUNICIPALES, SUBCATEGORÍAS Y OFICINAS DE DERIVACIÓN
+// ------------------------------------------------------------------------------
+// NOTA PARA FUTURAS ACTUALIZACIONES: 
+// Para agregar una categoría, use la estructura -> "NOMBRE": { oficina: "X", subcategorias: ["Y"] }
 export const MAPEO_MUNICIPAL = {
-    "Ayuda Social": {
-        oficina: "DIDECO",
-        subcategorias: ["Caja mercadería", "Apoyo económico", "Medicamentos", "Pago cuentas básicas", "Subsidios", "Emergencia habitacional", "Apoyo adulto mayor", "Apoyo discapacidad"]
+    "AYUDA SOCIAL": {
+        oficina: "DIDESO",
+        subcategorias: ["Giftcard", "Apoyo económico", "Medicamentos", "Pago cuentas básicas", "Subsidios Económicos"]
     },
-    "Alumbrado Público": {
-        oficina: "Dirección de Operaciones / Alumbrado Público",
-        subcategorias: ["Poste apagado", "Luz parpadeando", "Cable expuesto", "Poste dañado", "Mantención luminarias", "Sector oscuro inseguro"]
+    "ALUMBRADO": {
+        oficina: "OBRAS",
+        subcategorias: ["Robo de Cable", "Solicitud Punto Lumínico", "Solicitud de Despeje Cono Lumínico", "Mantención de Luminarias"]
     },
-    "Aseo y Basura": {
-        oficina: "Dirección de Medio Ambiente y Aseo",
-        subcategorias: ["Basura acumulada", "Microbasural", "Retiro escombros", "Retiro ramas", "Contenedor dañado", "Punto sucio"]
+    "ASEO Y BASURA": {
+        oficina: "DIMAO",
+        subcategorias: ["Solicitud Fumigación", "Basura acumulada", "Microbasural", "Retiro escombros"]
     },
-    "Áreas Verdes": {
-        oficina: "Departamento de Áreas Verdes",
-        subcategorias: ["Poda árboles", "Árbol peligroso", "Mantención plaza", "Riego", "Pasto largo", "Juegos dañados"]
+    "AREAS VERDES": {
+        oficina: "DIMAO",
+        subcategorias: ["Reparación/Traslado de Juegos Dañados", "Poda árboles", "Árbol peligroso", "Mantención plaza"]
     },
-    "Seguridad": {
-        oficina: "Seguridad Ciudadana",
+    "SEGURIDAD": {
+        oficina: "SEGURIDAD MUNICIPAL",
         subcategorias: ["Ruidos molestos", "Consumo drogas", "Peleas", "Vehículos abandonados", "Patrullaje", "Cámaras seguridad", "Alarmas comunitarias"]
     },
-    "Mascotas y Veterinaria": {
-        oficina: "Departamento de Tenencia Responsable",
-        subcategorias: ["Perro abandonado", "Esterilización", "Vacunación", "Ataque animal", "Rescate animal", "Operativo veterinario"]
+    "MASCOTAS": {
+        oficina: "DIMAO",
+        subcategorias: ["Esterilización", "Vacunación", "Operativo veterinario"]
     },
-    "Infraestructura Vial": {
-        oficina: "SECPLA / Dirección de Obras",
-        subcategorias: ["Baches", "Veredas rotas", "Señalética", "Semáforos", "Demarcación vial", "Accesibilidad"]
+    "TRÁNSITO Y ESTRUCTURA VIAL": {
+        oficina: "TRÁNSITO",
+        subcategorias: ["Señalética y Demarcación Vial", "Alumbrado Paradero", "Baches", "Veredas rotas", "Semáforos", "Accesibilidad"]
     },
-    "Vivienda": {
-        oficina: "Oficina de Vivienda",
-        subcategorias: ["Subsidio habitacional", "Mejoramiento vivienda", "Hacinamiento", "Emergencia habitacional", "Comité vivienda"]
+    "TRAMITES MUNICIPALES SIN DERIVACION": {
+        oficina: "OFICINA DEL CONCEJAL",
+        subcategorias: ["Orientación municipal", "Certificados", "Permisos", "Patentes", "Derivaciones"]
     },
-    "Trámites Municipales": {
-        oficina: "OIRS / Atención Ciudadana",
-        subcategorias: ["Patentes", "Permisos", "Certificados", "Orientación municipal", "Derivaciones"]
-    },
-    "Adulto Mayor": {
-        oficina: "Oficina Adulto Mayor",
-        subcategorias: ["Ayuda social", "Talleres", "Visitas", "Apoyo salud", "Beneficios"]
-    },
-    "Discapacidad": {
-        oficina: "Oficina de Inclusión",
-        subcategorias: ["Ayudas técnicas", "Credencial discapacidad", "Inclusión laboral", "Accesibilidad"]
-    },
-    "Educación": {
-        oficina: "DAEM / Educación Municipal",
-        subcategorias: ["Becas", "Transporte escolar", "Problemas colegio", "Matrículas", "Apoyo estudiantes"]
-    },
-    "Salud": {
-        oficina: "Corporación de Salud / CESFAM",
-        subcategorias: ["Horas médicas", "Medicamentos", "Reclamos salud", "Derivación", "Salud mental"]
-    },
-    "Niñez y Familia": {
-        oficina: "Oficina de la Niñez",
-        subcategorias: ["Vulneración derechos", "Apoyo familiar", "Mediación", "Actividades niños"]
-    },
-    "Operativos Territoriales": {
-        oficina: "Equipo Territorial Concejal",
-        subcategorias: ["Operativo limpieza", "Operativo veterinario", "Plaza activa", "Gobierno en terreno", "Feria servicios"]
-    },
-    "OIRS / Participación Ciudadana": {
-        oficina: "OIRS Municipal",
-        subcategorias: ["Reclamo", "Sugerencia", "Felicitación", "Consulta", "Denuncia"]
+    "OPERATIVO TERRITORIAL": {
+        oficina: "OPERATIVOS",
+        subcategorias: ["Oftalmológico", "Salud", "Podología"]
     }
 };
 
-// ==============================================================================
-// DICCIONARIO MAESTRO DE INTELIGENCIA TERRITORIAL (LA CISTERNA)
-// ==============================================================================
+// ------------------------------------------------------------------------------
+// 2. MATRIZ TERRITORIAL DE UNIDADES VECINALES Y ASOCIACIÓN DE JUNTAS DE VECINOS
+// ------------------------------------------------------------------------------
+// NOTA PARA FUTURAS ACTUALIZACIONES:
+// Asegúrese de que las sub-UV agregadas existan como llaves dentro del objeto 'juntas'.
 export const MAPEO_TERRITORIAL = {
     "Sector Territorial 1": {
         uvs: ["1-A", "1-B", "1-C", "No Sabe / Sin Información"],

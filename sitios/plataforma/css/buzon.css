@@ -191,3 +191,43 @@
         padding-bottom: 6px;
     }
 }
+/* 🌟 CORRECCIÓN DE SCROLL DOBLE EN PANTALLA PRINCIPAL */
+html, body {
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+
+.app-container {
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+.main-content {
+    height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.triage-panel-container {
+    display: flex;
+    gap: 0;
+    align-items: stretch; /* Asegura que ambas columnas tengan la misma altura si se puede */
+    height: calc(100vh - 190px); /* Restar altura del header y KPI */
+}
+
+.triage-column.left {
+    overflow-y: auto;
+    padding-right: 16px;
+}
+
+.triage-column.right {
+    overflow-y: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.dashboard-body {
+    height: calc(100vh - 60px); /* Ajuste dinámico según el header global */
+    display: flex;
+    flex-direction: column;
+}

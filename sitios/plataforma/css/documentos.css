@@ -11,6 +11,56 @@
     display: block; 
 }
 
+/* --- BARRA DE FILTRO Y BÚSQUEDA (ALTA VISIBILIDAD) --- */
+#doc-search-bar-section {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    padding: 16px 20px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+    display: block !important;
+}
+
+/* Asegurar visibilidad del texto de la etiqueta superior */
+#search-bar-label {
+    display: block !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    color: var(--text-light) !important;
+    margin-bottom: 6px !important;
+}
+
+/* Selector para el input de búsqueda */
+#filter-doc-busqueda {
+    background-color: var(--bg-workspace) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    box-sizing: border-box !important;
+    transition: all 0.2s ease-in-out !important;
+    display: block !important;
+}
+
+/* Efecto focus interactivo azul corporativo */
+#filter-doc-busqueda:focus {
+    border-color: #2563eb !important;
+    background-color: var(--card-bg) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+    outline: none !important;
+}
+
+/* Contraste adaptativo para la sugerencia tipográfica interna */
+#filter-doc-busqueda::placeholder {
+    color: var(--text-light) !important;
+    opacity: 0.75 !important;
+}
+
 /* --- REJILLA DE CARPETAS --- */
 .folder-grid-canvas {
     display: grid;
@@ -20,7 +70,6 @@
 }
 
 .neighbor-folder-card {
-    /* CORREGIDO: Adaptación a Modo Claro y Oscuro mediante variables */
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -37,14 +86,14 @@
 .neighbor-folder-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 25px rgba(11, 67, 140, 0.08);
-    border-color: #2563eb; /* Efecto highlight integrado */
+    border-color: #2563eb;
 }
 
 .folder-svg-icon-container {
     width: 64px;
     height: 64px;
     margin-bottom: 12px;
-    color: #f59e0b; /* Color amarillo/naranja por defecto de la carpeta */
+    color: #f59e0b;
     transition: transform 0.2s ease;
 }
 
@@ -55,7 +104,7 @@
 .neighbor-folder-card h4 {
     font-size: 13.5px;
     font-weight: 700;
-    color: var(--text-dark); /* Color dinámico SaaS */
+    color: var(--text-dark);
     margin: 0 0 4px 0;
     width: 100%;
     white-space: nowrap;
@@ -67,7 +116,7 @@
 .neighbor-folder-card p {
     margin: 0 0 8px 0;
     font-size: 11.5px;
-    color: var(--text-light); /* Color dinámico SaaS */
+    color: var(--text-light);
     font-weight: 500;
     transition: color 0.4s ease;
 }
@@ -75,18 +124,18 @@
 .folder-card-badge-id {
     font-size: 10px;
     font-family: monospace;
-    background-color: var(--bg-workspace); /* Adaptación dinámica */
+    background-color: var(--bg-workspace);
     color: var(--text-light);
     padding: 2px 8px;
     border-radius: 12px;
     font-weight: 600;
-    border: 1px solid var(--border-color); /* Sutil contraste para separar el badge */
+    border: 1px solid var(--border-color);
     transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
 }
 
 /* --- ESTILOS DE COMPONENTES DESPLEGABLES (ACCORDION) --- */
 .accordion-item {
-    background-color: var(--card-bg); /* Adaptación dinámica */
+    background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
@@ -96,7 +145,7 @@
 
 .accordion-header {
     padding: 14px 18px;
-    background-color: var(--card-bg); /* Adaptación dinámica */
+    background-color: var(--card-bg);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -109,7 +158,7 @@
 }
 
 .accordion-header:hover {
-    background-color: var(--bg-workspace); /* Efecto hover respetando el modo oscuro/claro */
+    background-color: var(--bg-workspace);
 }
 
 .accordion-arrow {
@@ -126,11 +175,10 @@
 .accordion-content {
     padding: 16px 18px;
     border-top: 1px solid var(--border-color);
-    background-color: var(--bg-workspace); /* Contraste interior del acordeón */
+    background-color: var(--bg-workspace);
     transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 
-/* Fila de hipervínculo limpio URL (Botón interior del acordeón) */
 .folder-download-row-btn {
     display: flex;
     align-items: center;
@@ -151,6 +199,29 @@
     background-color: var(--bg-workspace);
     border-color: #2563eb;
     color: #2563eb;
+}
+
+/* ==========================================================================
+   📱 RESPONSIVIDAD EXCLUSIVA MÓVIL Y BLINDAJE DE VISIBILIDAD DE FILTROS
+   ========================================================================== */
+@media (max-width: 992px) {
+    /* Forzar de manera absoluta la visibilidad del layout interno del filtro */
+    #doc-search-bar-section .filter-layout-row {
+        display: flex !important; /* Anula el 'display: none' heredado de mobile.css */
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    #doc-search-bar-section .filter-control,
+    #doc-search-bar-section .filter-buttons-group {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #doc-search-bar-section button {
+        width: 100% !important;
+        padding: 10px !important;
+    }
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

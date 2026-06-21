@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Territorial - SIGEV Aguayo</title>
+    <title>Mapa Territorial Inteligente - SIGEV</title>
     <link class="tenant-branding" rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/solicitudes.css">
@@ -34,33 +34,128 @@
                     <p style="font-size: 13px; color: var(--text-light); margin-top: 2px;">Análisis geoespacial correlacionado de solicitudes, aportes y distribución demográfica</p>
                 </div>
 
-                <section class="map-layer-dashboard">
-                    <div class="layer-card-checkbox" data-target="vecinos" style="border-left: 4px solid #2563eb;">
-                        <input type="checkbox" id="chk-layer-vecinos" checked>
-                        <div class="layer-card-info">
-                            <span class="layer-title">👥 Padrón de Vecinos</span>
-                            <span class="layer-desc">Ubicación de familias inscritas</span>
-                        </div>
+                <!-- SUB-NAVEGACIÓN POR PESTAÑAS COMBINADA CON ACCIÓN PREMIUM -->
+                <div class="tab-navigation" style="margin-top: 10px; margin-bottom: 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+                    <div style="display: flex;">
+                        <div class="tab-item active" data-vista="mapa">🗺️ Vista Cartográfica</div>
+                        <div class="tab-item" data-vista="info">📊 Fichas de Cobertura</div>
                     </div>
-                    <div class="layer-card-checkbox" data-target="solicitudes" style="border-left: 4px solid #ef4444;">
-                        <input type="checkbox" id="chk-layer-solicitudes" checked>
-                        <div class="layer-card-info">
-                            <span class="layer-title">🔴 Requerimientos / Tickets</span>
-                            <span class="layer-desc">Casos territoriales abiertos</span>
-                        </div>
-                    </div>
-                    <div class="layer-card-checkbox" data-target="donaciones" style="border-left: 4px solid #10b981;">
-                        <input type="checkbox" id="chk-layer-donaciones" checked>
-                        <div class="layer-card-info">
-                            <span class="layer-title">💚 Aportes Sociales</span>
-                            <span class="layer-desc">Ayudas y subvenciones entregadas</span>
-                        </div>
-                    </div>
-                </section>
+                    <!-- 🚀 AJUSTADO: Inicia por defecto con la acción de seleccionar todo -->
+                    <button id="btn-toggle-all-layers" style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; margin-right: 4px; transition: all 0.15s ease;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionar Todo
+                    </button>
+                </div>
 
-                <section class="map-canvas-container-card">
-                    <div id="mapa-canvas"></div>
-                </section>
+                <!-- 🗺️ CONTENEDOR 1: VISTA CARTOGRÁFICA INTERACTIVA -->
+                <div id="pane-mapa-view" class="map-pane-view active">
+                    <!-- Botonera de Capas (REPARADA: Desmarcados por defecto excepto Sectores) -->
+                    <section class="map-layer-dashboard">
+                        <div class="layer-card-checkbox" data-target="vecinos" style="border-left: 4px solid #2563eb;">
+                            <input type="checkbox" id="chk-layer-vecinos">
+                            <div class="layer-card-info">
+                                <span class="layer-title">👥 Padrón de Vecinos</span>
+                                <span class="layer-desc">Familias inscritas</span>
+                            </div>
+                        </div>
+                        <div class="layer-card-checkbox" data-target="presenciales" style="border-left: 4px solid #ef4444;">
+                            <input type="checkbox" id="chk-layer-presenciales">
+                            <div class="layer-card-info">
+                                <span class="layer-title">🏢 Tickets Presenciales</span>
+                                <span class="layer-desc">Casos en terreno</span>
+                            </div>
+                        </div>
+                        <div class="layer-card-checkbox" data-target="buzon" style="border-left: 4px solid #06b6d4;">
+                            <input type="checkbox" id="chk-layer-buzon">
+                            <div class="layer-card-info">
+                                <span class="layer-title">🌐 Buzón Ciudadano</span>
+                                <span class="layer-desc">Ingresos desde web</span>
+                            </div>
+                        </div>
+                        <div class="layer-card-checkbox" data-target="donaciones" style="border-left: 4px solid #10b981;">
+                            <input type="checkbox" id="chk-layer-donaciones">
+                            <div class="layer-card-info">
+                                <span class="layer-title">💚 Aportes Sociales</span>
+                                <span class="layer-desc">Ayudas entregadas</span>
+                            </div>
+                        </div>
+                        <div class="layer-card-checkbox" data-target="hotspots" style="border-left: 4px solid #f59e0b;">
+                            <input type="checkbox" id="chk-layer-hotspots">
+                            <div class="layer-card-info">
+                                <span class="layer-title">🔥 Puntos Críticos</span>
+                                <span class="layer-desc">Alta acumulación</span>
+                            </div>
+                        </div>
+                        <div class="layer-card-checkbox" data-target="sectores" style="border-left: 4px solid #9333ea;">
+                            <!-- 🚀 SECTORES: Única capa marcada inicialmente -->
+                            <input type="checkbox" id="chk-layer-sectores" checked>
+                            <div class="layer-card-info">
+                                <span class="layer-title">🗺️ Sectores</span>
+                                <span class="layer-desc">Límites comunales</span>
+                            </div>
+                        </div>
+                        <div class="layer-card-checkbox" data-target="indices" style="border-left: 4px solid #f43f5e;">
+                            <input type="checkbox" id="chk-layer-indices">
+                            <div class="layer-card-info">
+                                <span class="layer-title">📊 Índices de Cobertura</span>
+                                <span class="layer-desc">Letreros de gestión</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="map-canvas-container-card">
+                        <!-- Panel Lateral: Glosario -->
+                        <div id="panel-info-sectores" style="display: flex;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <h3 style="margin: 0; color: #0b438c; font-size: 15px; font-weight: 800;">Glosario e Índices GIS</h3>
+                                <button id="btn-cerrar-panel-sectores" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
+                            </div>
+                            <p style="font-size: 11px; color: #64748b; margin-top: 0; margin-bottom: 12px; line-height: 1.3;">Simbología cartográfica oficial de la concejalía</p>
+                            
+                            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 4px;">
+                                <h4 style="font-size: 11px; text-transform: uppercase; color: #475569; margin: 0 0 8px 0; font-weight: 800;">🎨 Código de Colores</h4>
+                                <div class="glossary-item"><span class="dot azul"></span> <span>Vecino Registrado</span></div>
+                                <div class="glossary-item"><span class="dot rojo"></span> <span>Ticket Presencial Abierto</span></div>
+                                <div class="glossary-item"><span class="dot celeste"></span> <span>Ingreso Digital Buzón</span></div>
+                                <div class="glossary-item"><span class="dot verde"></span> <span>Aporte Social Otorgado</span></div>
+                                <div class="glossary-item"><span class="dot fucs"></span> <span>Punto de Alerta Crítica</span></div>
+                            </div>
+
+                            <h4 style="font-size: 11px; text-transform: uppercase; color: #475569; margin: 8px 0 6px 0; font-weight: 800;">🏘️ Límites de Cuadrantes</h4>
+                            <div class="sector-info-block" style="border-left: 3px solid #9333ea;">
+                                <strong style="color: #9333ea;">Sector 1 (Noreste)</strong>
+                                <div><b>N:</b> Av. Lo Ovalle | <b>S:</b> Av. El Parrón<br><b>E:</b> Av. San Francisco | <b>O:</b> Gran Avenida</div>
+                            </div>
+                            <div class="sector-info-block" style="border-left: 3px solid #eab308;">
+                                <strong style="color: #eab308;">Sector 2 (Centro-Este)</strong>
+                                <div><b>N:</b> Av. El Parrón | <b>S:</b> Américo Vespucio Sur<br><b>E:</b> Av. San Francisco | <b>O:</b> Gran Avenida</div>
+                            </div>
+                            <div class="sector-info-block" style="border-left: 3px solid #06b6d4;">
+                                <strong style="color: #06b6d4;">Sector 3 (Sureste)</strong>
+                                <div><b>N:</b> Américo Vespucio Sur | <b>S:</b> Av. Lo Espejo<br><b>E:</b> Av. San Francisco | <b>O:</b> Gran Avenida</div>
+                            </div>
+                            <div class="sector-info-block" style="border-left: 3px solid #2563eb;">
+                                <strong style="color: #2563eb;">Sector 4 (Noroeste)</strong>
+                                <div><b>N:</b> Av. Lo Ovalle | <b>S:</b> Av. El Parrón<br><b>E:</b> Gran Avenida | <b>O:</b> Autopista Central</div>
+                            </div>
+                            <div class="sector-info-block" style="border-left: 3px solid #16a34a;">
+                                <strong style="color: #16a34a;">Sector 5 (Centro-Oeste)</strong>
+                                <div><b>N:</b> Av. El Parrón | <b>S:</b> Américo Vespucio Sur<br><b>E:</b> Gran Avenida | <b>O:</b> Autopista Central</div>
+                            </div>
+                            <div class="sector-info-block" style="border-left: 3px solid #ef4444; margin-bottom: 0;">
+                                <strong style="color: #ef4444;">Sector 6 (Suroeste)</strong>
+                                <div><b>N:</b> Américo Vespucio Sur | <b>S:</b> Av. Lo Espejo<br><b>E:</b> Gran Avenida | <b>O:</b> Autopista Central</div>
+                            </div>
+                        </div>
+
+                        <div id="mapa-canvas"></div>
+                    </section>
+                </div>
+
+                <!-- 📊 CONTENEDOR 2: GRID DE FICHAS DE COBERTURA (SIN MAPA) -->
+                <div id="pane-info-view" class="map-pane-view">
+                    <div class="standalone-sectors-grid" id="standalone-cards-injector"></div>
+                </div>
+
             </div>
         </main>
     </div>

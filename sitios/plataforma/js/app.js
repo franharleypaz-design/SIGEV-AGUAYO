@@ -19,10 +19,9 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO PARA EL GUARDIÁN GLOBAL
-// Si estás localmente en localhost o 127.0.0.1 validará el entorno de "paz". En producción leerá la URL.
+// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO CON OVERRIDE DE SESIÓN
 const subdominioDetectado = window.location.hostname.split('.')[0];
-const TARGET_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
+const BASE_TENANT_ID = (subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado;
 
 // --- FUNCIÓN EXCLUSIVA PARA MOSTRAR ALERTAS DE SEGURIDAD PREMIUM ---
 function mostrarAlertaSeguridadYSalir(mensaje) {
@@ -74,9 +73,28 @@ onAuthStateChanged(auth, async (user) => {
                 const estadoCuenta = userData.estado || "Activo";
                 const userTenant = userData.tenantId;
 
-                // FIJADO DE SEGURIDAD: Bloquea accesos cruzados de funcionarios de otros municipios
-                if (userTenant !== TARGET_TENANT_ID) {
-                    mostrarAlertaSeguridadYSalir(`Tu cuenta no pertenece al Workspace territorial de SIGEV-${TARGET_TENANT_ID.toUpperCase()}.`);
+                // 👑 VALIDACIÓN DE PRIVILEGIOS DE SUPER ADMINISTRADOR GLOBAL
+                const esSuperAdminGlobal = (userRole === "SUPER_ADMIN");
+
+                // 🪄 SWAPPER DINÁMICO DE WORKSPACE (EXCLUSIVO PARA CHECA)
+                let workspaceActivo = BASE_TENANT_ID;
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryTenant = urlParams.get('t') || urlParams.get('tenant');
+
+                // Si eres Super Admin y especificas un tenant por URL (?t=aguayo), forzamos el cambio
+                if (esSuperAdminGlobal && queryTenant) {
+                    workspaceActivo = queryTenant.toLowerCase().trim();
+                } else if (esSuperAdminGlobal && sessionStorage.getItem('SIGEV_ACTIVE_TENANT')) {
+                    // Si ya habías entrado a un tenant antes, mantenemos tu sesión en esa pestaña
+                    workspaceActivo = sessionStorage.getItem('SIGEV_ACTIVE_TENANT');
+                }
+
+                // Guardamos en la memoria de la sesión activa el tenant definitivo para que lo lean los otros JS
+                sessionStorage.setItem('SIGEV_ACTIVE_TENANT', workspaceActivo);
+
+                // FIJADO DE SEGURIDAD STANDARD: Bloquea accesos cruzados para usuarios comunes
+                if (!esSuperAdminGlobal && userTenant !== workspaceActivo) {
+                    mostrarAlertaSeguridadYSalir(`Tu cuenta no pertenece al Workspace territorial de SIGEV-${workspaceActivo.toUpperCase()}.`);
                     return;
                 }
 
@@ -86,7 +104,7 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
-                // NUEVO MAPEO: Permite el ingreso a los 3 roles corporativos del ecosistema
+                // NUEVO MAPEO: Permite el ingreso a los roles corporativos del de la plataforma
                 if (userRole === "SUPER_ADMIN" || userRole === "ADMIN" || userRole === "GESTOR_TERRITORIAL" || userRole === "admin" || userRole === "mod") {
                     if (userAvatar && user.photoURL) userAvatar.src = user.photoURL;
                     if (userDisplayName) userDisplayName.innerText = user.displayName;
@@ -95,7 +113,7 @@ onAuthStateChanged(auth, async (user) => {
                     mostrarAlertaSeguridadYSalir("Tu cuenta requiere aprobación del administrador para acceder al Equipo Territorial.");
                 }
             } else {
-                mostrarAlertaSeguridadYSalir(`Tu correo electrónico no figura registrado en el sistema SIGEV-${TARGET_TENANT_ID.toUpperCase()}.`);
+                mostrarAlertaSeguridadYSalir(`Tu correo electrónico no figura registrado en el sistema SIGEV-${workspaceActivo.toUpperCase()}.`);
             }
         } catch (error) {
             console.error("Error en el guardián de acceso:", error);
@@ -108,6 +126,8 @@ onAuthStateChanged(auth, async (user) => {
 
 window.logoutSystem = function() {
     if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+        // Al salir limpiamos el pasaporte de desarrollo
+        sessionStorage.removeItem('SIGEV_ACTIVE_TENANT');
         signOut(auth).then(() => {
             window.location.href = "index.html";
         }).catch((error) => console.error("Error al cerrar sesión:", error));
