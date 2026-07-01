@@ -19,7 +19,8 @@
         import { inyectarEstructuraGlobal } from "./js/layout.js";
         inyectarEstructuraGlobal();
     </script>
-    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/seguridad.js?v=1"></script>
     <script type="module" src="js/configuracion.js?v=16.0" defer></script>
 </head>
 <body>
@@ -44,6 +45,10 @@
                             <li class="config-menu-item active" data-target="pane-general">⚙️ Identidad y Apariencia</li>
                             <li class="config-menu-item" data-target="pane-portal">🌐 Portal Público (Web)</li>
                             <li class="config-menu-item" data-target="pane-territorial">🏘️ Estructura Territorial y Concejo</li>
+                            <li class="config-menu-item" data-target="pane-triage">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px; margin-bottom: 2px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                Enrutamiento y Triage
+                            </li>
                             <li class="config-menu-item" data-target="pane-solicitudes">📨 Solicitudes, Aportes y Documentos</li>
                             <li class="config-menu-item" data-target="pane-dashboard">📊 Dashboard, Capas y Alertas</li>
                             <li class="config-menu-item" data-target="pane-migracion">📥 Migración de Datos (Excel)</li>
@@ -238,10 +243,29 @@
                             </div>
                         </section>
 
+                        <section class="config-pane-view" id="pane-triage">
+                            <div class="section-card" style="margin-top: 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                                    <div>
+                                        <h3 style="margin:0 0 4px 0; font-size:18px; color:#0f172a; font-weight: 800;">Motor de Enrutamiento y Triage</h3>
+                                        <p style="margin:0; font-size:13px; color:#64748b;">Administra las Categorías, Subcategorías y Códigos de Departamento para la generación automática de tickets.</p>
+                                    </div>
+                                    <button type="button" id="btn-add-triage-cat" style="background:#10b981; color:white; border:none; padding:10px 16px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">+ Nueva Categoría</button>
+                                </div>
+                                
+                                <div id="triage-builder-container" style="display: flex; flex-direction: column; gap: 16px;">
+                                    </div>
+                                
+                                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: right;">
+                                    <button class="btn btn-primary btn-save-config-master" style="background-color: #0b438c; font-weight: 700; padding: 12px 24px; font-size: 14px;">Guardar Matriz de Triage</button>
+                                </div>
+                            </div>
+                        </section>
+
                         <section class="config-pane-view" id="pane-solicitudes">
                             <div class="section-card" style="margin-top: 0;">
                                 <h3 class="pane-section-title">Clasificación de Requerimientos y Ayudas Sociales</h3>
-                                <div class="form-group" style="margin-top: 14px;"><label style="font-weight: 700;">Categorías Principales de Solicitudes Vecinales</label><input type="text" id="cfg-solicitudes-cat" value="Luminarias, Seguridad, Áreas Verdes, Basura, Tránsito, Ayuda Social"><span style="font-size:11px; color:var(--text-light); margin-top:4px; display:block;">Separa las categorías utilizando comas jurídicas estándar.</span></div>
+                                <div class="form-group" style="margin-top: 14px;"><label style="font-weight: 700;">Categorías Principales de Solicitudes Vecinales</label><input type="text" id="cfg-solicitudes-cat" value="Luminarias, Seguridad, Áreas Verdes, Basura, Tránsito, Ayuda Social" disabled style="background:#f1f5f9;"><span style="font-size:11px; color:var(--text-light); margin-top:4px; display:block;">*Esta opción ha sido migrada al nuevo panel de Triage Avanzado.</span></div>
                                 <div class="form-group" style="margin-top: 16px;"><label style="font-weight: 700;">Estados Flujo del Ticket</label><input type="text" id="cfg-solicitudes-estados" value="Pendiente, En Gestión, Derivada, Resuelta, Cerrada"></div>
 
                                 <h4 class="pane-section-subtitle" style="margin-top: 24px;">Tipos de Aportes Sociales (Donaciones)</h4>

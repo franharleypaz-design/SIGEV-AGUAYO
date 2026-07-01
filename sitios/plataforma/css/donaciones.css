@@ -1,49 +1,155 @@
-/* ==============================================================================
-   SIGEV-AGUAYO - ESTILOS ESPEJO PARA LA CONSOLA DE DONACIONES TERRITORIALES
-   ============================================================================== */
+.dashboard-body {
+    padding: 24px;
+}
+
+.kpi-dashboard-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-panel-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.filter-layout-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr auto;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.filter-control {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-control label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #475569;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.filter-control input,
+.filter-control select {
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 13.5px;
+    outline: none;
+    transition: 0.2s;
+    background: #ffffff;
+    height: 41px;
+    box-sizing: border-box;
+}
+
+.filter-control select {
+    -webkit-appearance: none;
+    background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpolyline points="6 9 12 15 18 9"%3E%3C/polyline%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    padding-right: 32px;
+}
+
+.filter-buttons-group {
+    display: flex;
+    gap: 12px;
+    height: 41px;
+}
+
+.tab-filtro-donacion {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.tab-filtro-donacion.active {
+    font-weight: 700;
+    color: #0b438c;
+    border-bottom: 2px solid #0b438c;
+}
+
+.tab-filtro-donacion:hover:not(.active) {
+    color: #334155;
+    border-bottom-color: #cbd5e1;
+}
+
+@media (max-width: 1024px) {
+    .kpi-dashboard-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .filter-layout-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .filter-buttons-group {
+        flex-direction: column;
+        height: auto;
+    }
+    .filter-buttons-group button {
+        width: 100%;
+    }
+    .tabs-container {
+        padding-bottom: 4px;
+    }
+}
+
+@media (max-width: 640px) {
+    .kpi-dashboard-row {
+        grid-template-columns: 1fr;
+    }
+    .donaciones-split-layout {
+        flex-direction: column;
+    }
+    #donaciones-detail-sidebar {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+.table-responsive-container {
+    overflow-x: auto;
+    width: 100%;
+    min-width: 100%;
+}
+.donaciones-split-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-top: 20px;
+    width: 100%;
+}
 
 .mini-kpi-card {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
 }
 
 .mini-kpi-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-}
-
-.badge-donacion-tipo {
-    background-color: rgba(59, 130, 246, 0.08);
-    color: var(--primary-blue);
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    display: inline-block;
-    white-space: nowrap;
-}
-
-.donacion-hover-trigger {
-    text-decoration: none;
-    transition: color 0.15s ease;
-}
-
-.donacion-hover-trigger:hover {
-    text-decoration: underline;
-    color: #1d4ed8 !important;
-}
-
-@media (max-width: 1200px) {
-    .kpi-dashboard-row {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-}
-
-@media (max-width: 768px) {
-    .kpi-dashboard-row {
-        grid-template-columns: 1fr !important;
-        gap: 12px !important;
-    }
+    border-color: #0b438c;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }

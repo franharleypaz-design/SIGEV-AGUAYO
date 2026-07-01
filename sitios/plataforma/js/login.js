@@ -55,15 +55,62 @@ if (btnGoogleLogin) {
             if (!userSnap.exists()) {
                 await setDoc(userRef, {
                     uid: user.uid,
+                    nombreCompleto: user.displayName,
                     nombre: user.displayName,
                     email: user.email,
                     photoURL: user.photoURL,
                     fechaRegistro: serverTimestamp(),
                     tenantId: tenantActual,
-                    rol: "pendiente"
+                    rol: "pendiente",
+                    rolVisual: "Inactivo",
+                    estadoCuenta: "Inactivo"
                 });
                 console.log(`¡Nuevo perfil territorial registrado en Cloud Firestore bajo Tenant-${tenantActual}!`);
+                
+                // Si es un usuario nuevo, forzamos un cierre de sesión silencioso y mostramos error,
+                // impidiendo que entre y ensucie el dashboard.
+                await auth.signOut();
+                if (loginError) {
+                    loginError.style.display = 'block';
+                    loginError.innerText = "Tu cuenta no tiene permisos para ingresar. Comunícate con tu administrador.";
+                }
+                
+                btnGoogleLogin.disabled = false;
+                btnGoogleLogin.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.32 14.24c-.24-.72-.38-1.5-.38-2.24s.14-1.52.38-2.24V6.61H1.21C.4 8.22 0 10.04 0 12s.4 3.78 1.21 5.39l4.11-3.15z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.39l4.11 3.15c.94-2.85 3.57-4.96 6.68-4.96z"/>
+                    </svg>
+                    <span>Iniciar sesión con Google</span>
+                `;
+                return; // Bloqueamos que continúe y salte a dashboard.html
             } else {
+                const userData = userSnap.data();
+                const rolSeguro = (userData.rol || "").toUpperCase();
+                const estado = userData.estadoCuenta || userData.estado || "Activo";
+
+                // Verificación estricta de permisos antes de dejarlo pasar
+                if (estado === "Suspendido" || estado === "Inactivo" || rolSeguro === "PENDIENTE" || rolSeguro === "INACTIVO" || (!rolSeguro.includes("ADMIN") && !rolSeguro.includes("GESTOR") && !rolSeguro.includes("SECRETARIA") && !rolSeguro.includes("CONCEJAL") && !rolSeguro.includes("MOD"))) {
+                    await auth.signOut();
+                    if (loginError) {
+                        loginError.style.display = 'block';
+                        loginError.innerText = "Tu cuenta no tiene permisos para ingresar. Comunícate con tu administrador.";
+                    }
+                    btnGoogleLogin.disabled = false;
+                    btnGoogleLogin.innerHTML = `
+                        <svg width="18" height="18" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-8.17z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"/>
+                            <path fill="#FBBC05" d="M5.32 14.24c-.24-.72-.38-1.5-.38-2.24s.14-1.52.38-2.24V6.61H1.21C.4 8.22 0 10.04 0 12s.4 3.78 1.21 5.39l4.11-3.15z"/>
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.39l4.11 3.15c.94-2.85 3.57-4.96 6.68-4.96z"/>
+                        </svg>
+                        <span>Iniciar sesión con Google</span>
+                    `;
+                    return;
+                }
+
                 await setDoc(userRef, {
                     nombre: user.displayName,
                     photoURL: user.photoURL,
@@ -104,6 +151,9 @@ async function cargarBrandingPublico() {
         const docRef = doc(db, "configuracion_tenant", tenantActual);
         const snap = await getDoc(docRef);
 
+        const brandContainer = document.getElementById("public-brand-container");
+        const customTitle = document.getElementById("public-custom-title");
+
         if (snap.exists()) {
             const config = snap.data();
             
@@ -115,9 +165,29 @@ async function cargarBrandingPublico() {
                     `;
                 }
             }
+
+            if (config.sidebarLogoUrl && brandContainer) {
+                const img = new Image();
+                img.src = config.sidebarLogoUrl;
+                img.onload = () => {
+                    brandContainer.innerHTML = `
+                        <div style="background-color: #ffffff; padding: 12px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; margin: 0 auto 20px auto;">
+                            <img src="${config.sidebarLogoUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                    `;
+                };
+            }
+
+            if (config.sidebarTitle && customTitle) {
+                customTitle.innerText = config.sidebarTitle;
+            } else if (customTitle) {
+                customTitle.innerText = "Sistema de Gestión Territorial";
+            }
+        } else {
+            if (customTitle) customTitle.innerText = "Sistema de Gestión Territorial";
         }
-    } catch (error) {
-        console.warn("Buzón de conectividad: Canal offline.", error);
+    } catch (e) {
+        console.error("Error al cargar branding público:", e);
     }
 }
 
@@ -368,3 +438,62 @@ function inicializarFormularioBuzonCiudadano() {
 // Inicialización de procesos
 cargarBrandingPublico();
 inicializarFormularioBuzonCiudadano();
+
+// ============================================================================
+// SISTEMA DE SEGURIDAD: CIERRE DE SESIÓN POR INACTIVIDAD (15 MINUTOS)
+// ============================================================================
+let timeoutInactividad;
+
+function reiniciarTemporizadorInactividad() {
+    clearTimeout(timeoutInactividad);
+    if (auth.currentUser) {
+        timeoutInactividad = setTimeout(() => {
+            console.log("Cerrando sesión por inactividad operativa...");
+            auth.signOut().then(() => {
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Error al cerrar sesión por inactividad:", error);
+            });
+        }, 15 * 60 * 1000); // 15 minutos en milisegundos
+    }
+}
+
+window.onload = reiniciarTemporizadorInactividad;
+document.onmousemove = reiniciarTemporizadorInactividad;
+document.onkeypress = reiniciarTemporizadorInactividad;
+document.ontouchstart = reiniciarTemporizadorInactividad;
+document.onclick = reiniciarTemporizadorInactividad;
+document.onscroll = reiniciarTemporizadorInactividad;
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        reiniciarTemporizadorInactividad();
+    } else {
+        clearTimeout(timeoutInactividad);
+    }
+});
+
+// ============================================================================
+// 🎨 INYECCIÓN DINÁMICA DEL LOGO CORPORATIVO (Logo_Letra.png)
+// ============================================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Buscamos el contenedor del logo y el título en el modal de login
+    const logoZone = document.querySelector(".login-logo-zone");
+    const titleModal = document.querySelector(".login-title-modal");
+    
+    // 2. Reemplazamos el ícono SVG por tu imagen PNG
+    if (logoZone) {
+        // Asegúrate de que la ruta "img/Logo_Letra.png" coincida con tu estructura de carpetas
+        logoZone.innerHTML = `<img src="img/Logo_Letra.png" alt="SIGEV" style="width: 180px; height: auto; object-fit: contain; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">`;
+        
+        // Quitamos cualquier fondo o padding predeterminado que tuviera la zona del ícono antiguo
+        logoZone.style.background = "transparent";
+        logoZone.style.boxShadow = "none";
+        logoZone.style.marginBottom = "8px"; 
+    }
+    
+    // 3. Ocultamos el texto "SIGEV" ya que la imagen de la letra ya lo incluye
+    if (titleModal) {
+        titleModal.style.display = "none";
+    }
+});

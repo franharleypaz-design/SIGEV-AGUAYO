@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SIGEV - Documentación Técnica</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  
+  <style>
+    .app-name-link img {
+      width: 150px; /* Ajusta este tamaño si lo quieres más grande o pequeño */
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">Iniciando motor de documentación SIGEV...</div>
+  
+  <script>
+    window.$docsify = {
+      name: 'SIGEV Docs',
+      logo: 'img/Logo_Letra.png', // Llama a tu logo con letras desde la carpeta img
+      themeColor: '#2C7A33',      // El color verde institucional de SIGEV
+      loadSidebar: true,
+      subMaxLevel: 2,
+      auto2top: true,
+      
+      // Opcional: Agrega una barra de búsqueda nativa
+      search: 'auto',
+      search: {
+        maxAge: 86400000, // Tiempo de caché
+        paths: 'auto',
+        placeholder: 'Buscar en la documentación...',
+        noData: 'No se encontraron resultados',
+        depth: 3
+      }
+    }
+  </script>
+  
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <script src="https://unpkg.com/docsify-plugin-flexible-alerts"></script>
+  <script src="//unpkg.com/mermaid/dist/mermaid.js"></script>
+<script src="//unpkg.com/docsify-mermaid@latest/dist/docsify-mermaid.js"></script>
+<script>mermaid.initialize({ startOnLoad: true });</script>
+</body>
+</html>

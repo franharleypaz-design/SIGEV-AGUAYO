@@ -2,7 +2,7 @@
 // 🔍 MOTOR DE BÚSQUEDA Y SEGUIMIENTO DE TICKETS PARA EL VECINO (V16 SAAS-FADEIN)
 // ============================================================================
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, increment, serverTimestamp, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, increment, serverTimestamp, getDoc, runTransaction, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 console.log("🔵 SIGEV PORTAL.JS CARGADO CORRECTAMENTE V16"); 
 
@@ -40,7 +40,7 @@ function mostrarAlertaPublicaConCodigo(mensaje, codigoSeguimiento) {
         const overlay = document.createElement("div");
         overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 999999; padding: 20px; box-sizing: border-box;";
         overlay.innerHTML = `
-            <div style="background: #ffffff; width: 100%; max-width: 460px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; display: flex; flex-direction: column; font-family: system-ui, -apple-system, sans-serif; animation: alertPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box;">
+            <div style="background: #ffffff; width: 100%; max-width: 460px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; display: flex; flex-direction: column; font-family: inherit; animation: alertPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box;">
                 <div style="padding: 32px 32px 24px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
                     <div style="width: 56px; height: 56px; background: #f0fdf4; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -87,7 +87,7 @@ async function mostrarAlertaError(msg) {
         const overlay = document.createElement("div");
         overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999999; padding: 20px; box-sizing: border-box;";
         overlay.innerHTML = `
-            <div style="background: #ffffff; width: 100%; max-width: 400px; border-radius: 14px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; font-family: system-ui, -apple-system, sans-serif;">
+            <div style="background: #ffffff; width: 100%; max-width: 400px; border-radius: 14px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; font-family: inherit;">
                 <div style="width: 48px; height: 48px; background: #fef2f2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
@@ -245,6 +245,7 @@ if (formBuzonPublico) {
         btnSubmit.innerText = "Procesando solicitud...";
 
         try {
+            // 🚀 ESTÁNDAR MAESTRO: CORRELATIVO MATEMÁTICO DIARIO UNIFICADO
             const hoy = new Date();
             const yy = String(hoy.getFullYear()).slice(-2);
             const mm = String(hoy.getMonth() + 1).padStart(2, '0');
@@ -430,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (badge) { badge.innerText = "RESUELTO"; badge.style.background = "#dcfce7"; badge.style.color = "#166534"; }
                         
                         contenedorDinamico.innerHTML = `
-                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 16px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 16px; font-family: inherit; box-sizing: border-box;">
                                 <strong style="font-size: 11px; text-transform: uppercase; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">ESTADO DE LA SOLICITUD:</strong>
                                 <span style="font-style: normal; font-weight: 600; color: #0f172a; font-size: 13.5px; line-height: 1.6; display: block;">
                                     🎉 Hemos finalizado la gestión de tu solicitud.<br><br>
@@ -442,11 +443,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (badge) { badge.innerText = "EN GESTIÓN"; badge.style.background = "#e0e7ff"; badge.style.color = "#1e40af"; }
                         
                         contenedorDinamico.innerHTML = `
-                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; font-family: inherit; box-sizing: border-box;">
                                 <label style="font-size: 10px; font-weight: 800; color: #1d4ed8; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Estatus de Flujo:</label>
                                 <span style="font-size: 13px; font-weight: 600; color: #1e40af; display: flex; align-items: center; gap: 6px;">📝 Tu requerimiento está siendo atendido</span>
                             </div>
-                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 14px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 14px; font-family: inherit; box-sizing: border-box;">
                                 <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; font-weight: 800; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">ESTADO DE LA SOLICITUD:</strong>
                                 <span style="font-style: italic; font-weight: normal; color: #475569; font-size: 13.5px; line-height: 1.5; display: block;">Tu solicitud ya está siendo gestionada por nuestro equipo. Pronto serás contactado con novedades sobre tu caso.</span>
                             </div>
@@ -455,11 +456,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (badge) { badge.innerText = "EN REVISIÓN"; badge.style.background = "#fef3c7"; badge.style.color = "#92400e"; }
                         
                         contenedorDinamico.innerHTML = `
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-family: inherit; box-sizing: border-box;">
                                 <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Estatus de Flujo:</label>
                                 <span style="font-size: 13px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px;">📋 Tu solicitud está siendo revisada por nuestro equipo.</span>
                             </div>
-                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 14px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 14px; font-family: inherit; box-sizing: border-box;">
                                 <strong style="font-size: 11px; text-transform: uppercase; color: #92400e; font-weight: 800; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">ESTADO DE LA SOLICITUD:</strong>
                                 <span style="font-style: italic; font-weight: normal; color: #475569; font-size: 13.5px; line-height: 1.5; display: block;">Tu solicitud ya fue analizada por nuestro equipo y clasificada correctamente. Estamos a un paso de derivarla al departamento encargado de solucionarlo.</span>
                             </div>
@@ -468,11 +469,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (badge) { badge.innerText = "NUEVO"; badge.style.background = "#fffbeb"; badge.style.color = "#d97706"; }
                         
                         contenedorDinamico.innerHTML = `
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-family: inherit; box-sizing: border-box;">
                                 <label style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Estatus de Flujo:</label>
                                 <span style="font-size: 13px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px;">📋 Tu solicitud está siendo revisada por nuestro equipo.</span>
                             </div>
-                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 14px; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 3px solid #0f172a; border-radius: 6px; padding: 14px; font-family: inherit; box-sizing: border-box;">
                                 <strong style="font-size: 11px; text-transform: uppercase; color: #d97706; font-weight: 800; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">ESTADO DE LA SOLICITUD:</strong>
                                 <span style="font-style: italic; font-weight: normal; color: #475569; font-size: 13.5px; line-height: 1.5; display: block;">¡Hola! Hemos recibido tu solicitud correctamente. Nuestro equipo la revisará muy pronto para canalizarla al área correspondiente.</span>
                             </div>
@@ -507,6 +508,12 @@ document.querySelectorAll('.scroll-link').forEach(anchor => {
 async function inicializarPortalPublicoDinamico() {
     try {
         console.log("Iniciando inyección de portal SaaS para el Tenant:", concejalActivo.tenantId);
+        
+        // 🚀 INYECCIÓN DEL SCRIPT RASTREADOR DE VISITAS URL
+        if (!sessionStorage.getItem("sigev_visita_contada") && !window.location.search.includes('c=')) {
+            sessionStorage.setItem("sigev_visita_contada", "true");
+            updateDoc(doc(db, "metricas_qr", concejalActivo.id), { visitasUrl: increment(1) }).catch(e => console.warn(e));
+        }
         
         const docRef = doc(db, "configuracion_tenant", concejalActivo.tenantId);
         const snap = await getDoc(docRef);

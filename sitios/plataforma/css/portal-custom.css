@@ -164,7 +164,7 @@
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(4px);
     z-index: 999999;
-    display: none; /* Oculto por defecto */
+    display: none; 
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -173,13 +173,11 @@
     transition: opacity 0.3s ease;
 }
 
-/* ESTA CLASE LA INYECTA EL JAVASCRIPT AL HACER CLIC EN EL BOTÓN */
 .modal-overlay.open {
     display: flex !important;
     opacity: 1;
 }
 
-/* Animación de entrada suave para la tarjeta interior */
 .modal-overlay.open .login-card {
     animation: modalFadeInUp 0.3s ease forwards;
 }
@@ -239,12 +237,16 @@
     .responsive-grid-2 {
         grid-template-columns: 1fr; 
     }
+    
+    /* 🚀 MEJORA: Previene que los modales se rompan o desborden en pantallas pequeñas */
     .login-card {
-        padding: 20px 16px !important;
-        width: 92% !important;
+        padding: 20px !important;
+        width: 100% !important;
         max-height: 90vh; 
         overflow-y: auto;
+        box-sizing: border-box;
     }
+    
     .footer-grid {
         display: flex !important;
         flex-direction: column !important;

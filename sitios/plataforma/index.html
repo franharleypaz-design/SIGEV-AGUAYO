@@ -205,10 +205,9 @@
                 display: none !important;
             }
             
-            /* 🚀 ENCUADRE DE IMAGEN PARA CELULAR: Desplaza la imagen a la esquina inferior derecha */
+            /* 🚀 ENCUADRE DE IMAGEN PARA CELULAR */
             .has-dynamic-bg {
-                background-position: 85% 100% !important; /* Desliza a la derecha (85%) y la pega abajo (100%) */
-                /* Degradado más transparente abajo (0.05) para que las líneas de colores luzcan perfectas */
+                background-position: 85% 100% !important; 
                 background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 45%, rgba(255, 255, 255, 0.05) 100%), var(--hero-dynamic-bg) !important;
             }
 
@@ -361,7 +360,7 @@
                     <svg class="feature-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
 
-                <div class="feature-card text-triage-btn" onclick="abrirModalBuzon('iniciativa')" style="cursor: pointer;" title="Abrir formulario de iniciativas">
+                <div class="feature-card text-triage-btn" onclick="abrirModalBuzon('iniciativa')" style="cursor: pointer;" title="Abrir formulario de initiatives">
                     <div class="feature-icon-box card-green-bg">
                         <svg width="20" height="20" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21h6"></path><path d="M12 22v-1"></path><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path></svg>
                     </div>
@@ -406,14 +405,14 @@
                 <div class="responsive-grid-2" style="margin-bottom: 16px;">
                     <div>
                         <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Tu RUN *</label>
-                        <input type="text" id="inp-consulta-rut" placeholder="Ej: 12345678-9" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; box-sizing: border-box;" maxlength="10">
+                        <input type="text" id="inp-consulta-rut" placeholder="Ej: 12345678-9" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; font-family: inherit; box-sizing: border-box;" maxlength="10">
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Código de Solicitud *</label>
-                        <input type="text" id="inp-consulta-codigo" placeholder="Ej: SIG-260611-0004" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; box-sizing: border-box;" maxlength="15">
+                        <input type="text" id="inp-consulta-codigo" placeholder="Ej: SIG-260611-0004" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; font-family: inherit; box-sizing: border-box;" maxlength="15">
                     </div>
                 </div>
-                <button id="btn-ejecutar-consulta" style="width: 100%; padding: 12px; border: none; font-weight: 700; background-color: #0b438c; color: white; border-radius: 6px; cursor: pointer; font-size: 13.5px; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <button id="btn-ejecutar-consulta" style="width: 100%; padding: 12px; border: none; font-weight: 700; background-color: #0b438c; color: white; border-radius: 6px; cursor: pointer; font-size: 13.5px; font-family: inherit; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     Buscar Requerimiento Oficial
                 </button>
             </div>
@@ -471,7 +470,7 @@
     </footer>
 
     <div class="modal-overlay" id="login-modal" style="display: none;">
-        <div class="login-card">
+        <div class="login-card modal-card">
             <button class="close-modal" id="close-login-btn" onclick="cerrarModalG('login-modal')">&times;</button>
             <div class="login-logo-zone">
                 <svg width="75" height="75" viewBox="0 0 24 24" fill="#f5b913" style="filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.15));">
@@ -494,7 +493,7 @@
     </div>
 
     <div class="modal-overlay" id="contact-modal" style="display: none;">
-        <div class="login-card" style="max-width: 400px; padding: 32px 24px; text-align: center; position: relative;">
+        <div class="login-card modal-card" style="max-width: 400px; padding: 32px 24px; text-align: center; position: relative;">
             <button class="close-modal" id="close-contact-btn" style="top: 16px; right: 16px;" onclick="cerrarModalG('contact-modal')">&times;</button>
             <div style="width: 86px; height: 86px; margin: 0 auto 16px auto; border-radius: 50%; overflow: hidden; border: 4px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <img src="" alt="Concejal" style="width: 100%; height: 100%; object-fit: cover;" id="modal-contact-img">
@@ -553,11 +552,11 @@
                 <div class="responsive-grid-2">
                     <div>
                         <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Nombre Completo <span style="color: red;">*</span></label>
-                        <input type="text" id="buzon-nombre" placeholder="Ej. Juan Pérez" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required>
+                        <input type="text" id="buzon-nombre" placeholder="Ej. Juan Pérez" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit;" required>
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">RUT <span style="color: red;">*</span></label>
-                        <input type="text" id="buzon-rut" placeholder="12345678-9" maxlength="10" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required oninput="this.value = this.value.replace(/[^0-9kK-]/g, '')">
+                        <input type="text" id="buzon-rut" placeholder="12345678-9" maxlength="10" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit;" required oninput="this.value = this.value.replace(/[^0-9kK-]/g, '')">
                     </div>
                 </div>
 
@@ -565,26 +564,26 @@
                     <div>
                         <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Teléfono Móvil <span style="color: red;">*</span></label>
                         <div style="display: flex; align-items: stretch; gap: 8px;">
-                            <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; display: flex; align-items: center; font-weight: 700; color: #475569; white-space: nowrap; flex-shrink: 0;">
+                            <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; display: flex; align-items: center; font-weight: 700; color: #475569; white-space: nowrap; flex-shrink: 0; font-family: inherit;">
                                 +56 9
                             </div>
-                            <input type="tel" id="buzon-telefono" placeholder="12345678" required maxlength="8" pattern="[0-9]{8}" style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <input type="tel" id="buzon-telefono" placeholder="12345678" required maxlength="8" pattern="[0-9]{8}" style="flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit;" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Correo Electrónico</label>
-                        <input type="email" id="buzon-correo" placeholder="ejemplo@correo.com" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+                        <input type="email" id="buzon-correo" placeholder="ejemplo@correo.com" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit;">
                     </div>
                 </div>
 
                 <div>
                     <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Dirección Residencial</label>
-                    <input type="text" id="buzon-direccion" placeholder="Ej: Av. Central 1234" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+                    <input type="text" id="buzon-direccion" placeholder="Ej: Av. Central 1234" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit;">
                 </div>
 
                 <div>
                     <label id="lbl-buzon-asunto" style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Asunto <span style="color: red;">*</span></label>
-                    <input type="text" id="buzon-asunto" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required>
+                    <input type="text" id="buzon-asunto" style="padding: 8px 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit;" required>
                 </div>
 
                 <div>
@@ -594,7 +593,7 @@
 
                 <div>
                     <label style="font-size: 11px; font-weight: 700; color: #0f172a; display:block; margin-bottom:4px; text-transform: uppercase;">Adjuntar Evidencia <small style="font-weight: 400; color: #64748b; text-transform: none;">(Máx. 5 fotos, hasta 4MB c/u)</small></label>
-                    <input type="file" id="buzon-archivos" accept="image/*" multiple style="width: 100%; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
+                    <input type="file" id="buzon-archivos" accept="image/*" multiple style="width: 100%; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px; font-family: inherit;">
                     <div id="error-archivos" style="color: #ef4444; font-size: 11.5px; font-weight: 600; margin-top: 6px; display: none;"></div>
                 </div>
 
@@ -603,7 +602,7 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button type="submit" id="btn-submit-buzon" style="flex: 1; padding: 12px; border: none; font-weight: 700; background-color: #0b438c; color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                    <button type="submit" id="btn-submit-buzon" style="flex: 1; padding: 12px; border: none; font-weight: 700; background-color: #0b438c; color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-family: inherit;">
                         Enviar Solicitud
                     </button>
                 </div>
@@ -612,7 +611,7 @@
     </div>
 
     <div class="modal-overlay" id="modal-resultado-busqueda" style="display: none;">
-        <div class="login-card" style="max-width: 540px; text-align: left; padding: 28px 24px; border-radius: 12px; position: relative;">
+        <div class="modal-card login-card" style="max-width: 540px; text-align: left; padding: 28px 24px; border-radius: 12px; position: relative; font-family: inherit;">
             
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                 <div>
@@ -630,28 +629,32 @@
             <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
                 <div>
                     <label style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Vecino Solicitante:</label>
-                    <span style="font-size: 14px; font-weight: 600; color: #1e293b;" id="res-solicitante">--</span>
+                    <span style="font-size: 14px; font-weight: 600; color: #1e293b; font-family: inherit;" id="res-solicitante">--</span>
                 </div>
                 <div>
                     <label style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Tipo de Requerimiento:</label>
-                    <span style="font-size: 14px; font-weight: 600; color: #1e293b;" id="res-asunto">--</span>
+                    <span style="font-size: 14px; font-weight: 600; color: #1e293b; font-family: inherit;" id="res-asunto">--</span>
                 </div>
                 <div>
                     <label style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Detalle Ingresado:</label>
-                    <span style="font-size: 13.5px; color: #334155; line-height: 1.4; display: block;" id="res-descripcion">--</span>
+                    <span style="font-size: 13.5px; font-weight: 500; color: #334155; line-height: 1.5; display: block; font-family: inherit;" id="res-descripcion">--</span>
                 </div>
             </div>
 
             <div id="res-contenedor-estado-dinamico" style="display: none; flex-direction: column; gap: 16px; margin-bottom: 24px;">
             </div>
 
-            <button type="button" style="width: 100%; background-color: #0b438c; font-size: 13.5px; padding: 12px; color: white; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onclick="cerrarModalG('modal-resultado-busqueda')">Cerrar Consulta</button>
+            <button type="button" style="width: 100%; background-color: #0b438c; font-size: 13.5px; padding: 12px; color: white; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; font-family: inherit;" onclick="cerrarModalG('modal-resultado-busqueda')">Cerrar Consulta</button>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
+            // 🚨 RESET DE SEGURIDAD (Limpieza obligatoria de llaves de acceso al cargar la interfaz de login)
+            sessionStorage.removeItem("sigev_2fa_autenticado");
+            sessionStorage.removeItem("sigev_2fa_token");
+
             // 1. Formateador inteligente de RUT (Agrega guion automáticamente)
             const inpRutConsulta = document.getElementById('inp-consulta-rut');
             if (inpRutConsulta) {

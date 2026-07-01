@@ -14,7 +14,8 @@
         import { inyectarEstructuraGlobal } from "./js/layout.js";
         inyectarEstructuraGlobal();
     </script>
-    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/seguridad.js?v=1"></script>
     <script type="module" src="js/concejos.js" defer></script>
 
     <style>
@@ -64,11 +65,10 @@
 
                 <section class="concejo-panel-content active" id="panel-sesiones">
                     <div id="lista-sesiones-canvas" class="sessions-grid-layout">
-                        </div>
+                    </div>
                 </section>
 
                 <section class="concejo-panel-content" id="panel-votaciones">
-                    
                     
                     <div class="kpi-dashboard-grid-concejo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px;">
                         <div class="kpi-mini-card total-votes" onclick="window.aplicarFiltroKPI('Todos', this)" style="cursor: pointer; transition: all 0.2s; opacity: 1; transform: scale(1.02); border: 1px solid #0b438c;" title="Ver todas las votaciones">
@@ -118,7 +118,7 @@
                     <div class="section-card" style="padding: 0; overflow: hidden; margin-top: 20px;">
                         <div class="table-responsive-container">
                             <table class="custom-data-table" id="tabla-global-votaciones">
-                                                                <thead>
+                                <thead>
                                     <tr>
                                         <th>Fecha / Sesión</th>
                                         <th>Tema Tratado y Votado</th>
@@ -130,7 +130,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    </tbody>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -182,7 +182,10 @@
                             </div>
                         </div>
 
-                        <div class="form-group" style="margin-top: 12px;"><label>Resumen Ciudadano Ejecutivo (Cuadro informativo público para vecinos)</label><textarea id="s-resumen" rows="3" placeholder="Ej: Durante esta sesión se aprobó la adquisición de luminarias LED para distintos sectores de la comuna..."></textarea></div>
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label>Resumen Ciudadano Ejecutivo (Cuadro informativo público para vecinos)</label>
+                            <textarea id="s-resumen" rows="3" placeholder="Ej: Durante esta sesión se aprobó la adquisición de luminarias LED para distintos sectores de la comuna..."></textarea>
+                        </div>
                     </div>
 
                     <div>
@@ -192,7 +195,7 @@
                         </div>
                         
                         <div id="votaciones-dinamicas-list" class="votes-stack-container">
-                            </div>
+                        </div>
                     </div>
 
                 </form>
@@ -206,9 +209,9 @@
     </div>
 
 
-    <!-- 👑 MODAL: EXPEDIENTE DE CONCEJO (VISTA DETALLE LECTURA) -->
     <div id="modal-expediente-sesion" class="profile-modal-overlay" style="display: none; z-index: 2000;">
         <div class="profile-modal-card" style="max-width: 850px; width: 95%;">
+            
             <div class="profile-modal-header" style="background-color: #0f172a; padding: 20px 32px; border-bottom: 3px solid #3b82f6;">
                 <div class="profile-header-info" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div>
@@ -219,7 +222,7 @@
                         <h3 style="font-size: 22px; color: #fff; font-weight: 800; margin: 0;">Sesión de Concejo Municipal <span id="exp-num-sesion">#124</span></h3>
                     </div>
                     
-                                        <div style="text-align: right; display: flex; align-items: center; gap: 16px;">
+                    <div style="text-align: right; display: flex; align-items: center; gap: 16px;">
                         <div style="text-align: right; margin-right: 12px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px;">
                             <p style="color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; margin: 0 0 2px 0;">Fecha Celebración</p>
                             <p id="exp-fecha-sesion" style="color: #fff; font-size: 15px; font-weight: 700; margin: 0;"></p>
@@ -236,7 +239,7 @@
             </div>
             
             <div class="profile-modal-body" style="padding: 32px; background: #f8fafc; max-height: 600px; overflow-y: auto;">
-                <!-- Tarjeta Resumen y Asistencia -->
+                
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
                         <div>
@@ -250,18 +253,12 @@
                             </div>
                             <div>
                                 <h4 style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 800; margin-bottom: 4px;">Acta Original</h4>
-                                <div id="exp-pdf-container"></div>
-<!-- Contenedor para la previsualización del PDF incrustado -->
-<div id="exp-pdf-viewer" style="display: none; margin-top: 16px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; height: 500px; width: 100%;">
-    <iframe id="exp-pdf-iframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
-</div>
-
+                                <div id="exp-pdf-container" style="margin-top: 8px;"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tabla de Temas y Votaciones -->
                 <div>
                     <h4 style="font-size: 14px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                         <span style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 12px;">2</span> 
@@ -279,14 +276,14 @@
                                 </tr>
                             </thead>
                             <tbody id="exp-lista-votaciones">
-                                <!-- Llenado por JS -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
+
             </div>
             
-                        <div style="padding: 20px 32px; background: white; border-top: 1px solid #e2e8f0; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; display: flex; justify-content: flex-end; align-items: center;">
+            <div style="padding: 20px 32px; background: white; border-top: 1px solid #e2e8f0; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; display: flex; justify-content: flex-end; align-items: center;">
                 <button onclick="window.cerrarModalG('modal-expediente-sesion')" class="btn btn-secondary" style="font-weight: 700; color: #475569; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 24px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 13px;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='#f8fafc'; this.style.color='#475569'; this.style.borderColor='#cbd5e1';">
                     Cerrar Vista
                 </button>
@@ -296,9 +293,9 @@
 
 
     
-    <!-- 👑 MODAL: VISTA Y EDICIÓN DE UN SOLO VOTO -->
-    <div id="modal-voto-single" class="profile-modal-overlay" style="display: none; z-index: 2000;">
-        <div class="profile-modal-card" style="max-width: 600px; width: 95%; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+    <div id="modal-voto-single" class="profile-modal-overlay" style="display: none; z-index: 2500;">
+        <div class="profile-modal-card" style="max-width: 600px; width: 95%; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
+            
             <div class="profile-modal-header" style="background-color: #0f172a; padding: 20px 32px; border-bottom: 3px solid #3b82f6;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                     <div>
@@ -318,9 +315,8 @@
                 </div>
             </div>
             
-            <div style="padding: 24px 32px; background: #f8fafc; max-height: 600px; overflow-y: auto;">
+            <div class="profile-modal-body" style="padding: 24px 32px; background: #f8fafc; overflow-y: auto; flex-grow: 1;">
                 
-                <!-- Info de Sesión Read-Only -->
                 <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                     <div>
                         <span style="display: block; font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">Contexto de la Votación</span>
@@ -329,10 +325,9 @@
                             <span style="font-size: 12px; color: #475569; background: #f1f5f9; padding: 4px 8px; border-radius: 4px;">📅 <span id="mv-fecha-sesion">00/00/0000</span></span>
                         </div>
                     </div>
-                    <button onclick="window.irAExpedienteDesdeVoto()" style="background: white; border: 1px solid #cbd5e1; color: #475569; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer;">Ver Expediente Completo</button>
+                    <button onclick="window.irAExpedienteDesdeVoto()" style="background: white; border: 1px solid #cbd5e1; color: #475569; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">Ver Expediente Completo</button>
                 </div>
 
-                <!-- Formulario del Voto -->
                 <form id="form-voto-unico" onsubmit="event.preventDefault(); window.guardarEdicionVotoUnico();" style="display: flex; flex-direction: column; gap: 20px;">
                     
                     <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -364,98 +359,29 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Mi Voto Emitido</label>
-                        <select id="mv-input-aguayo" class="modo-vista-lectura" disabled style="font-size: 16px; font-weight: 800; border-color: transparent; background: transparent; padding: 8px 0; width: 100%; outline: none; border-radius: 6px;">
-                            <option value="A Favor" style="color:#10b981;">A Favor</option>
-                            <option value="En Contra" style="color:#ef4444;">En Contra</option>
-                            <option value="Abstención" style="color:#f59e0b;">Abstención</option>
-                            <option value="Ausente" style="color:#64748b;">Ausente en Sala</option>
-                        </select>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Argumentación / Nota Ciudadana</label>
-                        <textarea id="mv-input-comentario" class="modo-vista-lectura" readonly rows="3" style="font-size: 13px; font-weight: 500; color: #334155; border-color: transparent; background: transparent; padding: 8px 0; width: 100%; box-sizing: border-box; resize: vertical; outline: none; border-radius: 6px;"></textarea>
-                    </div>
-                    
-                    <div id="mv-acciones-guardar" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: right;">
-                        <button type="button" onclick="window.cancelarEdicionVotoUnico()" style="background: white; border: 1px solid #cbd5e1; color: #475569; font-weight: 700; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-right: 8px;">Cancelar</button>
-                        <button type="submit" style="background: #0b438c; border: none; color: white; font-weight: 700; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Guardar Cambios del Voto</button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-    </div>
-
-            </div>
-            
-            <div class="profile-modal-body" style="padding: 24px 32px; background: #f8fafc; max-height: 600px; overflow-y: auto;">
-                
-                <!-- Info de Sesión Read-Only -->
-                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="display: block; font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase;">Contexto de la Votación</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Sesión Nº <span id="mv-num-sesion">0</span></span>
-                        <span style="font-size: 12px; color: #475569; margin-left: 8px;">📅 <span id="mv-fecha-sesion">00/00/0000</span></span>
-                    </div>
-                    <button onclick="window.irAExpedienteDesdeVoto()" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;">Ver Expediente Completo</button>
-                </div>
-
-                <!-- Formulario del Voto -->
-                <form id="form-voto-unico" onsubmit="event.preventDefault(); window.guardarEdicionVotoUnico();">
-                    <div class="form-row-grid" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
                         
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Tema / Proyecto Votado</label>
-                            <input type="text" id="mv-input-tema" class="modo-vista-lectura" readonly required style="font-size: 14px; font-weight: 600; color: #0f172a; border-color: transparent; background: transparent; padding-left: 0; width: 100%;">
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                            <div class="form-group" style="margin: 0;">
-                                <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Categoría</label>
-                                <select id="mv-input-categoria" class="modo-vista-lectura" disabled style="appearance: none; font-size: 13px; font-weight: 600; color: #0ea5e9; border-color: transparent; background: transparent; padding-left: 0; width: 100%;">
-                                    <option value="Todos">General</option>
-                                    <option value="Seguridad">Seguridad Comunal</option>
-                                    <option value="Educación">Educación</option>
-                                    <option value="Salud">Salud</option>
-                                    <option value="Áreas Verdes">Áreas Verdes y Ornato</option>
-                                    <option value="Tránsito">Tránsito y Transporte</option>
-                                    <option value="Presupuesto">Presupuesto y Finanzas</option>
-                                    <option value="Patentes">Patentes de Alcoholes/Comerciales</option>
-                                    <option value="Urbanismo">Urbanismo y Obras públicas</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Resultado Concejo</label>
-                                <select id="mv-input-resultado" class="modo-vista-lectura" disabled style="appearance: none; font-size: 13px; font-weight: 700; border-color: transparent; background: transparent; padding-left: 0; width: 100%;">
-                                    <option value="Aprobado">✅ Aprobado</option>
-                                    <option value="Rechazado">❌ Rechazado</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Mi Voto Emitido</label>
-                            <select id="mv-input-aguayo" class="modo-vista-lectura" disabled style="appearance: none; font-size: 16px; font-weight: 800; border-color: transparent; background: transparent; padding-left: 0; width: 100%;">
-                                <option value="A Favor" style="color:#10b981;">A Favor</option>
-                                <option value="En Contra" style="color:#ef4444;">En Contra</option>
-                                <option value="Abstención" style="color:#f59e0b;">Abstención</option>
-                                <option value="Ausente" style="color:#64748b;">Ausente en Sala</option>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Mi Voto Emitido</label>
+                            <select id="mv-input-aguayo" class="modo-vista-lectura" disabled style="width: 100%; font-size: 14px; font-weight: 700; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 8px 0; color: #0f172a; outline: none; transition: 0.2s;">
+                                <option value="Pendiente" style="color:#64748b;">Pendiente de Votar</option>
+                                <option value="A Favor" style="color:#16a34a;">🟢 A Favor</option>
+                                <option value="En Contra" style="color:#ef4444;">🔴 En Contra</option>
+                                <option value="Abstención" style="color:#f59e0b;">🟡 Abstención</option>
+                                <option value="Ausente" style="color:#64748b;">⚫ Ausente en Sala</option>
                             </select>
                         </div>
 
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Argumentación / Nota</label>
-                            <textarea id="mv-input-comentario" class="modo-vista-lectura" readonly rows="3" style="font-size: 13px; font-weight: 500; color: #334155; border-color: transparent; background: transparent; padding-left: 0; resize: none; width: 100%;"></textarea>
+                        <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed #cbd5e1; padding-top: 16px;">
+                            <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Argumentación / Nota Ciudadana</label>
+                            <textarea id="mv-input-comentario" class="modo-vista-lectura" readonly rows="3" placeholder="Sin comentarios registrados..." style="width: 100%; font-size: 13.5px; font-weight: 500; color: #334155; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 8px 0; resize: vertical; outline: none; line-height: 1.5; font-family: inherit; transition: 0.2s;"></textarea>
                         </div>
 
                     </div>
                     
-                    <div id="mv-acciones-guardar" style="display: none; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: right;">
-                        <button type="button" onclick="window.cancelarEdicionVotoUnico()" class="btn btn-secondary" style="margin-right: 8px;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="background-color: #0b438c;">Guardar Cambios del Voto</button>
+                    <div id="mv-acciones-guardar" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: right;">
+                        <button type="button" onclick="window.cancelarEdicionVotoUnico()" style="background: white; border: 1px solid #cbd5e1; color: #475569; font-weight: 700; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-right: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'">Cancelar</button>
+                        <button type="submit" style="background: #0b438c; border: none; color: white; font-weight: 700; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#1e3a8a'">Guardar Cambios del Voto</button>
                     </div>
                 </form>
 

@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Donaciones - SIGEV Aguayo</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
     <link class="tenant-branding" rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/solicitudes.css">
@@ -14,8 +18,12 @@
         import { inyectarEstructuraGlobal } from "./js/layout.js";
         inyectarEstructuraGlobal();
     </script>
-    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/seguridad.js?v=1"></script>
     <script type="module" src="js/donaciones.js" defer></script>
+<style>
+        .tab-filtro-donacion:hover:not(.active) { color: #334155 !important; border-bottom-color: #cbd5e1 !important; }
+    </style>
 </head>
 <body>
 
@@ -31,9 +39,8 @@
                     <p style="font-size: 13px; color: var(--text-light); margin-top: 2px;">Tracking geográfico, stock y asignación de aportes sociales a familias de la comuna</p>
                 </div>
                 
-                <div class="kpi-dashboard-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 20px;">
-                    
-                    <div class="mini-kpi-card" data-filter="Todos" style="display: flex; align-items: center; gap: 16px; background: #fff; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s;">
+                <div class="kpi-dashboard-row">
+                    <div class="mini-kpi-card" data-filter="Todos">
                         <div style="background: rgba(37, 99, 235, 0.06); color: #2563eb; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                         </div>
@@ -44,7 +51,7 @@
                         </div>
                     </div>
 
-                    <div class="mini-kpi-card" data-filter="En revisión" style="display: flex; align-items: center; gap: 16px; background: #fff; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s;">
+                    <div class="mini-kpi-card" data-filter="En revisión">
                         <div style="background: rgba(245, 158, 11, 0.06); color: #d97706; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                         </div>
@@ -55,7 +62,7 @@
                         </div>
                     </div>
 
-                    <div class="mini-kpi-card" data-filter="En gestión" style="display: flex; align-items: center; gap: 16px; background: #fff; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s;">
+                    <div class="mini-kpi-card" data-filter="En gestión">
                         <div style="background: rgba(16, 185, 129, 0.06); color: #10b981; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                         </div>
@@ -66,7 +73,7 @@
                         </div>
                     </div>
 
-                    <div class="mini-kpi-card" data-filter="Finalizada" style="display: flex; align-items: center; gap: 16px; background: #fff; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s;">
+                    <div class="mini-kpi-card" data-filter="Finalizada">
                         <div style="background: rgba(139, 92, 246, 0.06); color: #7c3aed; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </div>
@@ -77,7 +84,7 @@
                         </div>
                     </div>
 
-                    <div class="mini-kpi-card" data-filter="Vencida" style="display: flex; align-items: center; gap: 16px; background: #fff; padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s;">
+                    <div class="mini-kpi-card" data-filter="Vencida">
                         <div style="background: rgba(239, 68, 68, 0.06); color: #dc2626; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                         </div>
@@ -87,65 +94,67 @@
                             <span style="font-size: 11px; color: #64748b; display: block; margin-top: 1px;">Pendientes +7 días</span>
                         </div>
                     </div>
-
                 </div>
 
-                <section class="filter-panel-card" style="margin-top: 20px;">
-                    <div class="filter-mobile-header-row" style="display: none; width: 100%;">
-                        <button id="btn-toggle-filters-mobile" style="width: 100%; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 6px; font-weight: 700; color: #1e293b; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>⚙️ FILTRAR HISTORIAL</span>
-                            <span class="filter-arrow">▼</span>
-                        </button>
-                    </div>
+                <div class="donaciones-split-layout" style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px; width: 100%; box-sizing: border-box;">
+                    <div style="flex: 1.8; min-width: 0; box-sizing: border-box;">
+                        
+                        <div class="tabs-container" style="display: flex; gap: 24px; border-bottom: 1px solid #cbd5e1; margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
+                            <div class="tab-filtro-donacion active" data-estado="Todos">
+                                Todos <span id="tab-count-don-todos" style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 6px;">0</span>
+                            </div>
+                            <div class="tab-filtro-donacion" data-estado="Por Clasificar">
+                                Por Clasificar <span id="tab-count-don-revision" style="background: #fee2e2; color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 6px;">0</span>
+                            </div>
+                            <div class="tab-filtro-donacion" data-estado="Clasificados">
+                                Clasificados <span id="tab-count-don-autorizadas" style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 6px;">0</span>
+                            </div>
+                            <div class="tab-filtro-donacion" data-estado="Derivados">
+                                Derivados <span id="tab-count-don-derivados" style="background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 6px;">0</span>
+                            </div>
+                            <div class="tab-filtro-donacion" data-estado="Por Responder">
+                                Por Responder <span id="tab-count-don-responder" style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 6px;">0</span>
+                            </div>
+                            <div class="tab-filtro-donacion" data-estado="Finalizados">
+                                Finalizados <span id="tab-count-don-finalizados" style="background: #dcfce7; color: #059669; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 6px;">0</span>
+                            </div>
+                        </div>
 
-                    <div class="filter-layout-row">
-                        <div class="filter-control">
-                            <label>Buscar Código</label>
-                            <input type="text" id="filter-donacion-codigo" placeholder="Ej: #VEC4-250526-DON">
-                        </div>
-                        <div class="filter-control">
-                            <label>Tipo de Aporte</label>
-                            <select id="filter-tipo">
-                                <option value="Todos">Todos los aportes</option>
-                                <option value="Canasta de Alimentos">Canasta de Alimentos</option>
-                                <option value="Insumos Médicos / Pañales">Insumos Médicos / Pañales</option>
-                                <option value="Materiales de Construcción">Materiales de Construcción</option>
-                                <option value="Mediagua / Vivienda Emergencia">Mediagua / Vivienda Emergencia</option>
-                                <option value="Silla de Ruedas / Ayuda Técnica">Silla de Ruedas / Ayuda Técnica</option>
-                                <option value="Subvención Económica Directa">Subvención Económica Directa</option>
-                            </select>
-                        </div>
-                        <div class="filter-control">
-                            <label>Fecha Desde</label>
-                            <input type="date" id="filter-fecha-desde">
-                        </div>
-                        <div class="filter-control">
-                            <label>Fecha Hasta</label>
-                            <input type="date" id="filter-fecha-hasta">
-                        </div>
-                        <div class="filter-buttons-group">
-                            <button id="btn-reset-filters" class="btn btn-secondary">Limpiar filtros</button>
-                            <button id="btn-trigger-new-donacion" class="btn btn-primary" style="background-color: #0b438c;">+ Nueva donación</button>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="donaciones-split-layout" style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px; width: 100%;">
-                    
-                    <div style="flex: 1.8; min-width: 0;">
-                        <div class="section-card" style="padding: 0; overflow: hidden; margin-top: 0;">
+                        <section class="filter-panel-card" style="padding: 16px; margin-bottom: 20px; border-radius: 8px; background: #fff; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div class="filter-layout-row">
+                                <div class="filter-control">
+                                    <label style="font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px;">Buscar Código o RUT</label>
+                                    <input type="text" id="filter-donacion-codigo" placeholder="Ej: SIG-260630-1033-DON">
+                                </div>
+                                <div class="filter-control">
+                                    <label style="font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px;">Tipo de Aporte</label>
+                                    <select id="filter-tipo">
+                                        <option value="Todos">Todos los aportes</option>
+                                        <option value="Canasta de Alimentos">Canasta de Alimentos</option>
+                                        <option value="Insumos Médicos / Pañales">Insumos Médicos / Pañales</option>
+                                        <option value="Materiales de Construcción">Materiales de Construcción</option>
+                                        <option value="Mediagua / Vivienda Emergencia">Mediagua / Vivienda Emergencia</option>
+                                        <option value="Silla de Ruedas / Ayuda Técnica">Silla de Ruedas / Ayuda Técnica</option>
+                                        <option value="Subvención Económica Directa">Subvención Económica Directa</option>
+                                    </select>
+                                </div>
+                                <div class="filter-control" style="display: flex; gap: 8px; margin-left: auto;">
+                                    <button id="btn-reset-filters" style="height: 36px; padding: 0 16px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; outline: none;">Limpiar</button>
+                                    <button id="btn-trigger-new-donacion" style="background-color: #0b438c; color: white; height: 36px; padding: 0 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; box-shadow: 0 2px 4px rgba(11, 67, 140, 0.2); outline: none;">+ Registrar Aporte</button>
+                                </div>
+                            </div>
+                        </section>
+<div class="section-card" style="padding: 0; overflow: hidden; margin-top: 0;">
                             <div class="table-responsive-container">
                                 <table class="custom-data-table" id="tabla-global-donaciones">
                                     <thead>
                                         <tr>
-                                            <th style="width: 40px;"><input type="checkbox"></th>
                                             <th>Nº Donación</th>
                                             <th>Fecha</th>
                                             <th>Vecino / Beneficiario</th>
                                             <th>Tipo Aporte</th>
-                                            <th>Detalle / Cantidad</th>
-                                            <th style="text-align: center;">Estado Entrega</th>
-                                            <th>Asignado A</th>
+                                            <th>Detalle / Costo</th>
+                                            <th style="text-align: center;">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -158,21 +167,22 @@
                                 <div style="display: flex; align-items: center; gap: 20px;">
                                     <div class="entries-selector">
                                         <span>Mostrar</span>
-                                        <select>
+                                        <select id="don-limit-entries">
                                             <option value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
                                         </select>
                                     </div>
                                     <div class="pagination-controls-buttons">
-                                        <button class="page-nav-btn">&lt;</button>
-                                        <div style="display: flex; gap: 4px;"><button class="page-nav-btn active">1</button></div>
-                                        <button class="page-nav-btn">&gt;</button>
+                                        <button class="page-nav-btn" id="don-pag-prev">&lt;</button>
+                                        <button class="page-nav-btn" id="don-pag-next">&gt;</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div id="donaciones-detail-sidebar" style="flex: 1; min-width: 340px; position: sticky; top: 20px;">
+                    <div id="donaciones-detail-sidebar" style="flex: 1; min-width: 340px; position: sticky; top: 20px; box-sizing: border-box;">
                         
                         <div id="panel-vacio-donaciones" class="section-card" style="padding: 40px 24px; text-align: center; color: var(--text-light); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; border: 2px dashed var(--border-color); background: rgba(248, 250, 252, 0.5); margin-top: 0;">
                             <div style="background: rgba(59, 130, 246, 0.08); color: #2563eb; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
@@ -183,66 +193,7 @@
                         </div>
 
                         <div id="panel-contenido-donaciones" class="section-card" style="display: none; padding: 24px; min-height: 380px; flex-direction: column; gap: 18px; position: relative; margin-top: 0;">
-                            
-                            <div style="display: flex; gap: 14px; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-                                <div style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                                </div>
-                                <div>
-                                    <h3 id="detail-donacion-tipo" style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-dark);">Ayuda Técnica</h3>
-                                    <p style="margin: 4px 0 0 0; font-size: 11.5px; color: var(--text-light);">Código: <strong id="detail-donacion-codigo" style="font-family: monospace; color:#0f172a;">#DON</strong></p>
-                                </div>
-                                <span id="detail-donacion-estado" style="margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase;">Estado</span>
                             </div>
-
-                            <div>
-                                <h5 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Información del Beneficiario</h5>
-                                <div class="profile-data-grid" style="display: grid; grid-template-columns: 1fr; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                    <div style="font-size: 12.5px;"><span style="color: var(--text-light);">Nombre:</span> <strong id="detail-donacion-vecino" style="color: var(--text-dark);">Cargando...</strong></div>
-                                    <div style="font-size: 12.5px;"><span style="color: var(--text-light);">RUN:</span> <strong id="detail-donacion-rut" style="color: var(--text-dark); font-family: monospace;">-</strong></div>
-                                    <div style="font-size: 12.5px;"><span style="color: var(--text-light);">Asignado A:</span> <strong id="detail-donacion-asignado" style="color: var(--text-dark); font-size: 12px;">-</strong></div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h5 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Especificaciones de Inventario</h5>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div style="background: #fff; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; text-align: center;">
-                                        <span style="font-size: 10.5px; color: var(--text-light); display: block; margin-bottom: 2px;">Cantidad / Item</span>
-                                        <strong id="detail-donacion-cantidad" style="font-size: 14px; color: var(--text-dark);">-</strong>
-                                    </div>
-                                    <div style="background: #fff; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; text-align: center;">
-                                        <span style="font-size: 10.5px; color: var(--text-light); display: block; margin-bottom: 2px;">Costo Fiscal / Social</span>
-                                        <strong id="detail-donacion-costo" style="font-size: 14px; color: #059669;">$0</strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h5 style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Detalle y Notas del Operador</h5>
-                                <div id="detail-donacion-notas" style="font-size: 12.5px; color: var(--text-dark); background: #fff; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; line-height: 1.5; min-height: 60px; white-space: pre-line;">
-                                    No se registran notas aclaratorias.
-                                </div>
-                            </div>
-
-                            <div style="margin-top: auto; padding-top: 10px;">
-                                <h5 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">Acciones de Gestión</h5>
-                                <div style="display: flex; gap: 10px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                    
-                                    <button id="action-donacion-entregar" style="flex: 1; background: #ffffff; color: #0f172a; font-weight: 600; border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;" onmouseover="this.style.borderColor='#cbd5e1'; this.style.background='#f1f5f9';" onmouseout="this.style.borderColor='var(--border-color)'; this.style.background='#ffffff';">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        Actualizar Estado
-                                    </button>
-
-                                    <button id="action-ver-vecino-donacion" style="flex: 1; background: #2563eb; color: #ffffff; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s;" onmouseover="this.style.background='#1d4ed8';" onmouseout="this.style.background='#2563eb';">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                        Ver Ficha Vecino
-                                    </button>
-
-                                </div>
-                            </div>
-
-                        </div>
                     </div>
 
                 </div>
@@ -250,78 +201,6 @@
         </main>
 
         <div id="donacion-hover-card" style="display: none; position: absolute; background: #fff; border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 2000; width: 280px; pointer-events: none;"></div>
-
-        <div id="modal-ingreso-donacion" class="profile-modal-overlay" style="display: none; z-index: 1500;">
-            <div class="profile-modal-card" style="max-width: 580px; width: 90%;">
-                <div class="profile-modal-header" style="background: linear-gradient(135deg, #1e293b, #10b981); padding: 20px 32px;">
-                    <div class="profile-header-info">
-                        <h3 style="font-size: 18px; color: #fff;">Registrar Aporte Social</h3>
-                        <p style="color: rgba(255,255,255,0.8); font-weight: 500;">Anexión de insumos y asignación directa a la bitácora vecinal</p>
-                    </div>
-                    <button id="btn-cerrar-ingreso" class="btn-profile-close" style="top: 16px; right: 16px;">&times;</button>
-                </div>
-                <div class="profile-modal-body" style="padding: 24px 32px; background: #fff;">
-                    <form id="form-donacion">
-                        <div class="form-row-grid" style="margin-bottom: 16px;">
-                            <div class="form-group">
-                                <label style="font-weight:700;">RUT Beneficiario <span class="required">*</span></label>
-                                <input type="text" id="donacion-vecino-rut" placeholder="Ej: 17.443.221-K" style="font-weight:600;">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:600; color:#64748b;">Nombre Beneficiario</label>
-                                <input type="text" id="donacion-vecino-nombre" readonly placeholder="Validando RUT..." style="background-color: #f1f5f9; color: #334155; cursor: not-allowed; font-weight: 700;">
-                            </div>
-                        </div>
-
-                        <div class="form-row-grid" style="margin-bottom: 16px;">
-                            <div class="form-group">
-                                <label style="font-weight:700;">Tipo de Donación <span class="required">*</span></label>
-                                <select id="donacion-tipo" style="font-weight:600;">
-                                    <option value="">Seleccione tipo...</option>
-                                    <option value="Canasta de Alimentos">Canasta de Alimentos</option>
-                                    <option value="Insumos Médicos / Pañales">Insumos Médicos / Pañales</option>
-                                    <option value="Materiales de Construcción">Materiales de Construcción</option>
-                                    <option value="Mediagua / Vivienda Emergencia">Mediagua / Vivienda Emergencia</option>
-                                    <option value="Silla de Ruedas / Ayuda Técnica">Silla de Ruedas / Ayuda Técnica</option>
-                                    <option value="Subvención Económica Directa">Subvención Económica Directa</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:700;">Cantidad / Volumen <span class="required">*</span></label>
-                                <input type="text" id="donacion-cantidad" placeholder="Ej: 2 unidades, 1 silla">
-                            </div>
-                        </div>
-
-                        <div class="form-row-grid" style="margin-bottom: 16px;">
-                            <div class="form-group">
-                                <label style="font-weight:700;">Monto Gasto / Costo Territorial ($) <span class="required">*</span></label>
-                                <input type="number" id="donacion-gasto" placeholder="Ej: 1000000">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-weight:700;">Estado de la Gestión *</label>
-                                <select id="donacion-estado" style="font-weight:700; color:#0b438c;">
-                                    <option value="En revisión" selected>En revisión / Proceso de asignación</option>
-                                    <option value="En gestión">En gestión / Distribución en ruta</option>
-                                    <option value="Finalizada">Finalizada / Entregado ✔</option>
-                                    <option value="Vencida">Vencida / Pendiente crítico</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-row-grid" style="margin-bottom: 0;">
-                            <div class="form-group full-width">
-                                <label style="font-weight:600;">Detalles u Observación del Otorgamiento</label>
-                                <textarea id="donacion-detalle" rows="2" placeholder="Ingresa datos internos de la entrega o ruta del equipo..."></textarea>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div style="padding: 16px 32px; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
-                    <button type="button" id="btn-limpiar-donacion" class="btn btn-secondary">Limpiar</button>
-                    <button type="button" id="btn-guardar-donacion" class="btn btn-primary" style="background-color: #10b981;" disabled>Registrar Aporte</button>
-                </div>
-            </div>
-        </div>
 
     </div>
 </body>

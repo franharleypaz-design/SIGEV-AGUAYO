@@ -66,6 +66,15 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
+// 🛡️ TRADUCTOR UNIVERSAL DE FECHAS (Previene colapsos por fechas antiguas de Excel)
+function parseFirestoreDate(fDate) {
+    if (!fDate) return new Date();
+    if (fDate.toDate) return fDate.toDate();
+    if (fDate.seconds) return new Date(fDate.seconds * 1000);
+    const d = new Date(fDate);
+    return isNaN(d.getTime()) ? new Date() : d;
+}
+
 function inicializarRelojMundial() {
     const clockContainer = document.getElementById("live-clock");
     if (!clockContainer) return;
@@ -74,6 +83,26 @@ function inicializarRelojMundial() {
         clockContainer.innerText = `|   ${ahora.toLocaleDateString('es-CL')}   ${ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
     };
     render(); setInterval(render, 1000);
+}
+
+// 🚀 SPINNER DE CARGA BLOQUEANTE GLOBAL
+function mostrarLoaderBloqueante(mensaje) {
+    const exist = document.getElementById("global-loader-sigev");
+    if (exist) exist.remove();
+    const loader = document.createElement("div");
+    loader.id = "global-loader-sigev";
+    loader.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.8); backdrop-filter:blur(4px); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff;";
+    loader.innerHTML = `
+        <div class="loader-spinner" style="width:50px; height:50px; border:4px solid rgba(255,255,255,0.3); border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px;"></div>
+        <h3 style="margin:0; font-size:16px; font-weight:700;">${mensaje}</h3>
+        <style>@keyframes spin { 100% { transform:rotate(360deg); } }</style>
+    `;
+    document.body.appendChild(loader);
+}
+
+function ocultarLoaderBloqueante() {
+    const loader = document.getElementById("global-loader-sigev");
+    if (loader) loader.remove();
 }
 
 function mostrarAlertaPersonalizada(mensaje, tipo = "success") {
@@ -160,277 +189,528 @@ function mostrarAlertaTicketCreado(nombre, rut, codigo) {
     overlay.querySelector("#btn-alerta-exito-ok").onclick = () => { overlay.remove(); };
 }
 
-async function abrirVisorVecino(id) {
+// ==============================================================================
+// VISOR DE EXPEDIENTE VECINAL (STANDARDIZADO V53)
+// ==============================================================================
+async function abrirVisorVecino(idVecino) {
     try {
-        const docRef = doc(db, "vecinos", id); const docSnap = await getDoc(docRef); if (!docSnap.exists()) return;
-        const data = docSnap.data(); const fotoSrc = data.fotoPerfil || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100";
-        const fNacimientoFormatted = data.fechaNacimiento ? data.fechaNacimiento.split("-").reverse().join("/") : "No registrada";
+        const docRef = doc(db, "vecinos", idVecino);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+            alert("No se encontró la información de este vecino en el padrón.");
+            return;
+        }
+        
+        const data = docSnap.data(); 
+        
+        // 1. Formateo de fecha de nacimiento
+        let fNacimientoFormatted = "No registrada";
+        if (data.fechaNacimiento && data.fechaNacimiento !== "No registrada") {
+            if (data.fechaNacimiento.includes("-")) {
+                fNacimientoFormatted = data.fechaNacimiento.split("-").reverse().join("/");
+            } else {
+                fNacimientoFormatted = data.fechaNacimiento;
+            }
+        }
 
-        const snapSolicitudes = await getDocs(query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("idVecino", "==", id)));
-        let solicitudesLista = []; snapSolicitudes.forEach(sDoc => { solicitudesLista.push({ id: sDoc.id, ...sDoc.data() }); });
-        solicitudesLista.sort((a, b) => (b.fechaCreacion?.seconds || 0) - (a.fechaCreacion?.seconds || 0));
+        // 2. Extraemos el historial de solicitudes de ESTE vecino
+        const qSols = query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("idVecino", "==", idVecino));
+        const snapSolicitudes = await getDocs(qSols);
+        let solicitudesLista = [];
+        snapSolicitudes.forEach(sDoc => { solicitudesLista.push({ id: sDoc.id, ...sDoc.data() }); });
+        
+        // ORDENAMOS DE FORMA SEGURA CON EL TRADUCTOR
+        solicitudesLista.sort((a, b) => {
+            const tA = parseFirestoreDate(a.fechaCreacion).getTime();
+            const tB = parseFirestoreDate(b.fechaCreacion).getTime();
+            return tB - tA;
+        });
 
-        const modalOverlay = document.createElement("div"); 
+        // 3. Extraemos el núcleo familiar si tiene ID Hogar válido
+        let familiares = [];
+        if (data.idHogar && data.idHogar !== "" && !data.idHogar.includes("IND-")) {
+            const qFam = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID), where("idHogar", "==", data.idHogar));
+            const snapFam = await getDocs(qFam);
+            snapFam.forEach(fDoc => { familiares.push({ id: fDoc.id, ...fDoc.data() }); });
+        } else if (data.idHogar) {
+            // Es un hogar individual, se inserta a sí mismo para evitar que salga vacío
+            familiares.push({ id: docRef.id, ...data });
+        }
+
+        const modalOverlay = document.createElement("div");
         modalOverlay.className = "profile-modal-overlay";
-        modalOverlay.style.zIndex = "2500"; 
-
+        modalOverlay.style.zIndex = "4000"; // Z-index alto para quedar sobre el ticket
+        
+        // Render de Solicitudes Históricas
         let solicitudesHTML = "";
         if (solicitudesLista.length > 0) {
             solicitudesLista.forEach(sol => {
-                const fCreacionObj = sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000) : new Date();
-                const d = String(fCreacionObj.getDate()).padStart(2, '0'); const m = String(fCreacionObj.getMonth() + 1).padStart(2, '0'); const a = String(fCreacionObj.getFullYear()).slice(-2);
-                const codigoTicket = sol.codigoInterno || sol.codigo || `${(sol.idVecino || "000").substring(0, 4).toUpperCase()}-${d}${m}${a}-${sol.id.substring(0, 3).toUpperCase()}`;
+                const fCreacionObj = parseFirestoreDate(sol.fechaCreacion);
+                const badgeClass = sol.estado === "Abierta" || sol.estado === "En revisión" ? "open" : "review";
+                const d = String(fCreacionObj.getDate()).padStart(2, '0');
+                const m = String(fCreacionObj.getMonth() + 1).padStart(2, '0');
+                const a = String(fCreacionObj.getFullYear()).slice(-2);
+                const codigoTicket = `${(sol.idVecino || "000").substring(0, 4).toUpperCase()}-${d}${m}${a}-${sol.id.substring(0, 3).toUpperCase()}`;
 
                 solicitudesHTML += `
-                    <div style="padding: 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <div style="font-weight: 700; font-size: 14px; color: #1e3a8a;">#${codigoTicket} - ${sol.motivo}</div>
-                            <span style="font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: bold; background: #f1f5f9; color: #475569;">${sol.estadoGestion || sol.estado}</span>
-                        </div>
-                        <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Derivada a: <b style="color: #334155;">${sol.oficinaDerivada || 'No asignada'}</b> el ${fCreacionObj.toLocaleDateString('es-CL')}</div>
-                        <p style="color: #0f172a; margin: 0; font-size: 13px; line-height: 1.5;">${sol.descripcion || 'Sin descripción detallada.'}</p>
+                    <div class="profile-solicitud-box" style="margin-top: 0; margin-bottom: 16px;">
+                        <h4><span>#${codigoTicket} - ${sol.motivo} (${sol.subcategoria || 'Gral'})</span><span class="badge ${badgeClass}">${sol.estado}</span></h4>
+                        <p style="font-size: 11px; color: var(--text-light)">Derivada a: <b>${sol.oficinaDerivada || 'No asignada'}</b> el ${fCreacionObj.toLocaleDateString('es-CL')}</p>
+                        <p style="color: var(--text-dark); margin-top: 6px; line-height: 1.4;">${sol.descripcion}</p>
                     </div>`;
             });
-        } else { 
-            solicitudesHTML = `<div style="text-align: center; padding: 40px; color: #94a3b8; font-size: 13px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">Este vecino no registra requerimientos territoriales históricos.</div>`; 
+        } else {
+            solicitudesHTML = `<div class="no-data-placeholder"><p>Este vecino no registra requerimientos territoriales históricos.</p></div>`;
         }
 
-        const sectorVisorLabel = ETIQUETAS_SECTORES[data.sectorTerritorial] || data.sectorTerritorial || "Sin Información";
-
-        let docHTML = "";
-        if (data.urlDocumento) {
-            docHTML = `
-                <div style="padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <span style="font-size: 14px; font-weight: 600; color: #0f172a;">${data.nombreDocumento || "Documento de Respaldo"}</span>
-                    <a href="${data.urlDocumento}" target="_blank" style="color: #2563eb; display: flex; align-items: center; font-weight: 600; font-size: 13px; text-decoration: none;" title="Ver documento">
-                        Ver archivo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-left: 4px;"><path d="M1 12s4-8 11-8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    </a>
-                </div>`;
+        // Render de Núcleo Familiar
+        let nucleoHTML = `<div style="margin-bottom:14px; background:#f5f3ff; padding:12px; border-radius:6px; font-size:12.5px; border:1px solid #e9d5ff; color:#6b21a8;">🏠 <b>Código Único Familiar (idHogar):</b> <span style="font-family:monospace; font-weight:700;">${data.idHogar || 'S/I'}</span></div>`;
+        if (familiares.length > 0) {
+            familiares.forEach(f => {
+                const badgeJefe = f.jefeHogar ? `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-size:10.5px; font-weight:700;">Jefe(a) de Hogar</span>` : '';
+                nucleoHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:8px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+                        <div><strong style="font-size:13px; color:#0f172a;">${f.nombreCompleto} ${f.id === idVecino ? '(Ficha Actual)' : ''}</strong><br><small style="color:#64748b;">RUN: ${f.rut} • Oficio: ${f.ocupacion || 'S/R'}</small></div>
+                        <div>${badgeJefe}</div>
+                    </div>`;
+            });
         } else {
-            docHTML = `<div style="text-align: center; padding: 40px; color: #94a3b8; font-size: 13px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">No se registran archivos PDF o documentos anexos en este expediente.</div>`;
+            nucleoHTML += `<div class="no-data-placeholder"><p>No se registran cohabitantes amarrados a este inmueble.</p></div>`;
+        }
+
+        const sectorVisorLabel = data.sectorTerritorial || "Sin Información";
+        const shortId = data.correlativo ? `SIG-VEC-${String(data.correlativo).padStart(5, '0')}` : `SIG-VEC-${idVecino.substring(0, 6).toUpperCase()}`;
+        
+        // Colores y letras (usando el mismo algoritmo que vecinos.js)
+        const COLORES_AVATAR = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#6366f1", "#14b8a6"];
+        const colorAvatar = COLORES_AVATAR[idVecino.charCodeAt(0) % COLORES_AVATAR.length];
+        
+        let iniciales = "NN";
+        if (data.nombreCompleto) {
+            const parts = data.nombreCompleto.trim().split(" ");
+            if (parts.length === 1) iniciales = parts[0].substring(0, 2).toUpperCase();
+            else iniciales = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
         }
 
         modalOverlay.innerHTML = `
-            <div class="profile-modal-card" style="max-width: 760px; width: 95%; border-radius: 12px; overflow: hidden; background: #fff; display: flex; flex-direction: column;">
-                <div style="background: #154c8a; padding: 20px 24px; color: white; position: relative;">
-                    <h2 style="margin: 0; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">Expediente Digital</h2>
-                    <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.85;">SIGEV - Visualización de Hoja de Vida Territorial</p>
-                    <button class="btn-profile-close" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
-                </div>
-                <div class="profile-modal-tabs" style="display: flex; gap: 24px; padding: 0 24px; border-bottom: 1px solid #e2e8f0; background: #fff;">
-                    <div class="profile-tab active" data-target="v-panel-basicos" style="padding: 16px 0; font-size: 13px; font-weight: 600; color: #154c8a; border-bottom: 2px solid #154c8a; cursor: pointer;">Datos Básicos</div>
-                    <div class="profile-tab" data-target="v-panel-solicitudes" style="padding: 16px 0; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer;">Solicitudes</div>
-                    <div class="profile-tab" data-target="v-panel-avanzados" style="padding: 16px 0; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer;">Datos Avanzados</div>
-                    <div class="profile-tab" data-target="v-panel-adicional" style="padding: 16px 0; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer;">Info Adicional</div>
-                    <div class="profile-tab" data-target="v-panel-documentos" style="padding: 16px 0; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer;">Documentos</div>
-                </div>
-                <div class="profile-modal-body" style="padding: 32px 24px; max-height: 65vh; overflow-y: auto; background: #ffffff;">
-                    <div class="profile-panel active" id="v-panel-basicos" style="display: block;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px dashed #e2e8f0;">
-                            <div style="display: flex; align-items: center; gap: 16px;">
-                                <img src="${fotoSrc}" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: #f1f5f9; border: 1px solid #e2e8f0;">
-                                <div>
-                                    <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a;">${data.nombreCompleto || 'Sin nombre'}</h3>
-                                    <p style="margin: 4px 0 0 0; font-size: 13.5px; color: #64748b; display: flex; align-items: center; gap: 6px;">
-                                        RUN: <span style="color: #334155; font-weight: 600;">${data.rut || 'No registrado'}</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">TELÉFONO</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${data.telefono || 'No registrado'}</p></div>
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">FECHA NACIMIENTO</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${fNacimientoFormatted}</p></div>
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">DIRECCIÓN</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${data.direccion || 'No registrada'}</p></div>
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">SECTOR TERRITORIAL</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${sectorVisorLabel}</p></div>
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">UNIDAD VECINAL (UV)</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${data.unidadVecinal || 'Sin Información'}</p></div>
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">JUNTA DE VECINOS</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${data.juntaVecinos || 'Sin Información'}</p></div>
-                            <div style="grid-column: span 2;"><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">BARRIO / VILLA POPULAR</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${data.barrioPopular || 'Sin Información'}</p></div>
-                        </div>
+            <div class="profile-modal-card">
+                <div class="profile-modal-header" style="background-color: #0b438c; padding: 20px 32px;">
+                    <div class="profile-header-info">
+                        <h3 style="font-size: 18px; color: #fff; font-weight: 700; margin: 0;">Expediente Digital</h3>
+                        <p style="color: rgba(255,255,255,0.8); font-weight: 500; margin: 4px 0 0 0;">SIGEV-AGUAYO - Visualización de Hoja de Vida Territorial</p>
                     </div>
-                    <div class="profile-panel" id="v-panel-solicitudes" style="display: none;">${solicitudesHTML}</div>
-                    <div class="profile-panel" id="v-panel-avanzados" style="display: none;">
-                        <div style="display: grid; gap: 24px;">
-                            <div><label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">OCUPACIÓN / OFICIO</label><p style="margin: 6px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${data.ocupacion || "No registrada"}</p></div>
-                        </div>
-                    </div>
-                    <div class="profile-panel" id="v-panel-adicional" style="display: none;">
-                        <div style="display: grid; gap: 16px;">
+                    <button class="btn-profile-close" style="color: #fff; font-size: 24px; top: 16px; right: 16px;">&times;</button>
+                </div>
+                <div class="profile-modal-tabs">
+                    <div class="profile-tab active" data-target="v-panel-basicos">Datos Básicos</div>
+                    <div class="profile-tab" data-target="v-panel-nucleo">👨‍👩‍👧‍👦 Núcleo Familiar (${familiares.length})</div>
+                    <div class="profile-tab" data-target="v-panel-solicitudes">Solicitudes</div>
+                    <div class="profile-tab" data-target="v-panel-documentos">Documentos</div>
+                </div>
+                <div class="profile-modal-body">
+                    <div class="profile-panel active" id="v-panel-basicos">
+                        <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                            <div class="v-avatar-initials lg" style="background:${colorAvatar}; border: 2px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink:0;">${iniciales}</div>
                             <div>
-                                <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">OBSERVACIONES CRÍTICAS DE TERRENO</label>
-                                <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.6; color: #334155; white-space: pre-wrap; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">${data.observaciones || "No se registran observaciones adicionales."}</div>
+                                <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-dark);">${data.nombreCompleto}</h4>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-light); font-weight: 600;">RUN: ${data.rut} | <b>${data.tipoSolicitante || 'Vecino/a'}</b></p>
+                                ${data.nombreOrganizacion ? `<p style="margin:2px 0 0 0; font-size:12px; color:#2563eb; font-weight:700;">Org: ${data.nombreOrganizacion} (${data.tipoOrganizacion})</p>` : ''}
+                            </div>
+                            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                <span style="font-family: monospace; font-size: 12px; font-weight: 600; color: #475569;">ID: ${shortId}</span>
+                                <button class="btn-copy-id" style="background: none; border: none; cursor: pointer; color: #64748b; display: flex; align-items: center; padding: 2px; border-radius: 4px; transition: color 0.15s ease;" title="Copiar ID al portapapeles">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
                             </div>
                         </div>
+
+                        <div class="profile-data-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                            <div class="profile-data-item"><label>Teléfono</label><p>${data.telefono || "No registrado"}</p></div>
+                            <div class="profile-data-item"><label>Correo Electrónico</label><p>${data.correo || "No registrado"}</p></div>
+                            <div class="profile-data-item"><label>Canal Preferido</label><p>${data.canalPreferencia || "WhatsApp"}</p></div>
+                            <div class="profile-data-item"><label>Sexo</label><p>${data.sexo || "No especificado"}</p></div>
+                            <div class="profile-data-item"><label>Fecha Nacimiento</label><p>${fNacimientoFormatted}</p></div>
+                            <div class="profile-data-item"><label>Ocupación / Oficio</label><p>${data.ocupacion || "No registrada"}</p></div>
+                            
+                            <div class="profile-data-item" style="grid-column: 1 / -1; background: #f0fdf4; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                                <label style="color: #166534; font-size: 10px; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Previsión de Salud / Tramo</label>
+                                <p style="color: #14532d; font-size: 13.5px; margin:0;"><b>${data.previsionSalud || 'Ninguna-Particular'}</b> ${data.tramoLetraIsapre ? `(Tramo/Isapre: ${data.tramoLetraIsapre})` : ''}</p>
+                            </div>
+
+                            <div class="profile-data-item"><label>Dirección Principal</label><p>${data.direccion || "No registrada"}</p></div>
+                            <div class="profile-data-item"><label>Dirección Complementaria</label><p>${data.direccionComplementaria || "No registrada"}</p></div>
+                            <div class="profile-data-item"><label>Sector Territorial</label><p>${sectorVisorLabel}</p></div>
+                            <div class="profile-data-item"><label>Unidad Vecinal (UV)</label><p>${data.unidadVecinal || "Sin Información"}</p></div>
+                            <div class="profile-data-item"><label>Junta de Vecinos</label><p>${data.juntaVecinos || "Sin Información"}</p></div>
+                            <div class="profile-data-item"><label>Barrio / Villa Popular</label><p>${data.barrioPopular || "Sin Información"}</p></div>
+                            
+                            <div class="profile-data-item" style="grid-column: 1 / -1; background: #faf5ff; padding: 12px; border-radius: 6px; border: 1px solid #e9d5ff;">
+                                <label style="color: #6b21a8; font-size: 10px; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Hogar y Grupo Familiar</label>
+                                <p style="color: #581c87; font-size: 13.5px; margin:0;">Vivienda conformada por <b>${data.cantidadIntegrantes || 1} integrante(s)</b>.</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                            <label style="font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; display: block; margin-bottom: 6px;">📝 Observaciones / Notas Críticas</label>
+                            <p style="font-size: 13.5px; color: var(--text-dark); line-height: 1.5; white-space: pre-wrap; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">${data.observaciones || "No se registran observaciones adicionales del equipo territorial."}</p>
+                        </div>
+
+                        <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                            <label style="font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; display: block; margin-bottom: 6px;">📍 Ubicación Georreferenciada</label>
+                            <div id="v-visor-mapa-solicitudes" style="width: 100%; height: 210px; border: 1px solid #cbd5e1; border-radius: 8px; background: #e5e7eb;"></div>
+                        </div>
                     </div>
-                    <div class="profile-panel" id="v-panel-documentos" style="display: none;">${docHTML}</div>
+                    
+                    <div class="profile-panel" id="v-panel-nucleo">${nucleoHTML}</div>
+                    <div class="profile-panel" id="v-panel-solicitudes">${solicitudesHTML}</div>
+                    
+                    <div class="profile-panel" id="v-panel-documentos">
+                        ${data.urlDocumento ? `<div class="profile-solicitud-box" style="margin-top:0; border-left-color: var(--kpi-purple); display: flex; align-items: center; justify-content: space-between; padding: 14px 18px;"><span style="font-size: 13.5px; font-weight: 600; color: var(--text-dark);">${data.nombreDocumento || "Documento de Respaldo"}</span><a href="${data.urlDocumento}" target="_blank" style="color: var(--primary-blue); font-weight: 600; font-size: 12px; text-decoration: none;">Ver archivo</a></div>` : `<div class="no-data-placeholder"><p>No se registran archivos PDF anexos.</p></div>`}
+                    </div>
                 </div>
             </div>`;
+        
         document.body.appendChild(modalOverlay);
+
+        modalOverlay.querySelector(".btn-copy-id").onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(shortId).then(() => {
+                const iconBtn = modalOverlay.querySelector(".btn-copy-id");
+                iconBtn.style.color = "#10b981"; 
+                setTimeout(() => { iconBtn.style.color = "#64748b"; }, 1000);
+            }).catch(err => console.error("Error al copiar identificador territorial:", err));
+        };
+
+        // Renderizado del minimapa si hay coordenadas
+        if (data.lat && data.lng) {
+            setTimeout(() => {
+                const mapVisorContainer = modalOverlay.querySelector("#v-visor-mapa-solicitudes");
+                if (mapVisorContainer) {
+                    const mapaVisor = L.map(mapVisorContainer, { 
+                        zoomControl: true, dragging: true, touchZoom: true, scrollWheelZoom: false, doubleClickZoom: false
+                    }).setView([Number(data.lat), Number(data.lng)], 16);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapaVisor);
+                    
+                    const SVG_MARKER = L.divIcon({
+                        html: `<div class="custom-pin-wrapper"><svg class="pin-vector" width="28" height="38" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
+                        className: 'leaflet-marker-custom', iconSize: [28, 38], iconAnchor: [14, 38]
+                    });
+                    
+                    L.marker([Number(data.lat), Number(data.lng)], { icon: SVG_MARKER }).addTo(mapaVisor);
+                    
+                    setTimeout(() => mapaVisor.invalidateSize(), 60);
+                    setTimeout(() => mapaVisor.invalidateSize(), 250);
+                    
+                    const tabs = modalOverlay.querySelectorAll(".profile-tab");
+                    tabs.forEach(t => t.addEventListener("click", () => {
+                        if (t.getAttribute("data-target") === "v-panel-basicos") { setTimeout(() => mapaVisor.invalidateSize(), 50); }
+                    }));
+                }
+            }, 150);
+        } else {
+            const mapVisorContainer = modalOverlay.querySelector("#v-visor-mapa-solicitudes");
+            if (mapVisorContainer) {
+                mapVisorContainer.style.display = "flex";
+                mapVisorContainer.style.alignItems = "center";
+                mapVisorContainer.style.justifyContent = "center";
+                mapVisorContainer.style.color = "#64748b";
+                mapVisorContainer.style.fontSize = "12px";
+                mapVisorContainer.style.background = "#f1f5f9";
+                mapVisorContainer.innerHTML = "<p style='margin:0; font-weight:500;'>Este vecino no registra georreferenciación en su expediente.</p>";
+            }
+        }
 
         const tabs = modalOverlay.querySelectorAll(".profile-tab");
         const panels = modalOverlay.querySelectorAll(".profile-panel");
         tabs.forEach(t => t.addEventListener("click", () => {
-            tabs.forEach(tab => {
-                tab.classList.remove("active");
-                tab.style.borderBottom = "none";
-                tab.style.color = "#64748b";
-            }); 
-            panels.forEach(p => p.style.display = "none");
-            
-            t.classList.add("active"); 
-            t.style.borderBottom = "2px solid #154c8a";
-            t.style.color = "#154c8a";
-            modalOverlay.querySelector(`#${t.getAttribute("data-target")}`).style.display = "block";
+            tabs.forEach(tab => tab.classList.remove("active"));
+            panels.forEach(p => p.classList.remove("active"));
+            t.classList.add("active");
+            modalOverlay.querySelector(`#${t.getAttribute("data-target")}`).classList.add("active");
         }));
-
-        modalOverlay.querySelector(".btn-profile-close").addEventListener("click", () => modalOverlay.remove());
-    } catch (error) { console.error(error); }
+        
+        modalOverlay.querySelector(".btn-profile-close").onclick = () => modalOverlay.remove();
+        
+    } catch (error) { 
+        console.error("Error visualizando ficha vecinal:", error); 
+    }
 }
 
-async function abrirEditorVecino(id) {
+async function abrirEditorEspecificoSolicitud(idSolicitud) {
     try {
-        const docRef = doc(db, "vecinos", id);
+        const docRef = doc(db, "solicitudes", idSolicitud);
         const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) return;
 
-        if (!docSnap.exists()) {
-            mostrarAlertaPersonalizada("No se encontró el registro.", "error");
-            return;
-        }
+        const sol = docSnap.data();
+        
+        const fCreacionObj = parseFirestoreDate(sol.fechaCreacion);
+        const d = String(fCreacionObj.getDate()).padStart(2, '0');
+        const m = String(fCreacionObj.getMonth() + 1).padStart(2, '0');
+        const a = String(fCreacionObj.getFullYear()).slice(-2);
+        const smartTicketId = sol.codigoInterno || sol.codigo || `${(sol.idVecino || "000").substring(0, 4).toUpperCase()}-${d}${m}${a}-${sol.id.substring(0, 3).toUpperCase()}`;
 
-        const data = docSnap.data();
-        const fotoSrc = data.fotoPerfil || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100";
+        let opcionesCategoriasHTML = `<option value="">Seleccione Categoría</option>`;
+        Object.keys(MAPA_CLASIFICACION_SIGEV).forEach(cat => {
+            opcionesCategoriasHTML += `<option value="${cat}" ${(sol.categoria || sol.motivo) === cat ? 'selected' : ''}>${cat}</option>`;
+        });
 
         const modalOverlay = document.createElement("div");
         modalOverlay.className = "profile-modal-overlay";
 
-        let opcionesSectoresHTML = `<option value="">Seleccione Sector</option>`;
-        Object.keys(MAPEO_TERRITORIAL).forEach(sec => { opcionesSectoresHTML += `<option value="${sec}" ${data.sectorTerritorial === sec ? 'selected' : ''}>${ETIQUETAS_SECTORES[sec] || sec}</option>`; });
-
-        let opcionesUvsHTML = `<option value="">Seleccione UV</option>`;
-        if (data.sectorTerritorial && MAPEO_TERRITORIAL[data.sectorTerritorial]) { MAPEO_TERRITORIAL[data.sectorTerritorial].uvs.forEach(uv => { opcionesUvsHTML += `<option value="${uv}" ${data.unidadVecinal === uv ? 'selected' : ''}>${uv}</option>`; }); }
-
-        let opcionesJuntasTerritorialesHTML = `<option value="">Seleccione Junta</option>`;
-        if (data.sectorTerritorial && data.unidadVecinal && MAPEO_TERRITORIAL[data.sectorTerritorial]?.juntas[data.unidadVecinal]) { MAPEO_TERRITORIAL[data.sectorTerritorial].juntas[data.unidadVecinal].forEach(j => { opcionesJuntasTerritorialesHTML += `<option value="${j}" ${data.juntaVecinos === j ? 'selected' : ''}>${j}</option>`; }); }
-
-        const qSolsEdit = query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID), where("idVecino", "==", id));
-        const snapSolicitudesEdit = await getDocs(qSolsEdit);
-        let solicitudesListaEdit = [];
-        snapSolicitudesEdit.forEach(sDoc => { solicitudesListaEdit.push({ id: sDoc.id, ...sDoc.data() }); });
-        solicitudesListaEdit.sort((a, b) => (b.fechaCreacion?.seconds || 0) - (a.fechaCreacion?.seconds || 0));
-
-        let solicitudesRenderHTML = "";
-        if (solicitudesListaEdit.length > 0) {
-            solicitudesListaEdit.forEach(sol => {
-                const fCreacionObj = sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000) : new Date();
-                const d = String(fCreacionObj.getDate()).padStart(2, '0'); const m = String(fCreacionObj.getMonth() + 1).padStart(2, '0'); const a = String(fCreacionObj.getFullYear()).slice(-2);
-                const codigoTicket = sol.codigoInterno || sol.codigo || `${(sol.idVecino || "000").substring(0, 4).toUpperCase()}-${d}${m}${a}-${sol.id.substring(0, 3).toUpperCase()}`;
-
-                solicitudesRenderHTML += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                        <div>
-                            <div style="font-weight: 700; font-size: 13px; color: var(--primary-blue); margin-bottom: 3px;">#${codigoTicket}</div>
-                            <div style="font-weight: 600; font-size: 12.5px; color: var(--text-dark);">${sol.motivo} <span style="font-weight: normal; color: var(--text-light);">(${sol.subcategoria || 'Gral'})</span></div>
-                            <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">Estado: <b style="color: var(--text-dark);">${sol.estado}</b> | Prioridad: <b>${sol.prioridad || 'Media'}</b></div>
-                        </div>
-                    </div>`;
-            });
-        } else { solicitudesRenderHTML = `<div class="no-data-placeholder"><p>No se registran solicitudes activas para este vecino.</p></div>`; }
-
         modalOverlay.innerHTML = `
-            <div class="profile-modal-card">
-                <div class="profile-modal-header" style="background: linear-gradient(135deg, #1e293b, #475569);">
-                    <div class="modal-avatar-wrapper" style="position: relative;">
-                        <img src="${fotoSrc}" class="profile-modal-avatar" id="edit-modal-preview">
+            <div class="profile-modal-card" style="max-width: 600px; border-radius: 12px; overflow: hidden; background: #fff; display: flex; flex-direction: column; font-family: system-ui, sans-serif;">
+                <div style="background-color: #0b438c; padding: 20px 24px; position: relative; flex-shrink: 0;">
+                    <h3 style="margin: 0; font-size: 18px; color: #ffffff; font-weight: 800;">Editar y Reclasificar Requerimiento</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: rgba(255,255,255,0.85);">Ticket Público: ${smartTicketId}</p>
+                    <button class="btn-profile-close" style="position: absolute; top: 16px; right: 20px; background: none; border: none; color: #ffffff; font-size: 24px; cursor: pointer; outline: none;">&times;</button>
+                </div>
+
+                <div class="profile-modal-body" style="padding: 24px; overflow-y: auto; max-height: 70vh;">
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div>
+                                <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Nombre Remitente</label>
+                                <input type="text" id="es-nombre" value="${sol.vecinoNombre || sol.nombreVecino || ''}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Teléfono</label>
+                                <input type="text" id="es-telefono" value="${sol.vecinoTelefono || sol.telefono || ''}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Descripción del Problema</label>
+                            <textarea id="es-descripcion" rows="3" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; resize: vertical;">${sol.descripcion || ''}</textarea>
+                        </div>
+                        
+                        <div style="height: 1px; background: #e2e8f0; margin: 4px 0;"></div>
+
+                        <div>
+                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Categoría de Clasificación *</label>
+                            <select id="es-motivo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                ${opcionesCategoriasHTML}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Subcategoría Específica *</label>
+                            <select id="es-subcategoria" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                            </select>
+                        </div>
+
+                        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px 16px; border-radius: 8px;">
+                            <label style="font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block;">Departamento Encargado</label>
+                            <input type="text" id="es-oficina" value="${sol.oficinaDerivada || ''}" readonly style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13.5px; font-weight: 700; background-color: #ffffff; color: #0f172a; outline: none; cursor: not-allowed; box-sizing: border-box;">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div>
+                                <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Responsable de Seguimiento *</label>
+                                <select id="es-asignado" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; font-weight: 600; color: #0f172a; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                    <option value="Equipo Territorial">Cargando equipo...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Prioridad Operativa *</label>
+                                <select id="es-prioridad" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                    <option value="Baja" ${sol.prioridad === 'Baja' ? 'selected' : ''}>🟢 Baja</option>
+                                    <option value="Media" ${(sol.prioridad === 'Media' || !sol.prioridad) ? 'selected' : ''}>🟡 Media</option>
+                                    <option value="Alta" ${sol.prioridad === 'Alta' ? 'selected' : ''}>🔴 Alta</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Notas Internas / Resoluciones Operativas</label>
+                            <textarea id="es-notas-gestion" rows="3" placeholder="Ingresa instrucciones o resoluciones para el equipo..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; resize: vertical;">${sol.notasGestion || ''}</textarea>
+                        </div>
+
                     </div>
-                    <div class="profile-header-info"><h3>Modificando Expediente</h3><p>RUT: ${data.rut}</p></div>
-                    <button class="btn-profile-close">&times;</button>
                 </div>
-                <div class="profile-modal-tabs">
-                    <div class="profile-tab active" data-target="e-panel-basicos">Datos Básicos</div>
-                    <div class="profile-tab" data-target="e-panel-solicitudes">Solicitud Territorial</div>
+
+                <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
+                    <button type="button" id="btn-modal-cancel" style="padding: 10px 20px; font-size: 13.5px; font-weight: 600; color: #475569; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; outline: none;">Cancelar</button>
+                    <button type="button" id="btn-modal-save" style="padding: 10px 20px; font-size: 13.5px; font-weight: 700; color: #ffffff; background: #2563eb; border: none; border-radius: 6px; cursor: pointer; outline: none; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">🚀 Guardar Solicitud</button>
                 </div>
-                <div class="profile-modal-body">
-                    <div class="profile-panel active" id="e-panel-basicos">
-                        <div class="form-row-grid" style="margin-bottom: 14px;">
-                            <div class="form-group"><label>Nombre completo</label><input type="text" id="e-vecino-nombre" value="${data.nombreCompleto || ''}"></div>
-                            <div class="form-group"><label>Teléfono celular</label><input type="text" id="e-vecino-telefono" value="${data.telefono || ''}"></div>
-                        </div>
-                        <div class="form-row-grid" style="margin-bottom: 14px;">
-                            <div class="form-group"><label>Sector Territorial</label><select id="e-vecino-sector-territorial">${opcionesSectoresHTML}</select></div>
-                            <div class="form-group"><label>Unidad Vecinal</label><select id="e-vecino-unidad-vecinal">${opcionesUvsHTML}</select></div>
-                        </div>
-                        <div class="form-row-grid" style="margin-bottom: 14px;">
-                            <div class="form-group"><label>Junta de Vecinos</label><select id="e-vecino-junta-vecinal">${opcionesJuntasTerritorialesHTML}</select></div>
-                            <div class="form-group"><label>Barrio / Villa</label><input type="text" id="e-vecino-barrio-popular" value="${data.barrioPopular || ''}"></div>
-                        </div>
-                    </div>
-                    <div class="profile-panel" id="e-panel-solicitudes">${solicitudesRenderHTML}</div>
-                </div>
-                <div style="padding: 16px 32px; background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px;">
-                    <button class="btn btn-secondary btn-modal-cancel">Cancelar</button>
-                    <button class="btn btn-primary btn-modal-save" style="background-color: #0b438c;">Guardar cambios</button>
-                </div>
-            </div>`;
+            </div>
+        `;
         document.body.appendChild(modalOverlay);
 
-        const eSecTerr = modalOverlay.querySelector("#e-vecino-sector-territorial");
-        const eUvTerr = modalOverlay.querySelector("#e-vecino-unidad-vecinal");
-        const eJuntTerr = modalOverlay.querySelector("#e-vecino-junta-vecinal");
+        const selectPersonal = modalOverlay.querySelector("#es-asignado");
+        try {
+            const qUsers = query(collection(db, "usuarios")); 
+            const querySnapshot = await getDocs(qUsers);
+            
+            let opcionesHTML = `<option value="Equipo Territorial">Equipo Territorial</option>`;
+            window.cacheFotosUsuarios = {};
 
-        eSecTerr.addEventListener("change", (e) => {
-            const sec = e.target.value; eUvTerr.innerHTML = '<option value="">Seleccione UV</option>'; eJuntTerr.innerHTML = '<option value="">Seleccione Junta</option>'; eJuntTerr.disabled = true;
-            if (sec && MAPEO_TERRITORIAL[sec]) { MAPEO_TERRITORIAL[sec].uvs.forEach(uv => { eUvTerr.innerHTML += `<option value="${uv}">${uv}</option>`; }); eUvTerr.disabled = false; }
-        });
-        eUvTerr.addEventListener("change", (e) => {
-            const sec = eSecTerr.value; const uv = e.target.value; eJuntTerr.innerHTML = '<option value="">Seleccione Junta</option>';
-            if (sec && uv && MAPEO_TERRITORIAL[sec]?.juntas[uv]) { MAPEO_TERRITORIAL[sec].juntas[uv].forEach(j => { eJuntTerr.innerHTML += `<option value="${j}">${j}</option>`; }); eJuntTerr.disabled = false; }
-        });
+            querySnapshot.forEach((docSnap) => {
+                const userData = docSnap.data();
+                const rolNormalizado = (userData.rol || "").toLowerCase();
+                
+                if (rolNormalizado !== "pendiente" && rolNormalizado !== "super_admin" && rolNormalizado !== "superadmin" && userData.rol) {
+                    const nombreUsuario = userData.nombreCompleto || userData.nombre || userData.email;
+                    
+                    window.cacheFotosUsuarios[nombreUsuario] = userData.fotoPerfil || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50";
+                    
+                    const seleccionado = (sol.asignadoA === nombreUsuario) ? "selected" : "";
+                    opcionesHTML += `<option value="${nombreUsuario}" ${seleccionado}>${nombreUsuario}</option>`;
+                }
+            });
+            
+            selectPersonal.innerHTML = opcionesHTML;
+        } catch (error) {
+            console.error("Error consultando el personal autorizado:", error);
+            selectPersonal.innerHTML = `<option value="Equipo Territorial">Equipo Territorial</option>`;
+        }
 
-        const tabs = modalOverlay.querySelectorAll(".profile-tab"); const panels = modalOverlay.querySelectorAll(".profile-panel");
-        tabs.forEach(t => t.addEventListener("click", () => {
-            tabs.forEach(tab => tab.classList.remove("active")); panels.forEach(p => p.classList.remove("active"));
-            t.classList.add("active"); modalOverlay.querySelector(`#${t.getAttribute("data-target")}`).classList.add("active");
-        }));
+        const eMotivo = modalOverlay.querySelector("#es-motivo");
+        const eSub = modalOverlay.querySelector("#es-subcategoria");
+        const eOfi = modalOverlay.querySelector("#es-oficina");
 
-        modalOverlay.querySelector(".btn-profile-close").onclick = () => modalOverlay.remove();
-        modalOverlay.querySelector(".btn-modal-cancel").onclick = () => modalOverlay.remove();
-
-        const btnSave = modalOverlay.querySelector(".btn-modal-save");
-        btnSave.onclick = async () => {
-            const nuevoNombre = modalOverlay.querySelector("#e-vecino-nombre").value.trim(); if (!nuevoNombre) return;
-            btnSave.disabled = true; btnSave.innerText = "Sincronizando...";
-            try {
-                await updateDoc(docRef, {
-                    nombreCompleto: nuevoNombre, telefono: modalOverlay.querySelector("#e-vecino-telefono").value.trim(),
-                    sectorTerritorial: eSecTerr.value || "Sin Información", unidadVecinal: eUvTerr.value || "Sin Información",
-                    juntaVecinos: eJuntTerr.value || "Sin Información", barrioPopular: modalOverlay.querySelector("#e-vecino-barrio-popular").value.trim() || "Sin Información"
-                });
-                modalOverlay.remove(); renderizarMetricasServidor(); await ejecutarMotorCargaSolicitudes();
-            } catch (err) { console.error(err); btnSave.disabled = false; }
+        const poblarSub = (cat, defaultVal = "") => {
+            eSub.innerHTML = "";
+            if (cat && MAPA_CLASIFICACION_SIGEV[cat]) {
+                eOfi.value = MAPA_CLASIFICACION_SIGEV[cat].depName;
+                let h = `<option value="">Seleccione subcategoría</option>`;
+                Object.keys(MAPA_CLASIFICACION_SIGEV[cat].subs).forEach(s => { h += `<option value="${s}" ${s === defaultVal ? 'selected' : ''}>${s}</option>`; });
+                eSub.innerHTML = h; eSub.disabled = false;
+            } else { eOfi.value = ""; eSub.innerHTML = `<option value="">Seleccione categoría</option>`; eSub.disabled = true; }
         };
-    } catch (e) { console.error(e); }
+
+        if (sol.categoria || sol.motivo) poblarSub(sol.categoria || sol.motivo, sol.subcategoria);
+        eMotivo.addEventListener("change", (e) => poblarSub(e.target.value));
+
+        modalOverlay.querySelector(".btn-profile-close").addEventListener("click", () => modalOverlay.remove());
+        modalOverlay.querySelector("#btn-modal-cancel").addEventListener("click", () => modalOverlay.remove());
+
+        const btnSave = modalOverlay.querySelector("#btn-modal-save");
+        btnSave.addEventListener("click", async () => {
+            btnSave.disabled = true; btnSave.innerText = "Guardando...";
+            try {
+                const nombreAsignadoElegido = modalOverlay.querySelector("#es-asignado").value;
+                
+                let fotoEncargadoElegido = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50";
+                if (window.cacheFotosUsuarios && window.cacheFotosUsuarios[nombreAsignadoElegido]) {
+                    fotoEncargadoElegido = window.cacheFotosUsuarios[nombreAsignadoElegido];
+                }
+
+                const catNueva = eMotivo.value;
+                const subNueva = eSub.value;
+                let codigoInternoNuevo = sol.codigoInterno;
+
+                if (MAPA_CLASIFICACION_SIGEV[catNueva]) {
+                    const dataCat = MAPA_CLASIFICACION_SIGEV[catNueva];
+                    const baseCodigoPublico = sol.codigo || "S/N";
+                    if(baseCodigoPublico !== "S/N") {
+                        const tnt = CURRENT_TENANT_ID.substring(0, 4).toUpperCase();
+                        const sufijo = baseCodigoPublico.replace("SIG-", "");
+                        codigoInternoNuevo = `SIG-${tnt}-${sufijo}-${dataCat.depCod || "GEN"}-${dataCat.catCod || "GEN"}-${dataCat.subs[subNueva] || "GEN"}`;
+                    }
+                }
+
+                const updatePayload = {
+                    motivo: catNueva,
+                    categoria: catNueva,
+                    subcategoria: subNueva,
+                    oficinaDerivada: eOfi.value.trim(),
+                    codigoInterno: codigoInternoNuevo,
+                    asignadoA: nombreAsignadoElegido,
+                    registradaPorFoto: fotoEncargadoElegido,
+                    prioridad: modalOverlay.querySelector("#es-prioridad").value,
+                    notasGestion: modalOverlay.querySelector("#es-notas-gestion").value.trim(),
+                    vecinoNombre: modalOverlay.querySelector("#es-nombre").value.trim(),
+                    nombreVecino: modalOverlay.querySelector("#es-nombre").value.trim(),
+                    vecinoTelefono: modalOverlay.querySelector("#es-telefono").value.trim(),
+                    descripcion: modalOverlay.querySelector("#es-descripcion").value.trim()
+                };
+
+                await updateDoc(docRef, updatePayload);
+                modalOverlay.remove();
+                mostrarAlertaPersonalizada("La solicitud ha sido modificada y guardada exitosamente.", "success");
+                
+                await ejecutarMotorCargaSolicitudes(); 
+            } catch (err) {
+                console.error("Error al actualizar la solicitud:", err);
+                btnSave.disabled = false;
+                btnSave.innerText = "🚀 Guardar Solicitud";
+            }
+        });
+
+    } catch (err) { console.error(err); }
 }
 
 async function ejecutarMotorCargaSolicitudes() {
+    mostrarLoaderBloqueante("Sincronizando expedientes y aportes...");
     try {
         console.log("⏳ Descargando solicitudes para Tenant:", CURRENT_TENANT_ID);
         const snapGlobal = await getDocs(query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID)));
         
         solicitudesGlobalesMemory = [];
-        snapGlobal.forEach(sDoc => { solicitudesGlobalesMemory.push({ id: sDoc.id, ...sDoc.data() }); });
         
-        console.log(`✅ ${solicitudesGlobalesMemory.length} solicitudes encontradas en la nube.`);
+        let countClasificado = 0; let countDerivados = 0; let countPorResponder = 0; let countFinalizado = 0;
 
-        solicitudesGlobalesMemory.sort((a, b) => {
-            const timeA = a.fechaCreacion?.seconds || 0;
-            const timeB = b.fechaCreacion?.seconds || 0;
-            return timeB - timeA;
+        snapGlobal.forEach(sDoc => { 
+            const data = { id: sDoc.id, ...sDoc.data() };
+            
+            // Excluir las solicitudes que pertenecen de origen al Buzon Ciudadano o Web externo
+            if (data.origen === "Buzón Ciudadano" || data.origen === "Web") return;
+            
+            // REGLA HISTORICA MASIVA: Identifica origen "Migración Excel" o "Masivo"
+            if (String(data.origen || "").includes("Migración") || data.origen === "Masivo") {
+                const tieneRespuestaOficial = data.respuestaVecino || data.detalleInternoResolucion || data.respuesta || data.comentarioCierre;
+                
+                if (tieneRespuestaOficial) {
+                    data.estadoVirtual = "Finalizado";
+                    data.triageFalso = "Por Clasificar";
+                }
+            }
+            
+            solicitudesGlobalesMemory.push(data); 
+
+            const eOrig = data.estado || "Nuevo";
+            const eGest = data.estadoGestion || "";
+            const eVirt = data.estadoVirtual || "";
+
+            // Contabilizar en los contadores superiores segun estado virtual historico o real
+            if (eVirt === "Finalizado") {
+                countFinalizado++;
+            } else {
+                if (eOrig === "Clasificado" && (eGest === "En revisión" || eGest === "")) countClasificado++;
+                if (eGest === "Derivada" || eGest === "En gestión") countDerivados++; 
+                if (eGest === "Finalizado en espera de respuesta") countPorResponder++;
+                if (eOrig === "Resuelto" || eGest.includes("Respondido") || eGest === "Finalizada") countFinalizado++;
+            }
         });
 
+        // Ordenamiento seguro por marca de tiempo
+        solicitudesGlobalesMemory.sort((a,b) => {
+            const ta = a.fechaCreacionObj ? new Date(a.fechaCreacionObj).getTime() : (a.fechaCreacion?.seconds ? a.fechaCreacion.seconds*1000 : 0);
+            const tb = b.fechaCreacionObj ? new Date(b.fechaCreacionObj).getTime() : (b.fechaCreacion?.seconds ? b.fechaCreacion.seconds*1000 : 0);
+            return tb - ta;
+        });
+
+        const updateBadge = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+        updateBadge("badge-count-clasificado", countClasificado);
+        updateBadge("badge-count-revision", countDerivados);
+        updateBadge("badge-count-por-responder", countPorResponder);
+        updateBadge("badge-count-finalizado", countFinalizado);
+
+        // Sincronizar tambien la botonera de sub-pestañas inferior
+        if (typeof actualizarContadoresPestañasSolicitudes === "function") {
+            actualizarContadoresPestañasSolicitudes();
+        }
+
         aplicarFiltrosCruzadosInterfaz();
-        actualizarContadoresPestañasSolicitudes();
-        calcularEstadisticasAvanzadas(); // 🚀 ¡AQUÍ SE EJECUTA!
-    } catch (err) { 
-        console.error("❌ Error CRÍTICO cargando solicitudes:", err); 
+
+    } catch (e) {
+        console.error("Error cargando solicitudes globales:", e);
+        mostrarAlertaPersonalizada("Error al descargar expedientes", "error");
+    } finally {
+        ocultarLoaderBloqueante();
     }
 }
 
@@ -456,10 +736,10 @@ function calcularEstadisticasAvanzadas() {
 
         // 2. Tiempo Promedio de Resolución (Dias)
         if (isFinalizada && sol.fechaCreacion && sol.fechaFinalizada) {
-            const tCreacion = sol.fechaCreacion.seconds;
-            const tFin = sol.fechaFinalizada.seconds;
+            const tCreacion = parseFirestoreDate(sol.fechaCreacion).getTime();
+            const tFin = parseFirestoreDate(sol.fechaFinalizada).getTime();
             if (tFin >= tCreacion) {
-                sumaTiempos += (tFin - tCreacion);
+                sumaTiempos += ((tFin - tCreacion)/1000);
                 casosResueltosConTiempo++;
             }
         }
@@ -518,27 +798,19 @@ function calcularEstadisticasAvanzadas() {
 function aplicarFiltrosCruzadosInterfaz() {
     const textoBusqueda = document.getElementById("filter-solicitud-codigo")?.value.toLowerCase().trim() || "";
     const tipoSelect = document.getElementById("filter-tipo")?.value || "Todos";
-    const prioSelect = document.getElementById("filter-prioridad")?.value || "Todos";
-    const fDesde = document.getElementById("filter-fecha-desde")?.value || "";
-    const fHasta = document.getElementById("filter-fecha-hasta")?.value || "";
 
     let filtrados = solicitudesGlobalesMemory.filter(sol => {
+        if (sol.origen === "Buzón Ciudadano" || sol.origen === "Web") return false;
+
         if (textoBusqueda) {
             const ticketCodigo = (sol.codigo || "").toLowerCase();
             const ticketInterno = (sol.codigoInterno || "").toLowerCase();
             const nombreVecino = (sol.vecinoNombre || sol.nombreVecino || "").toLowerCase();
-            
-            const rutRaw = (sol.vecinoRut || sol.rutVecino || "").toLowerCase();
-            const rutCleanDB = rutRaw.replace(/[^0-9k]/g, "");
-            const textoRutClean = textoBusqueda.replace(/[^0-9k]/g, "");
+            const rutVecino = (sol.vecinoRut || sol.rutVecino || "").toLowerCase();
 
             const coincideCodigo = ticketCodigo.includes(textoBusqueda) || ticketInterno.includes(textoBusqueda);
             const coincideNombre = nombreVecino.includes(textoBusqueda);
-            
-            let coincideRut = rutRaw.includes(textoBusqueda);
-            if (!coincideRut && textoRutClean.length > 2) {
-                coincideRut = rutCleanDB.includes(textoRutClean);
-            }
+            const coincideRut = rutVecino.includes(textoBusqueda);
 
             if (!coincideCodigo && !coincideNombre && !coincideRut) return false;
         }
@@ -546,50 +818,39 @@ function aplicarFiltrosCruzadosInterfaz() {
         let matchesEstado = false;
         const eOrig = sol.estado || "Nuevo";
         const eGest = sol.estadoGestion || "";
-        const cat = sol.categoria || ""; 
-        const filtroLow = estadoFiltroKPIActivo.toLowerCase();
+        const eVirt = sol.estadoVirtual || "";
+        
+        // 🚀 CORRECCIÓN DEFINITIVA DE VARIABLE FANTASMA
+        const filtroLow = estadoFiltroKPIActivo ? estadoFiltroKPIActivo.toLowerCase() : "clasificado";
 
-        if (filtroLow === "todos") {
-            matchesEstado = true;
-        } else if (filtroLow.includes("por clasificar") || filtroLow.includes("pendiente de triage")) {
-            // 🚀 AQUÍ ATRAPAMOS LOS TICKETS DE MIGRACIÓN
-            matchesEstado = (cat === "Pendiente de Triage" || eGest.includes("migración masiva") || eGest === "Pendiente de Triage");
-        } else if (filtroLow.includes("clasificado") || filtroLow.includes("revisión")) {
-            matchesEstado = (eOrig === "Clasificado" && (eGest === "En revisión" || eGest === "") && cat !== "Pendiente de Triage");
-        } else if (filtroLow.includes("derivado") || filtroLow.includes("gestión")) {
-            matchesEstado = (eGest === "Derivada" || eGest === "En gestión");
-        } else if (filtroLow.includes("responder")) {
-            matchesEstado = (eGest === "Finalizado en espera de respuesta");
-        } else if (filtroLow.includes("finalizado") || filtroLow.includes("resuelto")) {
-            matchesEstado = (eOrig === "Resuelto" || eGest.includes("Respondido") || eGest.includes("Finalizada") || eGest.includes("Caso Resuelto"));
-        } else {
-            matchesEstado = (eOrig === estadoFiltroKPIActivo || eGest === estadoFiltroKPIActivo);
+        // Enrutamiento forzado: Si es un registro masivo resuelto, solo aparece en la pestaña Finalizados
+        if (eVirt === "Finalizado" && (filtroLow.includes("finalizado") || filtroLow.includes("resuelto"))) {
+             matchesEstado = true;
+        } else if (eVirt !== "Finalizado") {
+            if (filtroLow.includes("revisión") || filtroLow.includes("clasificado")) {
+                matchesEstado = (eOrig === "Clasificado" && (eGest === "En revisión" || eGest === ""));
+            } else if (filtroLow === "derivado" || filtroLow === "derivados" || filtroLow.includes("gestión")) {
+                matchesEstado = (eGest === "Derivada" || eGest === "En gestión");
+            } else if (filtroLow.includes("responder")) {
+                matchesEstado = (eGest === "Finalizado en espera de respuesta");
+            } else if (filtroLow.includes("finalizado") || filtroLow.includes("resuelto")) {
+                matchesEstado = (eOrig === "Resuelto" || eGest.includes("Respondido") || eGest === "Finalizada (Caso Resuelto)");
+            } else {
+                matchesEstado = (eOrig === estadoFiltroKPIActivo);
+            }
         }
 
         if (!matchesEstado) return false;
+        
+        // Impedir que los filtros por categoria oculten los registros masivos sin triage asignado
+        if (tipoSelect !== "Todos" && sol.motivo !== tipoSelect && !sol.triageFalso) return false;
 
-        if (tipoSelect !== "Todos") {
-            const catDB = sol.motivo || sol.categoria || sol.categoriaOficial || "";
-            if (catDB !== tipoSelect) return false;
-        }
-
-        if (prioSelect !== "Todos" && sol.prioridad !== prioSelect) return false;
-
-        if (sol.fechaCreacion) {
-            const fechaTicket = new Date(sol.fechaCreacion.seconds * 1000);
-            if (fDesde) {
-                const desdeDate = new Date(fDesde + "T00:00:00");
-                if (fechaTicket < desdeDate) return false;
-            }
-            if (fHasta) {
-                const hastaDate = new Date(fHasta + "T23:59:59");
-                if (fechaTicket > hastaDate) return false;
-            }
-        }
         return true;
     });
-    
+
     paginaActual = 1;
+    
+    // Invocacion directa corregida usando la funcion constructora real del archivo
     inyectarFilasTablaSolicitudes(filtrados);
 }
 
@@ -601,13 +862,17 @@ function actualizarContadoresPestañasSolicitudes() {
         const eOrig = sol.estado || "Nuevo";
         const eGest = sol.estadoGestion || "";
         const cat = sol.categoria || ""; 
+        const eVirt = sol.estadoVirtual || "";
         
-        // 🚀 SUMAMOS LOS TICKETS AL GLOBO ROJO
-        if (cat === "Pendiente de Triage" || eGest.includes("migración masiva") || eGest === "Pendiente de Triage") cPorClasificar++;
-        else if (eOrig === "Clasificado" && (eGest === "En revisión" || eGest === "")) cClasificados++;
-        else if (eGest === "Derivada" || eGest === "En gestión") cDerivados++;
-        else if (eGest === "Finalizado en espera de respuesta") cResponder++;
-        else if (eOrig === "Resuelto" || eGest.includes("Respondido") || eGest.includes("Finalizada") || eGest.includes("Caso Resuelto")) cFinalizados++;
+        if (eVirt === "Finalizado") {
+            cFinalizados++;
+        } else {
+            if (cat === "Pendiente de Triage" || eGest.includes("migración masiva") || eGest === "Pendiente de Triage") cPorClasificar++;
+            else if (eOrig === "Clasificado" && (eGest === "En revisión" || eGest === "") && cat !== "Pendiente de Triage") cClasificados++;
+            else if (eGest === "Derivada" || eGest === "En gestión") cDerivados++;
+            else if (eGest === "Finalizado en espera de respuesta") cResponder++;
+            else if (eOrig === "Resuelto" || eGest.includes("Respondido") || eGest.includes("Finalizada") || eGest.includes("Caso Resuelto")) cFinalizados++;
+        }
     });
 
     const elPorClas = document.getElementById("tab-count-clasificar");
@@ -635,7 +900,7 @@ function inyectarFilasTablaSolicitudes(listaTickets) {
 
     ticketsPaginados.forEach((sol, index) => {
         try {
-            const dateObj = sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000) : new Date();
+            const dateObj = parseFirestoreDate(sol.fechaCreacion);
             const estadoActual = sol.estadoGestion || sol.estado || "Abierta";
             let classEstado = "revision";
             
@@ -650,10 +915,14 @@ function inyectarFilasTablaSolicitudes(listaTickets) {
                     <td><input type="checkbox" class="row-selector-checkbox"></td>
                     <td style="white-space: nowrap;"><span class="stacked-cell-primary">${dateObj.toLocaleDateString('es-CL')}</span><span class="stacked-cell-secondary">${dateObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span></td>
                     <td style="min-width: 160px;"><span class="stacked-cell-primary" style="font-weight: 700; color: #0f172a;">${sol.vecinoNombre || sol.nombreVecino || 'Sin Nombre'}</span><span class="stacked-cell-secondary">RUT: ${sol.vecinoRut || sol.rutVecino || "S/R"}</span></td>
-                    <td style="min-width: 140px;"><span class="stacked-cell-primary" style="font-weight: 700; color: #1e3a8a;">${sol.categoria || sol.motivo || "Petición"}</span><span class="stacked-cell-secondary">${sol.subcategoria || "Gral"}</span></td>
-                    <td style="min-width: 130px;"><span class="stacked-cell-primary" style="font-size:12px; font-weight:600; color: #475569;">${sol.oficinaDerivada || "Equipo Territorial"}</span></td>
+                    <td style="min-width: 140px;"><span class="stacked-cell-primary" style="font-weight: 700; color: #1e3a8a;">${sol.triageFalso ? '<span style="color:#ef4444; font-weight:800;">[POR CLASIFICAR]</span>' : (sol.categoria || sol.motivo || "Petición")}</span><span class="stacked-cell-secondary">${sol.subcategoria || "Gral"}</span></td> 
                     <td style="min-width: 120px;"><span class="badge-status ${classEstado}">${estadoActual}</span></td>
                     <td><span class="badge-priority ${(sol.prioridad || "Media").toLowerCase()}">${sol.prioridad || "Media"}</span></td>
+                    <td style="width: 80px; text-align: center;">
+                        <button class="btn-accion-v v-edit" data-id="${sol.id}" title="Editar Solicitud Completa" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; border-radius: 4px; transition: 0.2s;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                    </td>
                 </tr>`;
         } catch (e) { console.warn("⚠️ Solicitud ignorada por falta de formato en BD:", sol.id, e); }
     });
@@ -662,11 +931,20 @@ function inyectarFilasTablaSolicitudes(listaTickets) {
     
     tbody.querySelectorAll(".table-row-clickable").forEach(tr => {
         tr.addEventListener("click", (e) => {
-            if(e.target.closest('input')) return;
+            if(e.target.closest('input') || e.target.closest('.v-edit')) return;
             document.querySelectorAll(".table-row-clickable").forEach(r => r.classList.remove("active-row"));
             tr.classList.add("active-row");
             const idx = tr.getAttribute("data-index");
             mostrarDetallesEnPanel(listaTickets[idx]); 
+        });
+    });
+
+    // 🚀 Escuchador EXCLUSIVO para el botón editar
+    tbody.querySelectorAll(".v-edit").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute("data-id");
+            abrirEditorEspecificoSolicitud(id);
         });
     });
 
@@ -741,7 +1019,7 @@ function mostrarDetallesEnPanel(sol) {
     
     panelContenido.style.cssText = "display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; font-family: system-ui, -apple-system, sans-serif;";
 
-    const fCreacionObj = sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000) : new Date();
+    const fCreacionObj = parseFirestoreDate(sol.fechaCreacion);
     const fechaStr = `${String(fCreacionObj.getDate()).padStart(2, '0')}-${String(fCreacionObj.getMonth() + 1).padStart(2, '0')}-${String(fCreacionObj.getFullYear()).slice(-2)}`;
     const horaStr = fCreacionObj.toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'});
 
@@ -751,7 +1029,7 @@ function mostrarDetallesEnPanel(sol) {
     if (estadoVisual === "En gestión" || estadoVisual === "Derivada" || estadoVisual === "Finalizado en espera de respuesta") { bgBadge = "#dbeafe"; colorBadge = "#2563eb"; }
     if (estadoVisual.includes("Finalizada") || sol.estado === "Resuelto") { bgBadge = "#dcfce7"; colorBadge = "#059669"; }
 
-    let rutBadge = sol.idVecino ? `<span style="background: #dcfce7; color: #059669; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; border: 1px solid #6ee7b7; margin-left:8px; display:inline-flex; align-items:center; gap:4px;">✓ Registrado <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></span>` : ``;
+    let rutBadge = sol.idVecino && sol.idVecino !== "SIN_EXPEDIENTE_VINCULADO" ? `<span style="background: #dcfce7; color: #059669; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; border: 1px solid #6ee7b7; margin-left:8px; display:inline-flex; align-items:center; gap:4px;">✓ Registrado <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v1"></path></svg></span>` : ``;
 
     let clasifBox = "";
     if (sol.codigoInterno) {
@@ -822,10 +1100,6 @@ function mostrarDetallesEnPanel(sol) {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
                             RECLASIFICAR REQUERIMIENTO
                         </button>
-                        <button id="btn-archivar-rapido" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="5" rx="2" ry="2"></rect><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"></path><line x1="10" y1="13" x2="14" y2="13"></line></svg>
-                            Archivar Sin Acción
-                        </button>
                     </div>
                 </div>
 
@@ -839,7 +1113,7 @@ function mostrarDetallesEnPanel(sol) {
                         <option value="En revisión" ${estadoVisual === 'En revisión' ? 'selected' : ''}>En revisión</option>
                         <option value="Derivada" ${estadoVisual === 'Derivada' ? 'selected' : ''}>Derivada</option>
                         <option value="En gestión" ${estadoVisual === 'En gestión' ? 'selected' : ''}>En gestión</option>
-                        <option value="Finalizada" ${estadoVisual.includes('Finalizada') || estadoVisual === 'Finalizado en espera de respuesta' ? 'selected' : ''}>Finalizada</option>
+                        <option value="Finalizada" ${estadoVisual.includes('Finalizada') || estadoVisual === 'Finalizado en espera de respuesta' || sol.estado === 'Resuelto' ? 'selected' : ''}>Finalizada</option>
                     </select>
                     
                     <div id="info-box-gestion" style="padding: 12px; border-radius: 6px; font-size: 12px; margin-bottom: 12px; background: #ffffff; border: 1px dashed #94a3b8; color: #475569; line-height: 1.5;"></div>
@@ -867,7 +1141,7 @@ function mostrarDetallesEnPanel(sol) {
     }
 
     const btnVerVecino = document.getElementById("btn-ver-ficha-rapida");
-    if(btnVerVecino && sol.idVecino) {
+    if(btnVerVecino && sol.idVecino && sol.idVecino !== "SIN_EXPEDIENTE_VINCULADO") {
         btnVerVecino.onclick = () => { abrirVisorVecino(sol.idVecino); };
     } else if (btnVerVecino) { btnVerVecino.style.display = "none"; }
 
@@ -875,21 +1149,6 @@ function mostrarDetallesEnPanel(sol) {
     if (btnReclasificar) {
         btnReclasificar.onclick = () => { 
             abrirEditorEspecificoSolicitud(sol.id); 
-        };
-    }
-
-    const btnArchivar = document.getElementById("btn-archivar-rapido");
-    if (btnArchivar) {
-        btnArchivar.onclick = async () => {
-            if(confirm("¿Estás seguro que deseas archivar este ticket sin emitir acción municipal?")) {
-                let userRoleCache = sessionStorage.getItem('SIGEV_USER_ROLE');
-                let baseName = auth.currentUser ? auth.currentUser.displayName : "Administrador";
-                let rolEtiqueta = (userRoleCache === "super_admin" || userRoleCache === "superadmin") ? "ADMINISTRADOR" : baseName;
-                
-                await updateDoc(doc(db, "solicitudes", sol.id), { estado: "Archivado", estadoGestion: "Archivado", archivadoPor: rolEtiqueta });
-                mostrarAlertaPersonalizada("El ticket ha sido archivado correctamente.", "info");
-                ejecutarMotorCargaSolicitudes();
-            }
         };
     }
 
@@ -1018,7 +1277,12 @@ function mostrarDetallesEnPanel(sol) {
     const btnHistorial = document.getElementById("btn-ver-historial");
     if (btnHistorial) {
         btnHistorial.onclick = () => {
-            const formatTs = (ts) => ts ? new Date(ts.seconds * 1000).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "Fecha desconocida";
+            const formatTs = (ts) => {
+                if (!ts) return "Fecha desconocida";
+                const d = ts.toDate ? ts.toDate() : new Date(ts.seconds ? ts.seconds * 1000 : ts);
+                if (isNaN(d.getTime())) return "Fecha desconocida";
+                return d.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            };
 
             const formatActor = (rawName) => {
                 if (!rawName) return "ADMINISTRADOR";
@@ -1027,8 +1291,8 @@ function mostrarDetallesEnPanel(sol) {
                 
                 n = n.replace(/\s*\(.*?\)\s*/g, '').trim();
                 let partes = n.split(" ");
-                if (partes.length >= 4) return partes[0] + " " + partes[2]; // Nombre1 Apellido1
-                if (partes.length === 3) return partes[0] + " " + partes[1]; // Nombre1 Apellido1 (usualmente)
+                if (partes.length >= 4) return partes[0] + " " + partes[2]; 
+                if (partes.length === 3) return partes[0] + " " + partes[1]; 
                 return n;
             };
 
@@ -1229,188 +1493,6 @@ export function inicializarEscuchadoresFiltros() {
     }
 }
 
-async function abrirEditorEspecificoSolicitud(idSolicitud) {
-    try {
-        const docRef = doc(db, "solicitudes", idSolicitud);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) return;
-
-        const sol = docSnap.data();
-        
-        const fCreacionObj = sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000) : new Date();
-        const d = String(fCreacionObj.getDate()).padStart(2, '0');
-        const m = String(fCreacionObj.getMonth() + 1).padStart(2, '0');
-        const a = String(fCreacionObj.getFullYear()).slice(-2);
-        const smartTicketId = sol.codigoInterno || sol.codigo || `${(sol.idVecino || "000").substring(0, 4).toUpperCase()}-${d}${m}${a}-${sol.id.substring(0, 3).toUpperCase()}`;
-
-        let opcionesCategoriasHTML = `<option value="">Seleccione Categoría</option>`;
-        Object.keys(MAPA_CLASIFICACION_SIGEV).forEach(cat => {
-            opcionesCategoriasHTML += `<option value="${cat}" ${(sol.categoria || sol.motivo) === cat ? 'selected' : ''}>${cat}</option>`;
-        });
-
-        const modalOverlay = document.createElement("div");
-        modalOverlay.className = "profile-modal-overlay";
-
-        modalOverlay.innerHTML = `
-            <div class="profile-modal-card" style="max-width: 550px; border-radius: 12px; overflow: hidden; background: #fff; display: flex; flex-direction: column; font-family: system-ui, sans-serif;">
-                <div style="background-color: #0b438c; padding: 20px 24px; position: relative; flex-shrink: 0;">
-                    <h3 style="margin: 0; font-size: 18px; color: #ffffff; font-weight: 800;">Reclasificar Requerimiento</h3>
-                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: rgba(255,255,255,0.85);">Ticket Público: ${smartTicketId}</p>
-                    <button class="btn-profile-close" style="position: absolute; top: 16px; right: 20px; background: none; border: none; color: #ffffff; font-size: 24px; cursor: pointer; outline: none;">&times;</button>
-                </div>
-
-                <div class="profile-modal-body" style="padding: 24px; overflow-y: auto; max-height: 70vh;">
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        
-                        <div>
-                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Categoría de Clasificación *</label>
-                            <select id="es-motivo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
-                                ${opcionesCategoriasHTML}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Subcategoría Específica *</label>
-                            <select id="es-subcategoria" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
-                            </select>
-                        </div>
-
-                        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px 16px; border-radius: 8px;">
-                            <label style="font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block;">Departamento Encargado</label>
-                            <input type="text" id="es-oficina" value="${sol.oficinaDerivada || ''}" readonly style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13.5px; font-weight: 700; background-color: #ffffff; color: #0f172a; outline: none; cursor: not-allowed; box-sizing: border-box;">
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                            <div>
-                                <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Responsable de Seguimiento *</label>
-                                <select id="es-asignado" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; font-weight: 600; color: #0f172a; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
-                                    <option value="Equipo Territorial">Cargando equipo...</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Prioridad Operativa *</label>
-                                <select id="es-prioridad" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: white; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%2364748b\\' stroke-width=\\'2.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolyline points=\\'6 9 12 15 18 9\\'%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
-                                    <option value="Baja" ${sol.prioridad === 'Baja' ? 'selected' : ''}>🟢 Baja</option>
-                                    <option value="Media" ${(sol.prioridad === 'Media' || !sol.prioridad) ? 'selected' : ''}>🟡 Media</option>
-                                    <option value="Alta" ${sol.prioridad === 'Alta' ? 'selected' : ''}>🔴 Alta</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 6px; display: block;">Notas Internas / Resoluciones Operativas</label>
-                            <textarea id="es-notas-gestion" rows="3" placeholder="Ingresa instrucciones o resoluciones para el equipo..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; resize: vertical;">${sol.notasGestion || ''}</textarea>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
-                    <button type="button" id="btn-modal-cancel" style="padding: 10px 20px; font-size: 13.5px; font-weight: 600; color: #475569; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; outline: none;">Cancelar</button>
-                    <button type="button" id="btn-modal-save" style="padding: 10px 20px; font-size: 13.5px; font-weight: 700; color: #ffffff; background: #2563eb; border: none; border-radius: 6px; cursor: pointer; outline: none; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">🚀 Guardar Re-Clasificación</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modalOverlay);
-
-        const selectPersonal = modalOverlay.querySelector("#es-asignado");
-        try {
-            const qUsers = query(collection(db, "usuarios")); 
-            const querySnapshot = await getDocs(qUsers);
-            
-            let opcionesHTML = `<option value="Equipo Territorial">Equipo Territorial</option>`;
-            window.cacheFotosUsuarios = {};
-
-            querySnapshot.forEach((docSnap) => {
-                const userData = docSnap.data();
-                const rolNormalizado = (userData.rol || "").toLowerCase();
-                
-                if (rolNormalizado !== "pendiente" && rolNormalizado !== "super_admin" && rolNormalizado !== "superadmin" && userData.rol) {
-                    const nombreUsuario = userData.nombreCompleto || userData.nombre || userData.email;
-                    
-                    window.cacheFotosUsuarios[nombreUsuario] = userData.fotoPerfil || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50";
-                    
-                    const seleccionado = (sol.asignadoA === nombreUsuario) ? "selected" : "";
-                    opcionesHTML += `<option value="${nombreUsuario}" ${seleccionado}>${nombreUsuario}</option>`;
-                }
-            });
-            
-            selectPersonal.innerHTML = opcionesHTML;
-        } catch (error) {
-            console.error("Error consultando el personal autorizado:", error);
-            selectPersonal.innerHTML = `<option value="Equipo Territorial">Equipo Territorial</option>`;
-        }
-
-        const eMotivo = modalOverlay.querySelector("#es-motivo");
-        const eSub = modalOverlay.querySelector("#es-subcategoria");
-        const eOfi = modalOverlay.querySelector("#es-oficina");
-
-        const poblarSub = (cat, defaultVal = "") => {
-            eSub.innerHTML = "";
-            if (cat && MAPA_CLASIFICACION_SIGEV[cat]) {
-                eOfi.value = MAPA_CLASIFICACION_SIGEV[cat].depName;
-                let h = `<option value="">Seleccione subcategoría</option>`;
-                Object.keys(MAPA_CLASIFICACION_SIGEV[cat].subs).forEach(s => { h += `<option value="${s}" ${s === defaultVal ? 'selected' : ''}>${s}</option>`; });
-                eSub.innerHTML = h; eSub.disabled = false;
-            } else { eOfi.value = ""; eSub.innerHTML = `<option value="">Seleccione categoría</option>`; eSub.disabled = true; }
-        };
-
-        if (sol.categoria || sol.motivo) poblarSub(sol.categoria || sol.motivo, sol.subcategoria);
-        eMotivo.addEventListener("change", (e) => poblarSub(e.target.value));
-
-        modalOverlay.querySelector(".btn-profile-close").addEventListener("click", () => modalOverlay.remove());
-        modalOverlay.querySelector("#btn-modal-cancel").addEventListener("click", () => modalOverlay.remove());
-
-        const btnSave = modalOverlay.querySelector("#btn-modal-save");
-        btnSave.addEventListener("click", async () => {
-            btnSave.disabled = true; btnSave.innerText = "Guardando...";
-            try {
-                const nombreAsignadoElegido = modalOverlay.querySelector("#es-asignado").value;
-                
-                let fotoEncargadoElegido = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50";
-                if (window.cacheFotosUsuarios && window.cacheFotosUsuarios[nombreAsignadoElegido]) {
-                    fotoEncargadoElegido = window.cacheFotosUsuarios[nombreAsignadoElegido];
-                }
-
-                const catNueva = eMotivo.value;
-                const subNueva = eSub.value;
-                let codigoInternoNuevo = sol.codigoInterno;
-
-                if (MAPA_CLASIFICACION_SIGEV[catNueva]) {
-                    const dataCat = MAPA_CLASIFICACION_SIGEV[catNueva];
-                    const baseCodigoPublico = sol.codigo || "S/N";
-                    if(baseCodigoPublico !== "S/N") {
-                        codigoInternoNuevo = `${baseCodigoPublico}-${dataCat.depCod || "GEN"}-${dataCat.catCod || "GEN"}-${dataCat.subs[subNueva] || "GEN"}`;
-                    }
-                }
-
-                const updatePayload = {
-                    motivo: catNueva,
-                    categoria: catNueva,
-                    subcategoria: subNueva,
-                    oficinaDerivada: eOfi.value.trim(),
-                    codigoInterno: codigoInternoNuevo,
-                    asignadoA: nombreAsignadoElegido,
-                    registradaPorFoto: fotoEncargadoElegido,
-                    prioridad: modalOverlay.querySelector("#es-prioridad").value,
-                    notasGestion: modalOverlay.querySelector("#es-notas-gestion").value.trim()
-                };
-
-                await updateDoc(docRef, updatePayload);
-                modalOverlay.remove();
-                mostrarAlertaPersonalizada("La solicitud se ha actualizado y reasignado en el sistema.", "success");
-                renderizarMetricasServidor();
-                await ejecutarMotorCargaSolicitudes(); 
-            } catch (err) {
-                console.error("Error al actualizar la solicitud:", err);
-                btnSave.disabled = false;
-                btnSave.innerText = "🚀 Guardar Re-Clasificación";
-            }
-        });
-
-    } catch (err) { console.error(err); }
-}
-
 function inicializarManejadorModalIngreso() {
     const modalIngreso = document.getElementById("modal-ingreso-vecino");
     const btnAbrirModal = document.getElementById("btn-trigger-new-solicitud");
@@ -1546,7 +1628,10 @@ function inicializarManejadorModalIngreso() {
             const dd = String(hoy.getDate()).padStart(2, '0');
             const fechaStr = `${yy}${mm}${dd}`;
 
-            // NUEVO SISTEMA DE CONTADOR: 1 Documento por Tenant
+            // 🚀 Extraemos las siglas del Tenant (Ej: MIG)
+            const tnt = CURRENT_TENANT_ID.substring(0, 4).toUpperCase();
+
+            // CONTADOR DIARIO MATEMÁTICO (Reinicia a las 00:00)
             const counterRef = doc(db, "counters_diarios", CURRENT_TENANT_ID);
             let correlativoNumerico = 1;
 
@@ -1564,12 +1649,16 @@ function inicializarManejadorModalIngreso() {
             });
 
             const correlativoStr = String(correlativoNumerico).padStart(4, '0');
+
+            // 🚀 ESTÁNDAR MAESTRO: Público corto, Interno con Tenant y Triage
             const codigoPublico = `SIG-${fechaStr}-${correlativoStr}`;
-            let codigoInterno = codigoPublico;
+            let codigoInterno = `SIG-${tnt}-${fechaStr}-${correlativoStr}`;
 
             if (MAPA_CLASIFICACION_SIGEV[cat]) {
                 const dataCat = MAPA_CLASIFICACION_SIGEV[cat];
-                codigoInterno = `${codigoPublico}-${dataCat.depCod || "GEN"}-${dataCat.catCod || "GEN"}-${dataCat.subs[sub] || "GEN"}`;
+                codigoInterno += `-${dataCat.depCod || "GEN"}-${dataCat.catCod || "GEN"}-${dataCat.subs[sub] || "GEN"}`;
+            } else {
+                codigoInterno += `-PENDIENTE-CLASIFICACION`;
             }
 
             const payload = {
@@ -1595,7 +1684,7 @@ function inicializarManejadorModalIngreso() {
             
             if (trSubcategoria) trSubcategoria.disabled = true;
 
-            renderizarMetricasServidor(); await ejecutarMotorCargaSolicitudes();
+            await ejecutarMotorCargaSolicitudes();
         } catch (err) {
             console.error("Error crítico al despachar solicitud manual:", err);
             mostrarAlertaPersonalizada("Error de conexión al guardar el caso.", "error");

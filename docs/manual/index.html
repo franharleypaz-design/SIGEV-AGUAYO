@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual de Usuario - SIGEV</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Manual de Usuario de la Plataforma SIGEV para Gestores">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  
+  <style>
+    :root {
+      --theme-color: #0b438c; /* Azul Institucional SIGEV */
+    }
+    
+    /* Logo corporativo más compacto y discreto, alineado al estilo doc */
+    .app-name-link img {
+      max-width: 110px !important; /* Tamaño reducido idéntico a la doc técnica */
+      height: auto !important;
+      margin: 15px auto 5px auto;
+      display: block;
+    }
+    
+    /* Fondo del menú lateral cambiado a BLANCO absoluto */
+    .sidebar {
+      background-color: #ffffff !important;
+      border-right: 1px solid #e2e8f0;
+    }
+    
+    /* Tipografías y títulos limpios */
+    .markdown-section h1 {
+      color: #0f172a;
+      font-weight: 700;
+      margin-top: 20px;
+    }
+    .markdown-section h2 {
+      color: #1e293b;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-top: 30px;
+    }
+    
+    /* Tablas ordenadas al 100% */
+    .markdown-section table {
+      width: 100%;
+      display: table;
+      margin-top: 15px;
+      margin-bottom: 25px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">Cargando el manual de SIGEV...</div>
+  
+  <script>
+    window.$docsify = {
+      name: 'Manual SIGEV',
+      
+      // Ruta relativa exacta hacia tu logo
+      logo: '../img/Logo_Letra.png', 
+
+      loadSidebar: true,
+      subMaxLevel: 2,
+      auto2top: true,
+      themeColor: '#0b438c',
+      
+      // Buscador Inteligente
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: '🔍 Buscar en la documentación...',
+        noData: '❌ No se encontraron resultados',
+        depth: 3
+      },
+      
+      // Paginación inferior
+      pagination: {
+        previousText: 'Anterior',
+        nextText: 'Siguiente',
+        crossChapter: true,
+        crossChapterText: true,
+      },
+
+      // Alertas visuales de colores
+      'flexible-alerts': {
+        style: 'callout',
+        note: { label: "Nota" },
+        tip: { label: "Consejo" },
+        warning: { label: "Atención" },
+        attention: { label: "Peligro" }
+      }
+    }
+  </script>
+  
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+
+  <script src="//cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  </script>
+  <script src="//unpkg.com/docsify-mermaid@2.0.1/dist/docsify-mermaid.js"></script>
+  
+  <script src="//unpkg.com/docsify-plugin-flexible-alerts"></script>
+</body>
+</html>

@@ -10,6 +10,9 @@
         ],
         "plataforma": [
           "sigev-aguayo"
+        ],
+        "documentacion": [
+          "sigev-docs"
         ]
       }
     }

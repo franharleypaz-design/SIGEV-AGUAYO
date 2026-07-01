@@ -94,7 +94,7 @@ const SIDEBAR_HTML = `
                 Reportes
             </a>
         </li>
-        <li class="sidebar-item" data-page="usuarios.html">
+        <li class="sidebar-item" data-page="usuarios.html" style="display: none;">
             <a href="usuarios.html">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 Usuarios
@@ -112,7 +112,7 @@ const SIDEBAR_HTML = `
                 Documentos
             </a>
         </li>
-        <li class="sidebar-item" data-page="configuracion.html">
+        <li class="sidebar-item" data-page="configuracion.html" style="display: none;">
             <a href="configuracion.html">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.01 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 Configuración
@@ -342,12 +342,13 @@ function ejecutarPrunerDeSeguridadMenu() {
 
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
-                    const rol = userData.rol;
+                    const rolOriginal = userData.rol || "";
+                    const rol = String(rolOriginal).toUpperCase().trim(); 
 
                     let iconoRolTopbar = "⏳";
-                    if (rol === "SUPER_ADMIN") iconoRolTopbar = "🎩";
-                    else if (rol === "ADMIN" || rol === "admin") iconoRolTopbar = "👑";
-                    else if (rol === "GESTOR_TERRITORIAL") iconoRolTopbar = "⭐";
+                    if (rol.includes("SUPER")) iconoRolTopbar = "🎩";
+                    else if (rol.includes("ADMIN")) iconoRolTopbar = "👑";
+                    else iconoRolTopbar = "⭐";
 
                     const nameLabel = document.getElementById("user-display-name");
                     if (nameLabel) {
@@ -356,7 +357,7 @@ function ejecutarPrunerDeSeguridadMenu() {
 
                     const labelRol = document.getElementById("user-display-role");
                     if (labelRol) {
-                        labelRol.innerText = userData.rolVisual || (rol === "SUPER_ADMIN" ? "Super Administrador" : rol === "ADMIN" ? "Administrador" : "Gestor Territorial");
+                        labelRol.innerText = userData.rolVisual || (rol.includes("SUPER") ? "Super Administrador" : rol.includes("ADMIN") ? "Administrador" : "Gestor Territorial");
                     }
 
                     const avatar = document.getElementById("user-avatar");
@@ -364,12 +365,20 @@ function ejecutarPrunerDeSeguridadMenu() {
                         avatar.src = userData.foto;
                     }
 
-                    if (rol === "GESTOR_TERRITORIAL" || rol === "mod") {
-                        const tabUsuarios = document.querySelector('[data-page="usuarios.html"]');
-                        const tabConfiguracion = document.querySelector('[data-page="configuracion.html"]');
-
-                        if (tabUsuarios) tabUsuarios.remove();
+                    // 🔒 REGLA 1: Solo SUPER_ADMIN ve Configuración (Desocultar si corresponde)
+                    const tabConfiguracion = document.querySelector('[data-page="configuracion.html"]');
+                    if (rol === "SUPER_ADMIN") {
+                        if (tabConfiguracion) tabConfiguracion.style.display = ""; 
+                    } else {
                         if (tabConfiguracion) tabConfiguracion.remove();
+                    }
+
+                    // 🔒 REGLA 2: Gestores no ven Usuarios (Desocultar si no es Gestor)
+                    const tabUsuarios = document.querySelector('[data-page="usuarios.html"]');
+                    if (rol !== "GESTOR_TERRITORIAL" && rol !== "mod") {
+                        if (tabUsuarios) tabUsuarios.style.display = ""; 
+                    } else {
+                        if (tabUsuarios) tabUsuarios.remove();
                     }
                 }
             } catch (error) {

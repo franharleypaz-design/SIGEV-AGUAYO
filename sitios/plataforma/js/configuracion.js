@@ -1,10 +1,10 @@
-// ==============================================================================
-// SIGEV-AGUAYO - MOTOR CENTRALIZADOR DE CONFIGURACIÓN PARAMÉTRICA (CONECTOR V20)
-// ==============================================================================
+// ============================================================================
+// SIGEV-AGUAYO - PANEL DE ADMINISTRACIÓN PARAMÉTRICA Y MIGRACIÓN (V54)
+// ============================================================================
 import { auth, db, app } from "./app.js";
-import { doc, getDoc, setDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, setDoc, getDoc, updateDoc, collection, writeBatch, getDocs, query, where, serverTimestamp, runTransaction, limit, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { actualizarPerfilLayout } from "./layout.js";
+import { inyectarEstructuraGlobal, actualizarPerfilLayout } from "./layout.js";
 
 const storage = getStorage(app);
 
@@ -46,7 +46,6 @@ auth.onAuthStateChanged(async (user) => {
         await cargarParametrosGlobalesWorkspace();
         await inicializarCentroAuditoriaMaster();
         inicializarModuloMigracionVecinos();
-        // 🚀 INICIALIZAR MÓDULO SOLICITUDES
         inicializarModuloMigracionSolicitudes();
     }
 });
@@ -96,6 +95,33 @@ function inicializarNavegacionConsola() {
         e.preventDefault();
         ejecutarCompilacionDescargaBackupJSON();
     };
+
+    const btnClearDB = document.getElementById("btn-clear-db");
+    if (btnClearDB) {
+        btnClearDB.addEventListener("click", () => {
+            mostrarConfirmacionPeligrosa(
+                "¿Estás completamente seguro de purgar el Padrón?", 
+                "Esta acción borrará de forma irreversible a todos los vecinos y sus expedientes territoriales del tenant activo.", 
+                limpiarBaseDeDatosVecinos
+            );
+        });
+    }
+
+    const btnClearMetrics = document.getElementById("btn-clear-metrics");
+    if (btnClearMetrics) {
+        btnClearMetrics.addEventListener("click", () => {
+            mostrarConfirmacionPeligrosa(
+                "¿Restablecer todas las métricas de gestión?", 
+                "Esta acción eliminará el historial de solicitudes y restablecerá los KPIs territoriales a cero.", 
+                limpiarMetricasGlobales
+            );
+        });
+    }
+
+    const btnGuardarBranding = document.getElementById("btn-guardar-branding");
+    if (btnGuardarBranding) {
+        btnGuardarBranding.addEventListener("click", guardarBrandingTenant);
+    }
 }
 
 function bindUploader(inputId, previewId, placeholderId, cfg, saveCallback) {
@@ -215,6 +241,7 @@ function inicializarCargaImagenLogo() {
         };
     }
 }
+
 async function cargarParametrosGlobalesWorkspace() {
     try {
         const docRef = doc(db, "configuracion_tenant", CURRENT_TENANT_ID);
@@ -336,11 +363,71 @@ async function cargarParametrosGlobalesWorkspace() {
             if (document.getElementById("cfg-auto-email-crear")) document.getElementById("cfg-auto-email-crear").checked = c.notificarUrgentesEmail === true;
             if (document.getElementById("cfg-auto-alerta-tiempo")) document.getElementById("cfg-auto-alerta-tiempo").checked = c.alertaTicketsTreintaDias === true;
 
+            if (typeof renderizarConstructorTriage === "function") {
+                renderizarConstructorTriage(c.mapaTriage);
+            }
         } else {
             if (document.getElementById("cfg-reloj-estilo")) document.getElementById("cfg-reloj-estilo").value = "1";
+            if (typeof renderizarConstructorTriage === "function") {
+                renderizarConstructorTriage(null);
+            }
         }
     } catch (err) {
         console.error("Error cargando configuración paramétrica:", err);
+    }
+}
+
+async function cargarBrandingActual() {
+    try {
+        const tenantRef = doc(db, "tenants", CURRENT_TENANT_ID);
+        const snap = await getDoc(tenantRef);
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.nombreAutoridad && document.getElementById("conf-nombre-autoridad")) document.getElementById("conf-nombre-autoridad").value = data.nombreAutoridad;
+            if (data.cargo && document.getElementById("conf-cargo-autoridad")) document.getElementById("conf-cargo-autoridad").value = data.cargo;
+            if (data.colorPrimario && document.getElementById("conf-color-primario")) document.getElementById("conf-color-primario").value = data.colorPrimario;
+        }
+    } catch (e) {
+        console.error("Error cargando configuración:", e);
+    }
+}
+
+async function guardarBrandingTenant() {
+    const btn = document.getElementById("btn-guardar-branding");
+    btn.disabled = true;
+    btn.innerText = "Guardando...";
+
+    const nombre = document.getElementById("conf-nombre-autoridad").value;
+    const cargo = document.getElementById("conf-cargo-autoridad").value;
+    const colorPrimario = document.getElementById("conf-color-primario").value;
+    const logoInput = document.getElementById("conf-logo-auth");
+
+    try {
+        const payload = {
+            nombreAutoridad: nombre,
+            cargo: cargo,
+            colorPrimario: colorPrimario,
+            updatedAt: serverTimestamp()
+        };
+
+        if (logoInput.files && logoInput.files.length > 0) {
+            const file = logoInput.files[0];
+            const storageRef = ref(storage, `branding/${CURRENT_TENANT_ID}/logo_${Date.now()}_${file.name}`);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            payload.logoUrl = url;
+        }
+
+        await setDoc(doc(db, "tenants", CURRENT_TENANT_ID), payload, { merge: true });
+        mostrarAlertaGlobal("Identidad gráfica actualizada correctamente.", "success");
+        setTimeout(() => location.reload(), 1500);
+
+    } catch (e) {
+        console.error(e);
+        mostrarAlertaGlobal("Error al guardar la configuración visual.", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios y Aplicar";
     }
 }
 
@@ -390,6 +477,7 @@ async function ejecutarPersistenciaConfiguracionFirestore() {
             showActasConcejo: document.getElementById("cfg-dash-chk-actas")?.checked || false,
             notificarUrgentesEmail: document.getElementById("cfg-auto-email-crear")?.checked || false,
             alertaTicketsTreintaDias: document.getElementById("cfg-auto-alerta-tiempo")?.checked || false,
+            mapaTriage: recolectarMapaTriageUI(),
             
             ultimaModificacionSaaS: serverTimestamp()
         };
@@ -466,6 +554,69 @@ async function ejecutarPersistenciaConfiguracionFirestore() {
         console.error("Error al persistir configuración:", err);
         overlayCarga.remove();
         alert("Ocurrió un error al guardar los cambios. Revisa la consola.");
+    }
+}
+
+// ============================================================================
+// PURGA DE BASE DE DATOS (DANGER ZONE)
+// ============================================================================
+async function limpiarBaseDeDatosVecinos() {
+    try {
+        mostrarLoaderBloqueante("Purgando padrón de vecinos...");
+        let batch = writeBatch(db);
+        const q = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
+        const snap = await getDocs(q);
+        
+        let count = 0;
+        snap.forEach(d => {
+            batch.delete(doc(db, "vecinos", d.id));
+            count++;
+            if (count >= 400) {
+                batch.commit();
+                batch = writeBatch(db);
+                count = 0;
+            }
+        });
+        if (count > 0) await batch.commit();
+
+        await setDoc(doc(db, "counters_diarios", CURRENT_TENANT_ID), { vecinosTotal: 0 }, { merge: true });
+
+        ocultarLoaderBloqueante();
+        mostrarAlertaGlobal("Padrón territorial purgado exitosamente.", "success");
+    } catch (e) {
+        console.error(e);
+        ocultarLoaderBloqueante();
+        mostrarAlertaGlobal("Error al eliminar los expedientes.", "error");
+    }
+}
+
+async function limpiarMetricasGlobales() {
+    try {
+        mostrarLoaderBloqueante("Restableciendo métricas y solicitudes...");
+        let batch = writeBatch(db);
+        const q = query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID));
+        const snap = await getDocs(q);
+        
+        let count = 0;
+        snap.forEach(d => {
+            batch.delete(doc(db, "solicitudes", d.id));
+            count++;
+            if (count >= 400) {
+                batch.commit();
+                batch = writeBatch(db);
+                count = 0;
+            }
+        });
+        if (count > 0) await batch.commit();
+
+        await setDoc(doc(db, "counters_diarios", CURRENT_TENANT_ID), { correlativoSolicitudes: 0 }, { merge: true });
+
+        ocultarLoaderBloqueante();
+        mostrarAlertaGlobal("Métricas y Casos eliminados permanentemente.", "success");
+    } catch (e) {
+        console.error(e);
+        ocultarLoaderBloqueante();
+        mostrarAlertaGlobal("Error al purgar las métricas.", "error");
     }
 }
 
@@ -755,6 +906,7 @@ function ejecutarExportacionCSVAuditoria() {
     linkDescarga.click();
     linkDescarga.remove();
 }
+
 function parsearFechaExcel(valor) {
     if (!valor) return "";
     const strVal = valor.toString().trim();
@@ -779,6 +931,162 @@ function parsearFechaExcel(valor) {
     return strVal; 
 }
 
+// ============================================================================
+// 🧽 MOTOR DE SANITIZACIÓN: LIMPIADOR INTELIGENTE DE NOMBRES Y TÍTULOS
+// ============================================================================
+function formatearNombreEstandar(textoRaw) {
+    if (!textoRaw) return "";
+    let nombreRaw = textoRaw.toString().trim().toLowerCase().replace(/\s+/g, ' '); 
+    const conectores = ["de", "del", "la", "las", "los", "y"];
+    return nombreRaw.split(' ').map((palabra, index) => {
+        if (index > 0 && conectores.includes(palabra)) {
+            return palabra; 
+        }
+        if (palabra.length === 0) return "";
+        return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+    }).join(' ');
+}
+
+function sanitizarFilaExcel(rowOriginal) {
+    const row = {};
+    Object.keys(rowOriginal).forEach(key => {
+        row[key.trim().toLowerCase()] = String(rowOriginal[key]).trim();
+    });
+
+    const getVal = (keywords) => {
+        for (let key of Object.keys(row)) {
+            for (let kw of keywords) {
+                if (key.includes(kw.toLowerCase())) return row[key];
+            }
+        }
+        return "";
+    };
+
+    let rawRut = getVal(["rut", "run", "cédula", "cedula"]).replace(/[^0-9kK]/g, "").toUpperCase();
+    let rutLimpio = "";
+    if (rawRut.length > 1) {
+        rutLimpio = rawRut.slice(0, -1) + "-" + rawRut.slice(-1);
+    } else {
+        rutLimpio = `S/R-${Math.floor(100000 + Math.random() * 900000)}`;
+    }
+
+    let nombreLimpio = formatearNombreEstandar(getVal(["nombre", "solicitante", "vecino"]));
+
+    let fonoRaw = getVal(["teléfono", "telefono", "celular", "fono"]).replace(/\D/g, "");
+    let fonoLimpio = "No registrado";
+    if (fonoRaw.length >= 8) {
+        let fono8 = fonoRaw.slice(-8); 
+        fonoLimpio = `+56 9 ${fono8.substring(0,4)} ${fono8.substring(4)}`;
+    }
+
+    let dirPrin = getVal(["dirección", "direccion", "calle", "domicilio"]);
+    let dirComp = getVal(["complementaria", "depto", "block", "casa", "piso"]);
+    let dirTest = dirPrin.toLowerCase();
+    let idHogarCalculado = "";
+
+    if (dirTest === "" || dirTest === "no registrada" || dirTest === "s/r" || dirTest === "sin informacion") {
+        const randomIso = Math.floor(10000 + Math.random() * 90000);
+        idHogarCalculado = `HOG-IND-${rutLimpio}-${randomIso}`;
+        dirPrin = "No registrada";
+    } else {
+        let baseString = `${dirPrin}-${dirComp}`;
+        idHogarCalculado = "HOG-" + baseString.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
+    }
+
+    let sexoClean = getVal(["sexo", "género", "genero"]);
+    if (!["Femenino", "Masculino", "Otro"].includes(sexoClean)) sexoClean = "No especificado";
+
+    let tipoSolRaw = getVal(["tipo solicitante", "solicitante"]);
+    let tipoOrgRaw = getVal(["tipo organización", "tipo organizacion"]).toLowerCase();
+    let nomOrgRaw = getVal(["nombre organización", "nombre organizacion", "nombre org"]);
+    let tipoOrgLimpio = "";
+
+    if (tipoOrgRaw || nomOrgRaw) {
+        let textoBusqueda = (tipoOrgRaw + " " + nomOrgRaw).toLowerCase();
+        
+        if (textoBusqueda.includes("jjvv") || textoBusqueda.includes("junta") || textoBusqueda.includes("vecinal")) {
+            tipoOrgLimpio = "Junta de Vecinos";
+        } else if (textoBusqueda.includes("seguridad") || textoBusqueda.includes("alarma")) {
+            tipoOrgLimpio = "Comité de Seguridad";
+        } else if (textoBusqueda.includes("vivienda") || textoBusqueda.includes("casa") || textoBusqueda.includes("allegados")) {
+            tipoOrgLimpio = "Comité de Vivienda";
+        } else if (textoBusqueda.includes("deportivo") || textoBusqueda.includes("club dep")) {
+            tipoOrgLimpio = "Club Deportivo";
+        } else if (textoBusqueda.includes("adulto mayor") || textoBusqueda.includes("abuelo") || textoBusqueda.includes("cam ") || textoBusqueda.includes("cam-")) {
+            tipoOrgLimpio = "Club de Adulto Mayor";
+        } else if (textoBusqueda.includes("cultural") || textoBusqueda.includes("arte") || textoBusqueda.includes("folclor")) {
+            tipoOrgLimpio = "Centro Cultural";
+        } else if (textoBusqueda.includes("padres") || textoBusqueda.includes("apoderados") || textoBusqueda.includes("cgpa")) {
+            tipoOrgLimpio = "Centro de Padres";
+        } else if (textoBusqueda.includes("scout")) {
+            tipoOrgLimpio = "Grupo Scout";
+        } else if (textoBusqueda.includes("animal") || textoBusqueda.includes("mascota") || textoBusqueda.includes("perro")) {
+            tipoOrgLimpio = "Org. Animalista";
+        } else if (textoBusqueda.includes("condominio") || textoBusqueda.includes("edificio") || textoBusqueda.includes("comunidad") || textoBusqueda.includes("copropiedad")) {
+            tipoOrgLimpio = "Condominio Organizado";
+        } else if (tipoOrgRaw !== "") {
+            tipoOrgLimpio = "Otra";
+        }
+    }
+
+    let tipoSolLimpio = tipoSolRaw;
+    const tiposValidos = ["Vecino/a", "Organización Comunitaria", "Institución", "Empresa o Comercio", "Autoridad o Funcionario"];
+    if (!tiposValidos.includes(tipoSolLimpio)) tipoSolLimpio = "Vecino/a";
+
+    if ((tipoOrgLimpio !== "" || nomOrgRaw !== "") && tipoSolLimpio === "Vecino/a") {
+        tipoSolLimpio = "Organización Comunitaria";
+    }
+    
+    if (tipoSolLimpio !== "Organización Comunitaria") {
+        tipoOrgLimpio = "";
+        nomOrgRaw = "";
+    }
+
+    let sectorCalculado = getVal(["sector", "territorial"]);
+    if (!sectorCalculado) {
+        if (dirTest === "" || dirTest === "no registrada" || dirTest === "s/r" || dirTest === "sin informacion") {
+            sectorCalculado = "Sin Información";
+        } else {
+            sectorCalculado = "Pendiente de Georreferenciación";
+        }
+    }
+
+    return {
+        rut: rutLimpio,
+        nombreCompleto: nombreLimpio || "Sin Nombre Registrado",
+        telefono: fonoLimpio,
+        correo: getVal(["correo", "email", "e-mail"]),
+        sexo: sexoClean,
+        canalPreferencia: getVal(["canal", "preferencia"]) || "WhatsApp",
+        
+        direccion: dirPrin,
+        direccionComplementaria: dirComp,
+        idHogar: idHogarCalculado,
+        
+        sectorTerritorial: sectorCalculado,
+        unidadVecinal: getVal(["unidad", "uv"]) || "Sin Información",
+        juntaVecinos: getVal(["junta", "jjvv"]) || "Sin Información",
+        barrioPopular: getVal(["barrio", "villa", "población"]) || "Sin Información",
+        
+        previsionSalud: getVal(["previsión", "prevision", "salud", "fonasa", "isapre"]) || "Ninguna-Particular",
+        tramoLetraIsapre: getVal(["tramo", "letra"]).toUpperCase(),
+        ocupacion: getVal(["ocupación", "ocupacion", "oficio", "profesión"]),
+        observaciones: getVal(["observacion", "nota", "comentario", "detalle"]),
+        
+        tipoSolicitante: tipoSolLimpio,
+        tipoOrganizacion: tipoOrgLimpio,
+        nombreOrganizacion: nomOrgRaw,
+        
+        cantidadIntegrantes: parseInt(getVal(["cantidad", "integrantes"])) || 1,
+        jefeHogar: getVal(["jefe", "jefatura"]).toUpperCase() === "SI",
+        fechaNacimiento: parsearFechaExcel(getVal(["nacimiento", "fecha nac"])),
+        
+        lat: "", 
+        lng: "",
+        tenantId: CURRENT_TENANT_ID
+    };
+}
+
 function inicializarModuloMigracionVecinos() {
     const btnDescargar = document.getElementById("btn-descargar-plantilla-vecinos");
     const inputFile = document.getElementById("cfg-excel-vecinos-file");
@@ -789,36 +1097,63 @@ function inicializarModuloMigracionVecinos() {
             if (typeof XLSX === "undefined") return alert("Error: Librería Excel no cargada.");
             
             const encabezados = [
-                "RUT (Ej: 18.478.241-3)", 
+                "RUT", 
                 "Nombre Completo", 
-                "Teléfono (Ej: +56 9 12345678)", 
-                "Canal Preferido (WhatsApp / Llamada / Correo)",
-                "Sexo (Femenino / Masculino / Otro)",
-                "Fecha Nacimiento (YYYY-MM-DD)", 
-                "Correo Electrónico", 
-                "Dirección", 
-                "Ocupación", 
+                "Telefono", 
+                "Canal Preferencia",
+                "Sexo",
+                "Fecha Nacimiento", 
+                "Correo", 
+                "Direccion Principal", 
+                "Direccion Complementaria",
+                "Sector Territorial",
+                "Unidad Vecinal",
+                "Junta de Vecinos",
+                "Barrio Popular",
+                "Prevision Salud",
+                "Tramo o Isapre",
+                "Ocupacion",
+                "Tipo Solicitante",
+                "Tipo Organizacion",
+                "Nombre Organizacion",
+                "Cantidad Integrantes",
+                "Jefe de Hogar",
                 "Observaciones"
             ];
 
             const ejemplo = [
                 "18.478.241-3", 
                 "Franchesca Paz Paz", 
-                "+56 9 72489389", 
+                "972489389", 
                 "WhatsApp",
                 "Femenino",
                 "1992-08-13", 
                 "franchescap.paz@gmail.com", 
-                "Lima 8677", 
-                "Independiente", 
-                "Líder vecinal."
+                "Goycolea 405", 
+                "Block B Depto 40",
+                "Sector Territorial 3",
+                "4",
+                "Sin Información",
+                "Sin Información",
+                "FONASA",
+                "B",
+                "Arquitecta",
+                "Organización Comunitaria",
+                "Junta de Vecinos",
+                "JJVV Las Camelias",
+                "4",
+                "SI",
+                "Líder vecinal fundadora."
             ];
 
             const ws = XLSX.utils.aoa_to_sheet([encabezados, ejemplo]);
             
             const wscols = [
-                {wch: 20}, {wch: 30}, {wch: 25}, {wch: 40}, {wch: 30}, 
-                {wch: 25}, {wch: 30}, {wch: 40}, {wch: 20}, {wch: 45}
+                {wch: 15}, {wch: 30}, {wch: 15}, {wch: 20}, {wch: 15}, 
+                {wch: 20}, {wch: 25}, {wch: 35}, {wch: 25}, {wch: 25},
+                {wch: 15}, {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
+                {wch: 25}, {wch: 25}, {wch: 25}, {wch: 30}, {wch: 20},
+                {wch: 15}, {wch: 40}
             ];
             ws['!cols'] = wscols;
 
@@ -829,9 +1164,21 @@ function inicializarModuloMigracionVecinos() {
     }
 
     if (inputFile) {
-        inputFile.addEventListener("change", (e) => {
+        inputFile.addEventListener("change", async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+
+            const tbody = document.getElementById("tbody-preview-vecinos");
+            if (tbody) {
+                document.getElementById("preview-migracion-vecinos").style.display = "block";
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:#0b438c; font-weight:bold;">⏳ Buscando coincidencias en la base de datos...</td></tr>`;
+            }
+
+            // Descargamos padrón actual en tiempo real para la validación visual
+            const qVecinosActuales = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
+            const snapActuales = await getDocs(qVecinosActuales);
+            const vecinosActuales = [];
+            snapActuales.forEach(doc => { vecinosActuales.push({ id: doc.id, ...doc.data() }); });
 
             const reader = new FileReader();
             reader.onload = (evt) => {
@@ -846,8 +1193,50 @@ function inicializarModuloMigracionVecinos() {
                         return;
                     }
 
-                    excelVecinosDataGlobal = jsonRows;
-                    renderizarPrevisualizacionVecinos(jsonRows);
+                    excelVecinosDataGlobal = jsonRows.map(row => {
+                        let objLimpio = sanitizarFilaExcel(row);
+                        
+                        let vecinoExistente = null;
+                        
+                        if (objLimpio.rut && !objLimpio.rut.startsWith("S/R-")) {
+                            vecinoExistente = vecinosActuales.find(v => v.rut === objLimpio.rut);
+                        }
+
+                        if (!vecinoExistente) {
+                            const nombreNorm = objLimpio.nombreCompleto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                            const fonoLimpio = (objLimpio.telefono || "").replace(/\D/g, "");
+                            const dirLimpia = objLimpio.direccion !== "No registrada" && objLimpio.direccion !== "Sin Información" ? objLimpio.direccion.toLowerCase().trim() : "";
+
+                            vecinoExistente = vecinosActuales.find(v => {
+                                const vName = (v.nombreCompleto || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                                const vFono = (v.telefono || "").replace(/\D/g, "");
+                                const vDir = v.direccion !== "No registrada" && v.direccion !== "Sin Información" ? (v.direccion || "").toLowerCase().trim() : "";
+
+                                const matchName = (nombreNorm !== "" && nombreNorm !== "sin nombre registrado" && vName === nombreNorm);
+                                const matchFono = (fonoLimpio.length >= 8 && vFono === fonoLimpio);
+                                const matchDir = (dirLimpia !== "" && vDir === dirLimpia);
+
+                                if (matchName && matchFono) return true;
+                                if (matchName && matchDir) return true;
+                                if (matchName && (v.rut || "").startsWith("S/R-")) return true;
+                                
+                                return false;
+                            });
+                        }
+
+                        if (vecinoExistente) {
+                            objLimpio.rut = vecinoExistente.rut; 
+                            objLimpio.nombreCompleto = vecinoExistente.nombreCompleto; 
+                            objLimpio.isMatched = true;
+                        } else {
+                            vecinosActuales.push(objLimpio);
+                        }
+
+                        return objLimpio;
+
+                    }).filter(v => v.rut !== "" && v.nombreCompleto !== "Sin Nombre Registrado");
+                    
+                    renderizarPrevisualizacionVecinos(excelVecinosDataGlobal);
                     
                 } catch (error) {
                     console.error("Error leyendo Excel:", error);
@@ -862,23 +1251,15 @@ function inicializarModuloMigracionVecinos() {
         btnConfirmar.addEventListener("click", () => {
             if (excelVecinosDataGlobal.length === 0) return;
             
-            mostrarModalConfirmacionMigracion(excelVecinosDataGlobal.length, CURRENT_TENANT_ID, async () => {
+            mostrarModalConfirmacionMigracion(excelVecinosDataGlobal.length, CURRENT_TENANT_ID, async (btnLoading, modalOverlay) => {
                 
-                btnConfirmar.disabled = true;
-                btnConfirmar.innerText = "⏳ Analizando Padrón Existente...";
+                
 
                 try {
-                    const padronRegistrado = new Set();
                     const qVecinosActuales = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
                     const snapActuales = await getDocs(qVecinosActuales);
-                    snapActuales.forEach(doc => {
-                        const data = doc.data();
-                        if (data.rut) {
-                            padronRegistrado.add(data.rut.replace(/[^0-9kK]/g, '').toUpperCase());
-                        }
-                    });
-
-                    btnConfirmar.innerText = "⏳ Procesando Lotes y Asignando IDs...";
+                    const vecinosActuales = [];
+                    snapActuales.forEach(doc => { vecinosActuales.push({ id: doc.id, ...doc.data() }); });
 
                     const counterRef = doc(db, "counters_diarios", CURRENT_TENANT_ID);
                     const counterSnap = await getDoc(counterRef);
@@ -889,179 +1270,222 @@ function inicializarModuloMigracionVecinos() {
 
                     let batch = writeBatch(db);
                     let contadorBatch = 0;
-                    let totalGuardados = 0;
-                    let correlativoActual = currentCount + 1; 
+                    let creados = 0;
+                    let actualizados = 0;
+                    let correlativoActual = currentCount; 
                     
                     let resumenOmitidos = [];
+                    let unicosAfectadosSet = new Set();
 
-                    for (const vecino of excelVecinosDataGlobal) {
-                        const rutBruto = vecino["RUT (Ej: 18.478.241-3)"] || vecino["RUT"] || "";
-                        const nombreVecino = (vecino["Nombre Completo"] || "Vecino Sin Nombre").toString().trim();
-                        const rutLimpio = rutBruto.toString().replace(/[^0-9kK]/g, '').toUpperCase();
+                    for (let i = 0; i < excelVecinosDataGlobal.length; i++) {
+                        btnLoading.innerText = `⏳ Inyectando: ${i + 1} de ${excelVecinosDataGlobal.length}...`;
+
+                        const payloadLimpio = excelVecinosDataGlobal[i];
                         
-                        if (!rutLimpio) continue; 
-
-                        if (padronRegistrado.has(rutLimpio)) {
-                            resumenOmitidos.push({ rut: rutBruto, nombre: nombreVecino });
-                            continue; 
+                        let vecinoExistente = null;
+                        
+                        if (payloadLimpio.rut && !payloadLimpio.rut.startsWith("S/R-")) {
+                            vecinoExistente = vecinosActuales.find(v => v.rut === payloadLimpio.rut);
                         }
 
-                        padronRegistrado.add(rutLimpio);
-                        
-                        let dv = rutLimpio.slice(-1);
-                        let cuerpo = rutLimpio.slice(0, -1);
-                        let rutFormateado = cuerpo + "-" + dv;
+                        if (!vecinoExistente) {
+                            const nombreNorm = payloadLimpio.nombreCompleto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                            const fonoLimpio = (payloadLimpio.telefono || "").replace(/\D/g, "");
+                            const dirLimpia = payloadLimpio.direccion !== "No registrada" && payloadLimpio.direccion !== "Sin Información" ? payloadLimpio.direccion.toLowerCase().trim() : "";
 
-                        const fechaNacimientoProcesada = parsearFechaExcel(vecino["Fecha Nacimiento (YYYY-MM-DD)"]);
+                            vecinoExistente = vecinosActuales.find(v => {
+                                const vName = (v.nombreCompleto || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                                const vFono = (v.telefono || "").replace(/\D/g, "");
+                                const vDir = v.direccion !== "No registrada" && v.direccion !== "Sin Información" ? (v.direccion || "").toLowerCase().trim() : "";
 
-                        const docRef = doc(collection(db, "vecinos"));
-                        
-                        batch.set(docRef, {
-                            tenantId: CURRENT_TENANT_ID,
-                            concejalId: concejalActivoData.id || `ID_CONCEJAL_${CURRENT_TENANT_ID.toUpperCase()}`,
-                            rut: rutFormateado,
-                            nombreCompleto: nombreVecino,
-                            telefono: (vecino["Teléfono (Ej: +56 9 12345678)"] || vecino["Telefono"] || "No registrado").toString().trim(),
-                            canalPreferencia: (vecino["Canal Preferido (WhatsApp / Llamada / Correo)"] || "WhatsApp").toString().trim(),
-                            sexo: (vecino["Sexo (Femenino / Masculino / Otro)"] || "No especificado").toString().trim(),
-                            fechaNacimiento: fechaNacimientoProcesada,
-                            correo: (vecino["Correo Electrónico"] || vecino["Correo"] || "").toString().trim(),
-                            direccion: (vecino["Dirección"] || vecino["Direccion"] || "No registrada").toString().trim(),
-                            lat: "",
-                            lng: "",
-                            sectorTerritorial: "Pendiente de Georreferenciación",
-                            unidadVecinal: "Sin Información",
-                            juntaVecinos: "Sin Información",
-                            barrioPopular: "Sin Información",
-                            ocupacion: (vecino["Ocupación"] || "").toString().trim(),
-                            observaciones: (vecino["Observaciones"] || "").toString().trim(),
-                            fechaRegistro: serverTimestamp(),
-                            etiquetas: ["migracion_excel"],
-                            correlativo: correlativoActual
-                        });
+                                const matchName = (nombreNorm !== "" && nombreNorm !== "sin nombre registrado" && vName === nombreNorm);
+                                const matchFono = (fonoLimpio.length >= 8 && vFono === fonoLimpio);
+                                const matchDir = (dirLimpia !== "" && vDir === dirLimpia);
 
-                        correlativoActual++;
-                        contadorBatch++;
-                        totalGuardados++;
+                                if (matchName && matchFono) return true;
+                                if (matchName && matchDir) return true;
+                                if (matchName && (v.rut || "").startsWith("S/R-")) return true;
+                                
+                                return false;
+                            });
+                        }
 
-                        if (contadorBatch >= 480) {
+                        if (vecinoExistente) {
+                            const updateData = {};
+                            
+                            if (payloadLimpio.rut && !payloadLimpio.rut.startsWith("S/R-") && vecinoExistente.rut.startsWith("S/R-")) updateData.rut = payloadLimpio.rut;
+                            if (payloadLimpio.telefono !== "No registrado") updateData.telefono = payloadLimpio.telefono;
+                            if (payloadLimpio.correo !== "") updateData.correo = payloadLimpio.correo;
+                            if (payloadLimpio.ocupacion !== "") updateData.ocupacion = payloadLimpio.ocupacion;
+                            if (payloadLimpio.previsionSalud !== "Ninguna-Particular") updateData.previsionSalud = payloadLimpio.previsionSalud;
+                            if (payloadLimpio.tramoLetraIsapre !== "") updateData.tramoLetraIsapre = payloadLimpio.tramoLetraIsapre;
+
+                            if (payloadLimpio.direccion !== "No registrada" && vecinoExistente.direccion !== payloadLimpio.direccion) {
+                                updateData.direccion = payloadLimpio.direccion;
+                                updateData.direccionComplementaria = payloadLimpio.direccionComplementaria;
+                                updateData.idHogar = payloadLimpio.idHogar;
+                            }
+
+                            if (Object.keys(updateData).length > 0) {
+                                batch.update(doc(db, "vecinos", vecinoExistente.id), updateData);
+                                actualizados++;
+                                contadorBatch++;
+                                unicosAfectadosSet.add(vecinoExistente.id);
+                            } else {
+                                resumenOmitidos.push(`Fila ${i + 2}: ${payloadLimpio.nombreCompleto || "S/N"} (RUT: ${payloadLimpio.rut}) - Registro ya existe sin datos nuevos`);
+                            }
+
+                        } else {
+                            correlativoActual++;
+                            payloadLimpio.correlativo = correlativoActual;
+                            payloadLimpio.fechaRegistro = serverTimestamp();
+                            payloadLimpio.fotoPerfil = "";
+
+                            const docRef = doc(collection(db, "vecinos"));
+                            batch.set(docRef, payloadLimpio);
+                            
+                            creados++;
+                            contadorBatch++;
+                            vecinosActuales.push({ id: docRef.id, ...payloadLimpio });
+                            unicosAfectadosSet.add(docRef.id);
+                        }
+
+                        if (contadorBatch >= 400) {
                             await batch.commit();
                             batch = writeBatch(db);
                             contadorBatch = 0;
                         }
                     }
 
-                    if (totalGuardados > 0) {
-                        batch.set(counterRef, { vecinosTotal: currentCount + totalGuardados }, { merge: true });
+                    if (contadorBatch > 0) {
                         await batch.commit();
+                    }
+
+                    if (creados > 0) {
+                        await setDoc(counterRef, { vecinosTotal: correlativoActual }, { merge: true });
                     }
 
                     document.getElementById("preview-migracion-vecinos").style.display = "none";
                     inputFile.value = "";
                     excelVecinosDataGlobal = [];
 
-                    mostrarModalResumenMigracion(totalGuardados, resumenOmitidos);
+                    const msjExito = `🎉 ¡Carga Finalizada!<br>Se leyeron <b>${creados + actualizados + resumenOmitidos.length}</b> filas del archivo Excel, logrando consolidar <b>${unicosAfectadosSet.size} expedientes vecinales únicos</b> en la base de datos (fusionando las filas duplicadas internamente).`;
+                    mostrarModalResumenMigracion(creados + actualizados, resumenOmitidos, [], msjExito);
 
                 } catch (error) {
                     console.error("Error en migración Batch:", error);
                     alert("❌ ERROR DE ESCRITURA\nHubo un problema de conexión con Firestore. Revisa la consola técnica.");
                 } finally {
-                    btnConfirmar.disabled = false;
-                    btnConfirmar.innerText = "🚀 Iniciar Migración a la Nube";
+                    if(modalOverlay) modalOverlay.remove();
                 }
             });
         });
     }
 }
 
-function mostrarModalConfirmacionMigracion(cantidadFilas, tenant, onConfirm) {
+function mostrarModalConfirmacionMigracion(cantidadFilas, tenant, onConfirm, titulo="Inyección Masiva al Padrón de Vecinos", desc="El motor aplicará el <b>Escudo Anti-Duplicados</b> y la fusión inteligente (Upsert) para agrupar núcleos familiares automáticamente.") {
     const overlay = document.createElement("div");
-    overlay.className = "profile-modal-overlay";
+    overlay.className = "profile-modal-overlay open";
+    overlay.style.display = "flex";
     overlay.style.zIndex = "2000";
 
+    let segs = Math.ceil(cantidadFilas * 0.2); 
+    if (segs < 5) segs = 5; 
+    let tiempoEstimado = segs < 60 ? `Aprox. ${segs} segundos` : `Aprox. ${Math.floor(segs/60)} min y ${segs%60} seg`;
+
     overlay.innerHTML = `
-        <div class="profile-modal-card" style="max-width: 450px; width: 90%; padding: 30px; text-align: center; border-radius: 12px; background: #fff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-            <div style="width: 56px; height: 56px; background: #fffbeb; color: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <div class="profile-modal-card" style="max-width: 500px; text-align: center; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); font-family: system-ui, sans-serif;">
+            <div class="profile-modal-header" style="background:#0f172a; padding: 20px;">
+                <h3 style="color:#fff; margin:0; font-size: 18px; font-weight: 700;">${titulo}</h3>
             </div>
-            <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 800; color: #0f172a;">Confirmación de Inyección Masiva</h3>
-            <p style="margin: 0 0 20px 0; font-size: 13.5px; color: #475569; line-height: 1.5; text-align: left; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                Estás a punto de procesar <strong>${cantidadFilas} registros</strong> hacia la base de datos del Workspace: <strong style="color:#0b438c; text-transform: uppercase;">${tenant}</strong>.<br><br>
-                El motor de persistencia aplicará el <strong>Escudo Anti-Duplicados</strong> (omitiendo RUTs ya existentes) y generará los identificadores territoriales (SIG-VEC) automáticamente.
-            </p>
-            <div style="display: flex; gap: 12px; justify-content: center;">
-                <button type="button" class="btn-cancelar-mig" style="flex: 1; padding: 12px; border-radius: 8px; font-size: 13.5px; font-weight: 700; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; cursor: pointer;">Cancelar</button>
-                <button type="button" class="btn-ejecutar-mig" style="flex: 1; padding: 12px; border-radius: 8px; font-size: 13.5px; font-weight: 700; background: #16a34a; color: white; border: none; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);">Ejecutar Inyección</button>
+            <div class="profile-modal-body" style="padding: 32px 24px;">
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #065f46; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                    <p style="font-size: 32px; font-weight: 800; margin: 0; line-height: 1;">${cantidadFilas}</p>
+                    <p style="font-size: 13px; font-weight: 600; margin: 4px 0 0 0;">Registros detectados y listos para integrarse al libro maestro</p>
+                </div>
+                
+                <p style="font-size: 13.5px; color: #475569; margin-bottom: 16px; line-height: 1.5;">
+                    ${desc}
+                </p>
+
+                <div style="background: #e0e7ff; border: 1px solid #c7d2fe; color: #3730a3; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Tiempo estimado: <b>${tiempoEstimado}</b>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button type="button" class="btn-cancelar-mig" style="flex: 1; padding: 10px 20px; border-radius: 6px; font-size: 13.5px; font-weight: 600; background: #ffffff; color: #475569; border: 1px solid #cbd5e1; cursor: pointer; outline:none;">Cancelar</button>
+                    <button type="button" class="btn-ejecutar-mig" style="flex: 1; padding: 10px 20px; border-radius: 6px; font-size: 13.5px; font-weight: bold; background: #10b981; color: white; border: none; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); outline:none;">Ejecutar Inyección</button>
+                </div>
             </div>
         </div>
     `;
     
     document.body.appendChild(overlay);
-
     overlay.querySelector('.btn-cancelar-mig').onclick = () => overlay.remove();
-    overlay.querySelector('.btn-ejecutar-mig').onclick = () => {
-        overlay.remove();
-        onConfirm();
+    overlay.querySelector('.btn-ejecutar-mig').onclick = (e) => {
+        const btn = e.target;
+        btn.disabled = true;
+        btn.style.background = "#e2e8f0";
+        btn.style.color = "#475569";
+        btn.style.boxShadow = "none";
+        onConfirm(btn, overlay);
     };
 }
 
-function mostrarModalResumenMigracion(exitosos, omitidos) {
+function mostrarModalResumenMigracion(exitosos, omitidosArr, erroresArr, mensajePrincipal) {
     const overlay = document.createElement("div");
-    overlay.className = "profile-modal-overlay";
-    overlay.style.zIndex = "2000";
+    overlay.className = "profile-modal-overlay open";
+    overlay.style.display = "flex";
+    overlay.style.zIndex = "999999";
 
-    let omitidosHtml = "";
-    if (omitidos.length > 0) {
-        omitidosHtml = `
-        <div style="margin-top: 20px; text-align: left;">
-            <p style="font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 8px;">Detalle de registros omitidos (Ya existían en la DB o duplicados en el Excel):</p>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; max-height: 200px; overflow-y: auto;">
-                <table style="width: 100%; font-size: 11.5px; text-align: left; border-collapse: collapse;">
-                    <thead style="position: sticky; top: 0; background: #f1f5f9;">
-                        <tr style="border-bottom: 1px solid #cbd5e1; color: #64748b;">
-                            <th style="padding: 8px 12px; font-weight: 700;">RUT Bloqueado</th>
-                            <th style="padding: 8px 12px; font-weight: 700;">Nombre Asociado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${omitidos.map(o => `
-                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 8px 12px; font-weight: 600; font-family: monospace; color: #ef4444;">${o.rut}</td>
-                            <td style="padding: 8px 12px; color: #334155;">${o.nombre}</td>
-                        </tr>`).join('')}
-                    </tbody>
-                </table>
-            </div>
+    let omitidosCount = Array.isArray(omitidosArr) ? omitidosArr.length : (omitidosArr || 0);
+    let erroresCount = Array.isArray(erroresArr) ? erroresArr.length : (erroresArr || 0);
+
+    let mensajeErrores = "";
+    if (erroresCount > 0) {
+        mensajeErrores = `<div style="margin-top: 16px; padding: 12px; background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 8px; color: #dc2626; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Atención: ${erroresCount} filas no se agregaron por errores de formato o red.
         </div>`;
     }
 
     overlay.innerHTML = `
-        <div class="profile-modal-card" style="max-width: 540px; width: 90%; padding: 30px; text-align: center; border-radius: 12px; background: #fff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-            <div style="width: 56px; height: 56px; background: ${exitosos > 0 ? '#dcfce7' : '#fef2f2'}; color: ${exitosos > 0 ? '#16a34a' : '#ef4444'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 800; color: #0f172a;">Resultados de la Migración</h3>
-            <p style="margin: 0; font-size: 13px; color: #64748b;">El sistema ha terminado de leer y procesar tu archivo Excel.</p>
-            
-            <div style="display: flex; gap: 16px; justify-content: center; margin-top: 24px;">
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px; border-radius: 8px; flex: 1;">
-                    <span style="display: block; font-size: 28px; font-weight: 800; color: #166534;">${exitosos}</span>
-                    <span style="font-size: 11px; font-weight: 800; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Cargados con éxito</span>
+        <div class="profile-modal-card" style="max-width: 480px; text-align: center; border-radius:16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; font-family: system-ui, sans-serif;">
+            <div class="profile-modal-header" style="background:#10b981; padding:28px 24px 24px 24px;">
+                <div style="width: 64px; height: 64px; background: #dcfce7; color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 8px; flex: 1;">
-                    <span style="display: block; font-size: 28px; font-weight: 800; color: #b91c1c;">${omitidos.length}</span>
-                    <span style="font-size: 11px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.5px;">Omitidos (Duplicados)</span>
-                </div>
+                <h3 style="color:#fff; margin:0; font-size:22px; font-weight:800; letter-spacing: -0.5px;">Operación Exitosa</h3>
             </div>
-            
-            ${omitidosHtml}
-            
-            <button type="button" class="btn-cerrar-resumen" style="margin-top: 24px; width: 100%; background: #0b438c; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(11, 67, 140, 0.2);">Entendido</button>
+            <div class="profile-modal-body" style="padding: 32px 24px; text-align: center; background: #ffffff;">
+                
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; padding: 20px; border-radius: 8px; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+                    ${mensajePrincipal}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 20px; font-weight: 800; color: #16a34a;">${exitosos}</div>
+                        <div style="font-size: 10px; font-weight: 800; color: #065f46; text-transform: uppercase;">Guardados</div>
+                    </div>
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 20px; font-weight: 800; color: #d97706;">${omitidosCount}</div>
+                        <div style="font-size: 10px; font-weight: 800; color: #92400e; text-transform: uppercase;">Omitidos</div>
+                    </div>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px;">
+                        <div style="font-size: 20px; font-weight: 800; color: #dc2626;">${erroresCount}</div>
+                        <div style="font-size: 10px; font-weight: 800; color: #991b1b; text-transform: uppercase;">Errores</div>
+                    </div>
+                </div>
+                
+                ${mensajeErrores}
+
+                <button class="btn btn-primary" style="width:100%; margin-top:24px; background:#0f172a; border:none; padding:14px; font-weight:bold; color:#fff; border-radius:8px; cursor:pointer; font-size: 14.5px; transition: background 0.2s; outline:none;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'" onclick="this.closest('.profile-modal-overlay').remove()">Entendido</button>
+            </div>
         </div>
     `;
-    
     document.body.appendChild(overlay);
-    overlay.querySelector('.btn-cerrar-resumen').onclick = () => overlay.remove();
 }
 
 function renderizarPrevisualizacionVecinos(data) {
@@ -1076,11 +1500,19 @@ function renderizarPrevisualizacionVecinos(data) {
     previewData.forEach(fila => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #e2e8f0";
+        
+        let badgeRut = "";
+        if (fila.isMatched) {
+            badgeRut = `<br><span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800;">✓ ENCONTRADO EN PADRÓN</span>`;
+        } else if (fila.rut.startsWith("S/R-")) {
+            badgeRut = `<br><span style="background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800;">⚠️ NUEVO VECINO</span>`;
+        }
+
         tr.innerHTML = `
-            <td style="padding: 10px 12px; font-family: monospace; font-weight: 600;">${fila["RUT (Ej: 18.478.241-3)"] || fila["RUT"] || '--'}</td>
-            <td style="padding: 10px 12px;">${fila["Nombre Completo"] || '--'}</td>
-            <td style="padding: 10px 12px;">${fila["Teléfono (Ej: +56 9 12345678)"] || fila["Telefono"] || '--'}</td>
-            <td style="padding: 10px 12px; color: #475569;">${fila["Dirección"] || fila["Direccion"] || '--'}</td>
+            <td style="padding: 10px 12px; font-family: monospace; font-weight: 600;">${fila.rut || '--'} ${badgeRut}</td>
+            <td style="padding: 10px 12px;">${fila.nombreCompleto || '--'}</td>
+            <td style="padding: 10px 12px;">${fila.telefono || '--'}</td>
+            <td style="padding: 10px 12px; color: #475569;">${fila.direccion || '--'}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -1095,309 +1527,587 @@ function renderizarPrevisualizacionVecinos(data) {
 // ==============================================================================
 // 🚀 3. MÓDULO MIGRACIÓN EXCEL DE SOLICITUDES (TICKETS HISTÓRICOS A TRIAGE)
 // ==============================================================================
-
 function inicializarModuloMigracionSolicitudes() {
+    const iptFile = document.getElementById("cfg-excel-solicitudes-file");
+    const canvasPreview = document.getElementById("preview-migracion-solicitudes");
     const btnDescargar = document.getElementById("btn-descargar-plantilla-solicitudes");
-    const inputFile = document.getElementById("cfg-excel-solicitudes-file");
-    const btnConfirmar = document.getElementById("btn-confirmar-migracion-solicitudes");
 
     if (btnDescargar) {
         btnDescargar.addEventListener("click", () => {
             if (typeof XLSX === "undefined") return alert("Error: Librería Excel no cargada.");
             
             const encabezados = [
-                "RUT Vecino (Ej: 18.478.241-3)", 
+                "RUT Vecino (Ej: 18.XXX.XXX-X)", 
                 "Nombre Vecino (Opcional)", 
                 "Teléfono (Opcional)", 
-                "Dirección Residencial (Opcional)",
+                "Dirección Residencial (Opcional)", 
                 "Fecha Ingreso Original (YYYY-MM-DD)", 
-                "Descripción del Problema (Requerido)"
+                "Motivo Principal (Ej: Poda, Subsidio)", 
+                "Lo que solicita (Detalle Requerido)", 
+                "Respuesta que se le dio (Opcional)"
             ];
-
             const ejemplo = [
-                "18.478.241-3", 
-                "Franchesca Paz Paz", 
-                "+56 9 72489389", 
-                "Lima 8677",
-                "2023-11-15", 
-                "Solicita poda urgente de árbol que choca con cables eléctricos."
+                "12.345.678-9", 
+                "Juan Pérez", 
+                "+56 9 8765 4321", 
+                "Gran Avenida 8585", 
+                "2026-06-27", 
+                "AYUDA SOCIAL", 
+                "Vecino solicita apoyo urgente con medicamentos recetados por la Red de Salud.", 
+                "Se gestiona subsidio directo y se hace entrega del set farmacológico en oficina."
             ];
 
             const ws = XLSX.utils.aoa_to_sheet([encabezados, ejemplo]);
-            const wscols = [{wch: 22}, {wch: 30}, {wch: 20}, {wch: 35}, {wch: 30}, {wch: 60}];
+            const wscols = [{wch: 25}, {wch: 25}, {wch: 20}, {wch: 30}, {wch: 30}, {wch: 30}, {wch: 50}, {wch: 50}];
             ws['!cols'] = wscols;
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Historial Solicitudes");
-            XLSX.writeFile(wb, "Plantilla_Migracion_Solicitudes.xlsx");
+            XLSX.writeFile(wb, "Plantilla_Migracion_Solicitudes_SIGEV.xlsx");
         });
     }
 
-    if (inputFile) {
-        inputFile.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+    if (!iptFile || !canvasPreview) return;
 
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-                    
-                    if (jsonRows.length === 0) {
-                        alert("⚠️ El archivo Excel está vacío.");
-                        return;
-                    }
+    iptFile.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-                    excelSolicitudesDataGlobal = jsonRows;
-                    renderizarPrevisualizacionSolicitudes(jsonRows);
-                    
-                } catch (error) {
-                    console.error("Error leyendo Excel:", error);
-                    alert("Ocurrió un error al intentar leer el archivo Excel.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    }
+        const tbody = document.getElementById("tbody-preview-solicitudes");
+        if (tbody) {
+            canvasPreview.style.display = "block";
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#0b438c; font-weight:bold;">⏳ Buscando coincidencias en la base de datos...</td></tr>`;
+        }
 
-    if (btnConfirmar) {
-        btnConfirmar.addEventListener("click", () => {
-            if (excelSolicitudesDataGlobal.length === 0) return;
-            
-            mostrarModalConfirmacionSolicitudes(excelSolicitudesDataGlobal.length, CURRENT_TENANT_ID, async () => {
+        // Descargamos padrón actual en tiempo real ANTES de generar la vista previa
+        const qVecinosActuales = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
+        const snapActuales = await getDocs(qVecinosActuales);
+        const vecinosActuales = [];
+        snapActuales.forEach(doc => { vecinosActuales.push({ id: doc.id, ...doc.data() }); });
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonCrudo = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: "" });
                 
-                btnConfirmar.disabled = true;
-                btnConfirmar.innerText = "⏳ Analizando Solicitudes Existentes...";
-
-                try {
-                    // 1. MAPA DE VECINOS (Para sacar el idVecino)
-                    const mapaVecinosDB = new Map();
-                    const qVecinosActuales = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
-                    const snapActuales = await getDocs(qVecinosActuales);
-                    snapActuales.forEach(doc => {
-                        const data = doc.data();
-                        if (data.rut) {
-                            mapaVecinosDB.set(data.rut.replace(/[^0-9kK]/g, '').toUpperCase(), doc.id);
-                        }
+                excelSolicitudesDataGlobal = jsonCrudo.map(rowOriginal => {
+                    const row = {};
+                    Object.keys(rowOriginal).forEach(key => {
+                        row[key.trim().toLowerCase()] = String(rowOriginal[key]).trim();
                     });
 
-                    // 2. ESCUDO ANTI-DUPLICADOS (Huella digital: RUT + Descripción)
-                    const solicitudesRegistradas = new Set();
-                    const qSolsActuales = query(collection(db, "solicitudes"), where("tenantId", "==", CURRENT_TENANT_ID));
-                    const snapSols = await getDocs(qSolsActuales);
-                    snapSols.forEach(doc => {
-                        const data = doc.data();
-                        if (data.rutVecino && data.descripcion) {
-                            const r = data.rutVecino.replace(/[^0-9kK]/g, '').toUpperCase();
-                            const d = data.descripcion.trim().substring(0, 40).toLowerCase();
-                            solicitudesRegistradas.add(`${r}_${d}`);
-                        }
-                    });
-
-                    btnConfirmar.innerText = "⏳ Inyectando Tickets Históricos...";
-
-                    let batch = writeBatch(db);
-                    let contadorBatch = 0;
-                    let totalGuardados = 0;
-                    let resumenOmitidos = [];
-
-                    const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, ''); 
-
-                    for (const row of excelSolicitudesDataGlobal) {
-                        const desc = row["Descripción del Problema (Requerido)"] || row["Descripción"] || "";
-                        if (!desc.trim()) continue;
-
-                        const rutBruto = row["RUT Vecino (Ej: 18.478.241-3)"] || row["RUT"] || "";
-                        let rutLimpio = rutBruto.toString().replace(/[^0-9kK]/g, '').toUpperCase();
-                        
-                        // 🚀 VALIDACIÓN DE LA HUELLA ÚNICA
-                        const descLimpia = desc.toString().trim();
-                        const huellaUnica = `${rutLimpio}_${descLimpia.substring(0, 40).toLowerCase()}`;
-
-                        if (solicitudesRegistradas.has(huellaUnica)) {
-                            resumenOmitidos.push({ rut: rutBruto || "S/R", nombre: descLimpia.substring(0, 40) + "..." });
-                            continue; // Lo salta porque ya existe
-                        }
-                        // Lo agregamos al set para que si en el MISMO excel viene dos veces, lo bloquee la segunda vez
-                        solicitudesRegistradas.add(huellaUnica);
-
-                        let rutFormateado = "Sin RUT";
-                        if (rutLimpio.length > 1) {
-                            let dv = rutLimpio.slice(-1);
-                            let cuerpo = rutLimpio.slice(0, -1);
-                            rutFormateado = cuerpo + "-" + dv;
-                        }
-
-                        // Buscamos si este vecino existe para amarrarle la solicitud
-                        let idVinculado = mapaVecinosDB.get(rutLimpio) || "SIN_EXPEDIENTE_VINCULADO";
-                        let nombreV = (row["Nombre Vecino (Opcional)"] || row["Nombre"] || "Vecino Histórico").toString().trim();
-                        let fonoV = (row["Teléfono (Opcional)"] || row["Teléfono"] || "S/R").toString().trim();
-                        let direV = (row["Dirección Residencial (Opcional)"] || row["Dirección"] || "S/R").toString().trim();
-
-                        let fechaCreacionFirebase = serverTimestamp();
-                        const fechaCruda = row["Fecha Ingreso Original (YYYY-MM-DD)"] || row["Fecha"];
-                        if (fechaCruda) {
-                            let fechaString = typeof parsearFechaExcel === "function" ? parsearFechaExcel(fechaCruda) : fechaCruda.toString();
-                            let d = new Date(fechaString);
-                            if (!isNaN(d.getTime())) {
-                                const { Timestamp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-                                fechaCreacionFirebase = Timestamp.fromDate(d);
+                    const getVal = (keywords) => {
+                        for (let key of Object.keys(row)) {
+                            for (let kw of keywords) {
+                                if (key.includes(kw.toLowerCase())) return row[key];
                             }
                         }
+                        return "";
+                    };
 
-                        const docRef = doc(collection(db, "solicitudes"));
-                        
-                        const numTicketStr = String(totalGuardados + 1).padStart(4, '0');
-                        const codVisual = `SIG-MIG-${dateStr}-${numTicketStr}`;
-                        
-                        batch.set(docRef, {
-                            tenantId: CURRENT_TENANT_ID,
-                            idVecino: idVinculado,
+                    let rawRut = getVal(["rut", "run", "cédula"]).replace(/[^0-9kK]/g, "").toUpperCase();
+                    let rutFinal = "";
+                    let isMatched = false;
+                    let nombreExcel = formatearNombreEstandar(getVal(["nombre", "solicitante", "vecino"])) || "Vecino Histórico";
+                    let telefonoExcel = getVal(["teléfono", "telefono", "celular", "fono", "contacto"]);
+                    
+                    if (rawRut.length > 1) {
+                        rutFinal = rawRut.slice(0, -1) + "-" + rawRut.slice(-1);
+                    } else {
+                        // 💡 CRUCE INTELIGENTE EN VIVO ANTES DE PREVIEW
+                        const nombreNorm = nombreExcel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                        let fonoExcelLimpio = telefonoExcel.replace(/\D/g, "");
+
+                        let vecinoMatch = vecinosActuales.find(v => {
+                            const vName = (v.nombreCompleto || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                            const vFono = (v.telefono || "").replace(/\D/g, "");
                             
-                            rutVecino: rutFormateado,
-                            vecinoRut: rutFormateado,
-                            nombreVecino: nombreV,
-                            vecinoNombre: nombreV,
-                            vecinoTelefono: fonoV,
-                            vecinoDireccion: direV,
+                            const matchName = (nombreNorm !== "" && nombreNorm !== "vecino historico") && (vName === nombreNorm || vName.includes(nombreNorm) || nombreNorm.includes(vName));
+                            const matchFono = (fonoExcelLimpio !== "" && fonoExcelLimpio.length > 7) && (vFono === fonoExcelLimpio);
 
-                            codigo: codVisual,
-                            codigoInterno: `${codVisual}-MIGRACION-EXCEL`,
-
-                            categoria: "Pendiente de Triage",
-                            subcategoria: "Requiere Clasificación",
-                            oficinaDerivada: "Pendiente",
-                            prioridad: "Media",
-                            motivo: "Ticket Histórico Migrado",
-                            descripcion: descLimpia,
-
-                            estado: "En revisión",
-                            estadoGestion: "Ingresado por migración masiva",
-                            origen: "Migración Excel",
-                            asignadoA: "Sin Asignar",
-                            registradaPorNombre: "Migración Masiva (Sistema)",
-                            registradaPorFoto: "",
-                            
-                            fechaCreacion: fechaCreacionFirebase,
-                            fechaClasificacion: null,
-                            fechaResueltoInterno: null,
-                            fechaFinalizada: null
+                            return matchName || matchFono;
                         });
 
-                        contadorBatch++;
-                        totalGuardados++;
-
-                        if (contadorBatch >= 480) {
-                            await batch.commit();
-                            batch = writeBatch(db);
-                            contadorBatch = 0;
+                        if (vecinoMatch) {
+                            rutFinal = vecinoMatch.rut;
+                            nombreExcel = vecinoMatch.nombreCompleto;
+                            isMatched = true;
+                        } else {
+                            rutFinal = "NO_ENCONTRADO";
+                            isMatched = false;
                         }
                     }
 
-                    if (contadorBatch > 0) {
-                        await batch.commit();
-                    }
+                    return {
+                        vecinoRut: rutFinal,
+                        vecinoNombre: nombreExcel,
+                        vecinoTelefono: telefonoExcel,
+                        vecinoDireccion: getVal(["dirección", "direccion", "domicilio", "calle"]),
+                        fechaCreacionOld: parsearFechaExcel(getVal(["fecha", "ingreso"])),
+                        categoriaOriginal: getVal(["motivo", "categoría", "categoria", "clasificación", "asunto"]) || "Sin Categoría",
+                        descripcionCorta: getVal(["solicita", "detalle", "descripción", "descripcion", "problema"]),
+                        respuestaHistorica: getVal(["respuesta", "resolución", "resolucion"]),
+                        isMatched: isMatched
+                    };
+                }).filter(v => v.descripcionCorta.trim() !== ""); 
 
-                    document.getElementById("preview-migracion-solicitudes").style.display = "none";
-                    inputFile.value = "";
-                    excelSolicitudesDataGlobal = [];
+                renderizarPrevisualizacionSolicitudes(excelSolicitudesDataGlobal);
+            } catch (error) {
+                console.error("Error al procesar el Excel de solicitudes:", error);
+                alert("Ocurrió un error al intentar leer el archivo Excel.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
 
-                    // Reutilizamos el modal de resumen de vecinos para que muestre los duplicados con elegancia
-                    mostrarModalResumenMigracion(totalGuardados, resumenOmitidos);
-
-                } catch (error) {
-                    console.error("Error en inyección de solicitudes:", error);
-                    alert("❌ ERROR DE CONEXIÓN\nHubo un problema de escritura en la base de datos.");
-                } finally {
-                    btnConfirmar.disabled = false;
-                    btnConfirmar.innerText = "🚀 Iniciar Inyección de Casos";
-                }
-            });
-        });
-    }
+    document.getElementById("btn-confirmar-migracion-solicitudes")?.addEventListener("click", mostrarModalConfirmacionSolicitudes);
 }
 
 function renderizarPrevisualizacionSolicitudes(data) {
-    document.getElementById("preview-count-solicitudes").innerText = `Total filas detectadas: ${data.length}`;
-    document.getElementById("preview-migracion-solicitudes").style.display = "block";
-    
+    const btnProcesar = document.getElementById("btn-confirmar-migracion-solicitudes");
     const tbody = document.getElementById("tbody-preview-solicitudes");
+    
+    if (!tbody) return;
+    
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ef4444; font-weight:600;">⚠️ El archivo Excel no contiene la estructura requerida o las columnas están vacías.</td></tr>`;
+        if (btnProcesar) btnProcesar.style.display = "none";
+        return;
+    }
+
+    document.getElementById("preview-count-solicitudes").innerText = `Total filas detectadas: ${data.length}`;
+    if (btnProcesar) btnProcesar.style.display = "inline-flex";
+
     tbody.innerHTML = "";
-
-    const previewData = data.slice(0, 5); 
-
-    previewData.forEach(fila => {
-        let descCruda = fila["Descripción del Problema (Requerido)"] || fila["Descripción"] || '--';
-        if (descCruda.length > 50) descCruda = descCruda.substring(0, 50) + '...';
-
-        let fechaCruda = fila["Fecha Ingreso Original (YYYY-MM-DD)"] || fila["Fecha"];
-        let fechaVisual = fechaCruda ? parsearFechaExcel(fechaCruda) : 'Asignará Hoy';
-
+    const previewData = data.slice(0, 5);
+    
+    previewData.forEach(v => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #e2e8f0";
+        
+        let eCol = "#475569"; let eBg = "#f1f5f9";
+        const tieneRespuesta = v.respuestaHistorica && v.respuestaHistorica !== "";
+        
+        if (tieneRespuesta) { 
+            eCol = "#16a34a"; eBg = "#d1fae5"; 
+        } else { 
+            eCol = "#d97706"; eBg = "#fef3c7"; 
+        }
+
+        let badgeRut = "";
+        if (v.isMatched) {
+            badgeRut = `<br><span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800;">✓ ENCONTRADO EN PADRÓN</span>`;
+        } else if (!v.vecinoRut) {
+            badgeRut = `<br><span style="background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800;">⚠️ NUEVO VECINO</span>`;
+        }
+
         tr.innerHTML = `
-            <td style="padding: 10px 12px; font-family: monospace; font-weight: 600;">${fila["RUT Vecino (Ej: 18.478.241-3)"] || fila["RUT"] || 'Sin RUT'}</td>
-            <td style="padding: 10px 12px; color: #475569;">${fechaVisual}</td>
-            <td style="padding: 10px 12px; color: #334155; font-style: italic;">"${descCruda}"</td>
+            <td style="padding: 10px 12px; font-weight: 600;">${v.vecinoRut || 'S/R-AUTO'} ${badgeRut}<br><small style="color:#64748b;">${v.vecinoNombre}</small></td>
+            <td style="padding: 10px 12px; color: #475569;">${v.fechaCreacionOld ? v.fechaCreacionOld.substring(0,10) : 'Hoy'}</td>
+            <td style="padding: 10px 12px; color: #0f172a;">
+                <b>[${v.categoriaOriginal}]</b> ${v.descripcionCorta}
+                <br>
+                <span style="background:${eBg}; color:${eCol}; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; margin-top:4px; display:inline-block;">
+                    ${tieneRespuesta ? '✓ RESUELTO CON HISTORIAL' : '⏳ COMPILADO COMO PENDIENTE'}
+                </span>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 
     if (data.length > 5) {
         const rowGris = document.createElement("tr");
-        rowGris.innerHTML = `<td colspan="3" style="text-align: center; padding: 12px; background: #f8fafc; color: #64748b; font-size: 11.5px; font-weight: 500;">...y ${data.length - 5} registros más listos para subirse.</td>`;
+        rowGris.innerHTML = `<td colspan="3" style="text-align: center; padding: 12px; background: #f8fafc; color: #64748b; font-size: 11.5px; font-weight: 500;">... y ${data.length - 5} registros más listos para subirse a la nube.</td>`;
         tbody.appendChild(rowGris);
     }
 }
 
-function mostrarModalConfirmacionSolicitudes(cantidadFilas, tenant, onConfirm) {
-    const overlay = document.createElement("div");
-    overlay.className = "profile-modal-overlay";
-    overlay.style.zIndex = "2000";
+function mostrarModalConfirmacionSolicitudes() {
+    if (excelSolicitudesDataGlobal.length === 0) return;
 
-    overlay.innerHTML = `
-        <div class="profile-modal-card" style="max-width: 450px; width: 90%; padding: 30px; text-align: center; border-radius: 12px; background: #fff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-            <div style="width: 56px; height: 56px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+    mostrarModalConfirmacionMigracion(
+        excelSolicitudesDataGlobal.length,
+        CURRENT_TENANT_ID,
+        async (btnLoading, modalOverlay) => {
+            let inyectados = 0; let omitidosLista = []; let erroresLista = [];
+            const colRef = collection(db, "solicitudes");
+            let uniqueVecinosSet = new Set();
+
+            btnLoading.innerText = "⏳ Leyendo Padrón de Vecinos...";
+            
+            const qVecinosActuales = query(collection(db, "vecinos"), where("tenantId", "==", CURRENT_TENANT_ID));
+            const snapActuales = await getDocs(qVecinosActuales);
+            const vecinosActuales = [];
+            snapActuales.forEach(doc => { vecinosActuales.push({ id: doc.id, ...doc.data() }); });
+
+            for (let i = 0; i < excelSolicitudesDataGlobal.length; i++) {
+                btnLoading.innerText = `⏳ Inyectando: ${i + 1} de ${excelSolicitudesDataGlobal.length}...`;
+                
+                const tk = excelSolicitudesDataGlobal[i];
+                
+                try {
+                    let rutDefinitivo = tk.vecinoRut;
+                    let idVecinoDefinitivo = "SIN_EXPEDIENTE_VINCULADO";
+
+                    // 1. Limpieza y estandarización del Excel
+                    const nombreExcelGuardado = formatearNombreEstandar(tk.vecinoNombre);
+
+                    // 2. Normalización profunda para comparación difusa
+                    const nombreNorm = nombreExcelGuardado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                    const fonoLimpio = (tk.vecinoTelefono || "").replace(/\D/g, "");
+                    const dirExcelLimpia = (tk.vecinoDireccion || "").toLowerCase().trim();
+
+                    let vecinoMatch = null;
+
+                    // 3. Primer filtro: Búsqueda exacta por RUT
+                    if (rutDefinitivo && !rutDefinitivo.startsWith("S/R-")) {
+                        vecinoMatch = vecinosActuales.find(v => v.rut === rutDefinitivo);
+                    }
+
+                    // 4. Segundo filtro: Búsqueda Difusa
+                    if (!vecinoMatch && nombreNorm !== "" && nombreNorm !== "vecino historico") {
+                        vecinoMatch = vecinosActuales.find(v => {
+                            const vName = (v.nombreCompleto || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ').trim();
+                            const vFono = (v.telefono || "").replace(/\D/g, "");
+                            const vDir = v.direccion !== "No registrada" && v.direccion !== "Sin Información" ? (v.direccion || "").toLowerCase().trim() : "";
+
+                            const matchName = (vName === nombreNorm);
+                            const matchFono = (fonoLimpio.length >= 8) && (vFono === fonoLimpio);
+                            const matchDir = (dirExcelLimpia !== "" && vDir === dirExcelLimpia);
+
+                            if (matchName && matchFono) return true;
+                            if (matchName && matchDir) return true;
+                            if (matchName) return true;
+
+                            return false;
+                        });
+                    }
+
+                    // 5. Resolución de la vinculación (Escudo Anti-Basura)
+                    let nEstado = "Resuelto";
+                    let nGestion = "Finalizada (Carga Histórica Nube)";
+                    let nDepartamento = "Pendiente de Triage";
+
+                    if (vecinoMatch) {
+                        rutDefinitivo = vecinoMatch.rut;
+                        idVecinoDefinitivo = vecinoMatch.id || "SIN_EXPEDIENTE_VINCULADO";
+                        tk.vecinoNombre = vecinoMatch.nombreCompleto;
+
+                        if (!tk.respuestaHistorica || tk.respuestaHistorica.trim() === "") {
+                            nEstado = "Clasificado";
+                            nGestion = "En gestión (Heredado Antiguo)";
+                        }
+                    } else {
+                        rutDefinitivo = "S/R-HISTORICO";
+                        idVecinoDefinitivo = "SIN_EXPEDIENTE_VINCULADO";
+                        tk.vecinoNombre = nombreExcelGuardado;
+                        nEstado = "Nuevo";
+                        nGestion = "Sin Match - A Revisión";
+                        nDepartamento = "Pendiente de Triage";
+                    }
+
+                    // 6. Nuevo Escudo Anti-Duplicados blindado por vecino
+                    const qCheck = query(colRef, where("tenantId", "==", CURRENT_TENANT_ID), where("motivo", "==", tk.categoriaOriginal));
+                    const checkSnap = await getDocs(qCheck);
+                    
+                    let esDuplicado = false;
+                    checkSnap.forEach(docSnap => {
+                        const dbData = docSnap.data();
+                        
+                        const esMismoVecino = (dbData.idVecino === idVecinoDefinitivo || dbData.vecinoRut === rutDefinitivo);
+                        
+                        if (esMismoVecino && dbData.descripcion === tk.descripcionCorta) {
+                            const dbResp = dbData.respuestaVecino || dbData.detalleInternoResolucion || "";
+                            if (!tk.respuestaHistorica || dbResp === tk.respuestaHistorica) {
+                                esDuplicado = true;
+                            }
+                        }
+                    });
+
+                    if (esDuplicado) {
+                        omitidosLista.push(`Fila ${i + 2}: Ticket duplicado exacto (${tk.categoriaOriginal}) para RUT ${rutDefinitivo}`);
+                        continue;
+                    }
+
+                    await addDoc(colRef, {
+                        tenantId: CURRENT_TENANT_ID,
+                        idVecino: idVecinoDefinitivo,
+                        origen: "Migración Histórica XLS",
+                        codigo: `HIST-${Date.now().toString().slice(-4)}-${i}`,
+                        departamento: nDepartamento,
+                        motivo: tk.categoriaOriginal,
+                        descripcion: tk.descripcionCorta,
+                        respuestaVecino: tk.respuestaHistorica,
+                        detalleInternoResolucion: tk.respuestaHistorica,
+                        estado: nEstado,
+                        estadoGestion: nGestion,
+                        vecinoNombre: tk.vecinoNombre,
+                        vecinoRut: rutDefinitivo,
+                        vecinoTelefono: tk.vecinoTelefono,
+                        vecinoDireccion: tk.vecinoDireccion,
+                        fechaCreacionObj: tk.fechaCreacionOld || new Date().toISOString(),
+                        fechaRegistro: serverTimestamp(),
+                        historicoCerrado: true 
+                    });
+                    
+                    if (rutDefinitivo && !rutDefinitivo.startsWith("S/R-")) {
+                        uniqueVecinosSet.add(rutDefinitivo);
+                    } else if (rutDefinitivo && rutDefinitivo.startsWith("S/R-")) {
+                        uniqueVecinosSet.add(idVecinoDefinitivo);
+                    }
+                    inyectados++;
+
+                } catch (err) {
+                    console.error("Fallo al inyectar ticket histórico:", err);
+                    erroresLista.push(`Fila ${i + 2}: Fallo al inyectar el ticket en la base de datos.`);
+                }
+            }
+
+            if(modalOverlay) modalOverlay.remove();
+            
+            const msjExito = `Se lograron insertar <b>${inyectados}</b> tickets históricos nuevos, los cuales se enlazaron exitosamente a <b>${uniqueVecinosSet.size}</b> vecinos únicos en la base de datos.`;
+            mostrarModalResumenMigracion(inyectados, omitidosLista, erroresLista, msjExito);
+            
+            excelSolicitudesDataGlobal = [];
+            document.getElementById("preview-migracion-solicitudes").innerHTML = "";
+            document.getElementById("cfg-excel-solicitudes-file").value = "";
+        },
+        "Inyección de Base Histórica de Solicitudes",
+        "El motor <b>validará duplicados</b> revisando que no exista ya un ticket con el mismo <b>Motivo</b>, <b>Detalle</b> y <b>Respuesta</b> para el <b>mismo vecino</b>. Los duplicados serán omitidos."
+    );
+}
+
+// ============================================================================
+// MOTOR DE ADMINISTRACIÓN DE TRIAGE DINÁMICO (V2 - INTERACTIVO Y AUTOMATIZADO)
+// ============================================================================
+const DEFAULT_TRIAGE_MAP = {
+    "AYUDA SOCIAL": { depCod: "DID", depName: "DIDESO", catCod: "SOC", subs: {"Giftcard":"GIF", "Apoyo económico":"ECO", "Medicamentos":"MED", "Pago cuentas básicas":"CUE", "Subsidios económicos":"SUB"} },
+    "ALUMBRADO": { depCod: "OBR", depName: "OBRAS", catCod: "ALU", subs: {"Robo de cable":"ROB", "Solicitud punto lumínico":"PUN", "Solicitud de despeje cono lumínico":"CON", "Mantención luminarias":"MAN", "Reparación juegos":"JUE"} },
+    "ASEO Y BASURA": { depCod: "DMA", depName: "DIMAO", catCod: "ASE", subs: {"Solicitud fumigación":"FUM", "Basura acumulada":"BAS", "Microbasural":"MIC", "Retiro escombros":"ESC"} },
+    "ÁREAS VERDES": { depCod: "DMA", depName: "DIMAO", catCod: "VER", subs: {"Poda árboles":"POD", "Árbol peligroso":"PEL", "Mantención plaza":"PLA"} },
+    "SEGURIDAD": { depCod: "SEG", depName: "SEGURIDAD MUNICIPAL", catCod: "SEG", subs: {"Ruidos molestos":"RUI", "Consumo drogas":"DRO", "Peleas":"PEL", "Vehículos abandonados":"VEH", "Patrullaje":"PAT", "Cámaras seguridad":"CAM", "Alarmas comunitarias":"ALA"} },
+    "MASCOTAS": { depCod: "DMA", depName: "DIMAO", catCod: "MAS", subs: {"Esterilización":"EST", "Vacunación":"VAC", "Operativo veterinario":"VET"} },
+    "ESTRUCTURA VIAL": { depCod: "TRA", depName: "TRÁNSITO", catCod: "VIA", subs: {"Señalética y demarcación vial":"SEN", "Alumbrado paradero":"PAR", "Baches":"BAC", "Veredas rotas":"VER", "Semáforos":"SEM", "Accesibilidad":"ACC"} },
+    "TRÁMITES MUNICIPALES": { depCod: "CON", depName: "OFICINA DEL CONCEJAL", catCod: "TRA", subs: {"Orientación municipal":"ORI", "Certificados":"CER", "Permisos":"PER", "Patentes":"PAT", "Derivaciones":"DER"} },
+    "OPERATIVO TERRITORIAL": { depCod: "OPE", depName: "OPERATIVO TERRITORIAL", catCod: "OPT", subs: {"Oftalmológico":"OFT", "Salud":"SAL", "Podología":"POD"} }
+};
+
+function renderizarConstructorTriage(mapaBase) {
+    const container = document.getElementById("triage-builder-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const mapa = (mapaBase && Object.keys(mapaBase).length > 0) ? mapaBase : DEFAULT_TRIAGE_MAP;
+
+    Object.keys(mapa).forEach(catName => {
+        agregarTarjetaTriageDOM(catName, mapa[catName]);
+    });
+
+    const btnAdd = document.getElementById("btn-add-triage-cat");
+    if (btnAdd) {
+        btnAdd.replaceWith(btnAdd.cloneNode(true));
+        document.getElementById("btn-add-triage-cat").addEventListener("click", () => {
+            agregarTarjetaTriageDOM("", { depName: "", depCod: "", catCod: "", subs: {} }, true);
+        });
+    }
+}
+
+function agregarTarjetaTriageDOM(catName, data, prepend = false) {
+    const container = document.getElementById("triage-builder-container");
+    if (!container) return;
+
+    const div = document.createElement("div");
+    div.className = "triage-card";
+    div.style.cssText = "border: 1px solid #cbd5e1; border-left: 4px solid #0b438c; border-radius: 8px; padding: 20px; background: #f8fafc; position: relative;";
+    
+    let subsHtml = "";
+    if (data.subs) {
+        Object.keys(data.subs).forEach(subName => {
+            subsHtml += `
+            <div class="subcat-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+                <input type="text" class="t-sub-name" value="${subName}" placeholder="Ej: Mantención plaza" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-size:12.5px; outline:none;">
+                <input type="text" class="t-sub-cod" value="${data.subs[subName]}" readonly tabindex="-1" style="width:60px; padding:8px; border:1px dashed #cbd5e1; border-radius:4px; font-size:12.5px; background:#e2e8f0; color:#64748b; font-family:monospace; text-align:center; cursor:not-allowed;" title="Código autogenerado">
+                <button type="button" class="btn-del-sub" title="Eliminar opción" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; border-radius:4px; width:30px; height:30px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
             </div>
-            <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 800; color: #0f172a;">Confirmación de Carga Histórica</h3>
-            <p style="margin: 0 0 20px 0; font-size: 13.5px; color: #475569; line-height: 1.5; text-align: left; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                Estás a punto de inyectar <strong>${cantidadFilas} solicitudes</strong>.<br><br>
-                El sistema cruzará los RUTs del archivo con tu padrón actual para amarrar las solicitudes a sus respectivos expedientes vecinales. Todas entrarán como <strong style="color:#0b438c;">Pendiente de Triage</strong>.
-            </p>
-            <div style="display: flex; gap: 12px; justify-content: center;">
-                <button type="button" class="btn-cancelar-mig" style="flex: 1; padding: 12px; border-radius: 8px; font-size: 13.5px; font-weight: 700; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; cursor: pointer;">Cancelar</button>
-                <button type="button" class="btn-ejecutar-mig" style="flex: 1; padding: 12px; border-radius: 8px; font-size: 13.5px; font-weight: 700; background: #3b82f6; color: white; border: none; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);">Ejecutar Inyección</button>
+            `;
+        });
+    }
+
+    div.innerHTML = `
+        <button type="button" class="btn-del-triage" title="Eliminar Categoría Completa" style="position: absolute; top: 20px; right: 20px; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-weight: bold; display:flex; align-items:center; justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 180px; gap: 16px; margin-bottom: 16px; padding-right: 48px;">
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #0f172a; text-transform: uppercase;">Nombre Categoría (Pública)</label>
+                <input type="text" class="t-cat-name" value="${catName}" placeholder="Ej: SEGURIDAD" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-weight: 700; color: #0b438c; outline:none; background: #fff;">
+            </div>
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Departamento Derivado</label>
+                <input type="text" class="t-dep-name" value="${data.depName || ''}" placeholder="Ej: DIRECCIÓN DE SEGURIDAD" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline:none; background: #fff;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                    <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Cód. Depto</label>
+                    <input type="text" class="t-dep-cod" value="${data.depCod || ''}" placeholder="AUTO" readonly tabindex="-1" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: monospace; text-transform: uppercase; outline:none; background: #e2e8f0; color:#64748b; text-align:center; cursor:not-allowed;">
+                </div>
+                <div>
+                    <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Cód. Cat.</label>
+                    <input type="text" class="t-cat-cod" value="${data.catCod || ''}" placeholder="AUTO" readonly tabindex="-1" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: monospace; text-transform: uppercase; outline:none; background: #e2e8f0; color:#64748b; text-align:center; cursor:not-allowed;">
+                </div>
             </div>
         </div>
-    `;
-    
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('.btn-cancelar-mig').onclick = () => overlay.remove();
-    overlay.querySelector('.btn-ejecutar-mig').onclick = () => {
-        overlay.remove();
-        onConfirm();
-    };
-}
-
-function mostrarAlertaSincronizacion(textoHtml) {
-    const overlay = document.createElement("div");
-    overlay.className = "profile-modal-overlay";
-    overlay.style.zIndex = "3000";
-
-    overlay.innerHTML = `
-        <div class="profile-modal-card" style="max-width: 400px; width: 90%; padding: 24px; text-align: center; border-radius: 12px; background: #fff;">
-            <div style="width: 50px; height: 50px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin:0;">Subcategorías Operativas</label>
+                <button type="button" class="btn-add-sub" style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; font-size:11px; font-weight:700; padding:4px 10px; border-radius:4px; cursor:pointer;">+ Añadir Opción</button>
             </div>
-            <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 800; color: #0f172a;">Inyección Exitosa</h3>
-            <p style="margin: 0 0 20px 0; font-size: 14px; color: #475569; line-height: 1.5; white-space: pre-wrap;">${textoHtml}</p>
-            <button class="btn-ok-final" style="width: 100%; padding: 12px; background: #0b438c; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Entendido</button>
-        </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('.btn-ok-final').onclick = () => overlay.remove();
+            <div class="subs-container">
+                ${subsHtml}
+            </div>
+            ${!subsHtml ? '<div class="no-subs-msg" style="font-size:12px; color:#94a3b8; text-align:center; padding:10px;">No hay opciones creadas.</div>' : ''}
+        </div>
+    `;
+
+    const generarCodigo = (texto) => {
+        if (!texto) return "";
+        let limpio = texto.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, '');
+        if (limpio.length < 3) return limpio.padEnd(3, 'X');
+        return limpio.substring(0,3);
+    };
+
+    const inputCatName = div.querySelector(".t-cat-name");
+    const inputCatCod = div.querySelector(".t-cat-cod");
+    inputCatName.addEventListener("input", (e) => {
+        if (!data.catCod) inputCatCod.value = generarCodigo(e.target.value);
+    });
+
+    const inputDepName = div.querySelector(".t-dep-name");
+    const inputDepCod = div.querySelector(".t-dep-cod");
+    inputDepName.addEventListener("input", (e) => {
+        if (!data.depCod) inputDepCod.value = generarCodigo(e.target.value);
+    });
+
+    const subsContainer = div.querySelector(".subs-container");
+    const btnAddSub = div.querySelector(".btn-add-sub");
+    
+    const bindSubEvents = (row) => {
+        const iName = row.querySelector(".t-sub-name");
+        const iCod = row.querySelector(".t-sub-cod");
+        const btnDel = row.querySelector(".btn-del-sub");
+        
+        iName.addEventListener("input", (e) => {
+            iCod.value = generarCodigo(e.target.value);
+        });
+        
+        btnDel.addEventListener("click", () => {
+            row.remove();
+            if(subsContainer.children.length === 0) {
+                const msg = document.createElement("div");
+                msg.className = "no-subs-msg";
+                msg.style.cssText = "font-size:12px; color:#94a3b8; text-align:center; padding:10px;";
+                msg.innerText = "No hay opciones creadas.";
+                subsContainer.appendChild(msg);
+            }
+        });
+    };
+
+    subsContainer.querySelectorAll(".subcat-row").forEach(bindSubEvents);
+
+    btnAddSub.addEventListener("click", () => {
+        const msg = subsContainer.querySelector(".no-subs-msg");
+        if(msg) msg.remove();
+
+        const row = document.createElement("div");
+        row.className = "subcat-row";
+        row.style.cssText = "display:flex; gap:8px; margin-bottom:8px; align-items:center; animation: fadeIn 0.3s ease;";
+        row.innerHTML = `
+            <input type="text" class="t-sub-name" value="" placeholder="Ej: Nueva opción..." style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-size:12.5px; outline:none;">
+            <input type="text" class="t-sub-cod" value="" readonly tabindex="-1" style="width:60px; padding:8px; border:1px dashed #cbd5e1; border-radius:4px; font-size:12.5px; background:#e2e8f0; color:#64748b; font-family:monospace; text-align:center; cursor:not-allowed;" title="Código autogenerado">
+            <button type="button" class="btn-del-sub" title="Eliminar opción" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; border-radius:4px; width:30px; height:30px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+        `;
+        subsContainer.appendChild(row);
+        bindSubEvents(row);
+        row.querySelector(".t-sub-name").focus();
+    });
+
+    div.querySelector(".btn-del-triage").onclick = () => {
+        if(confirm("¿Seguro que deseas eliminar esta categoría completa del flujo?")) div.remove();
+    };
+
+    if (prepend) { container.insertBefore(div, container.firstChild); } 
+    else { container.appendChild(div); }
 }
+
+function recolectarMapaTriageUI() {
+    const nuevoMapa = {};
+    const cards = document.querySelectorAll(".triage-card");
+    
+    cards.forEach(card => {
+        const catName = card.querySelector(".t-cat-name").value.trim().toUpperCase();
+        if (!catName) return;
+
+        const depName = card.querySelector(".t-dep-name").value.trim().toUpperCase();
+        const depCod = card.querySelector(".t-dep-cod").value.trim().toUpperCase().substring(0,3) || catName.substring(0,3);
+        const catCod = card.querySelector(".t-cat-cod").value.trim().toUpperCase().substring(0,3) || catName.substring(0,3);
+
+        const subsObj = {};
+        const subRows = card.querySelectorAll(".subcat-row");
+        subRows.forEach(row => {
+            const sName = row.querySelector(".t-sub-name").value.trim();
+            const sCod = row.querySelector(".t-sub-cod").value.trim().toUpperCase().substring(0,3);
+            if (sName) {
+                subsObj[sName] = sCod || sName.substring(0,3).toUpperCase();
+            }
+        });
+
+        nuevoMapa[catName] = {
+            depName: depName,
+            depCod: depCod,
+            catCod: catCod,
+            subs: subsObj
+        };
+    });
+    return nuevoMapa;
+}
+
+window.addEventListener('error', async (event) => {
+    if (event.message.includes("Firestore") || event.message.includes("Firebase")) return;
+
+    try {
+        const logsRef = collection(db, "logs");
+        await addDoc(logsRef, {
+            tenant: CURRENT_TENANT_ID,
+            usuario: auth.currentUser?.email || "Usuario Anónimo",
+            modulo: "ERROR_SISTEMA_CRITICO",
+            accion: "❌ Exception_Dropped",
+            documentoId: "Falla de Código Local",
+            detalles: `Mensaje: ${event.message}<br>Archivo: ${event.filename}<br>Línea: ${event.lineno}:${event.colno}<br>Stack: ${event.error?.stack || "No disponible"}`,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) {
+        console.error("Fallo crítico al reportar el error en la nube:", e);
+    }
+});
+
+window.addEventListener('unhandledrejection', async (event) => {
+    try {
+        const logsRef = collection(db, "logs");
+        await addDoc(logsRef, {
+            tenant: CURRENT_TENANT_ID,
+            usuario: auth.currentUser?.email || "Usuario Anónimo",
+            modulo: "ERROR_RED_PROMESAS",
+            accion: "⚠️ Promise_Rejected",
+            documentoId: "Falla de Conexión / Async",
+            detalles: `Motivo del rechazo: ${event.reason?.message || event.reason || "Desconocido"}<br>Stack: ${event.reason?.stack || "No disponible"}`,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) {
+        console.error("Fallo crítico al reportar rechazo asíncrono:", e);
+    }
+});

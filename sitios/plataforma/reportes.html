@@ -15,7 +15,9 @@
         import { inyectarEstructuraGlobal } from "./js/layout.js";
         inyectarEstructuraGlobal();
     </script>
-    <script type="module" src="js/app.js" defer></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/seguridad.js?v=1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module" src="js/reportes.js" defer></script>
 </head>
 <body>
@@ -28,7 +30,6 @@
 
             <div class="dashboard-body" style="gap: 20px;">
                 
-                <!-- Cabecera Superior con Rango de Fechas -->
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                     <div>
                         <h2 style="font-size: 22px; font-weight: 800; color: var(--text-dark); margin: 0;" id="repo-main-title">Reportes</h2>
@@ -43,7 +44,6 @@
                     </div>
                 </div>
 
-                <!-- 🎯 SUB-NAVEGACIÓN POR PESTAÑAS ANALÍTICAS -->
                 <div class="tab-navigation" style="margin-bottom: 0; border-bottom: 1px solid var(--border-color);">
                     <div class="tab-item active" data-reporte="ejecutivo">📈 Reporte Ejecutivo</div>
                     <div class="tab-item" data-reporte="territorial">🗺️ Reporte Territorial</div>
@@ -52,9 +52,7 @@
                     <div class="tab-item" data-reporte="tendencias">📊 Tendencias y Categorías</div>
                 </div>
 
-                <!-- 📊 INDICADORES ESTRATÉGICOS VARIABLES -->
                 <section class="kpi-grid">
-                    <!-- KPI 1 -->
                     <div class="kpi-card" style="cursor: default;">
                         <div class="kpi-icon-box blue" id="kpi-icon-1">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
@@ -66,7 +64,6 @@
                         </div>
                     </div>
                     
-                    <!-- KPI 2 -->
                     <div class="kpi-card" style="cursor: default;">
                         <div class="kpi-icon-box yellow" id="kpi-icon-2">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -78,7 +75,6 @@
                         </div>
                     </div>
                     
-                    <!-- KPI 3 -->
                     <div class="kpi-card" style="cursor: default;">
                         <div class="kpi-icon-box green" id="kpi-icon-3">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -90,7 +86,6 @@
                         </div>
                     </div>
                     
-                    <!-- KPI 4 -->
                     <div class="kpi-card" style="cursor: default;">
                         <div class="kpi-icon-box orange" id="kpi-icon-4">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line></svg>
@@ -103,13 +98,10 @@
                     </div>
                 </section>
 
-                <!-- 🗺️ CANVAS MAESTRO DE DISTRIBUCIÓN (MUTANTE SEGÚN BOTÓN) -->
                 <div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;">
                     
-                    <!-- Bloque Central -->
                     <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0;">
                         
-                        <!-- Distribución de Anillos Donuts (Visibles en Ejecutivo, Gestión y Participación) -->
                         <div id="canvas-row-donuts" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div class="chart-card">
                                 <div class="chart-card-header"><h3 id="title-donut-1">Muestreo por Categoría</h3></div>
@@ -127,7 +119,6 @@
                             </div>
                         </div>
 
-                        <!-- Gráfico de Ranking de Barras Dinámico Principal -->
                         <div class="chart-card" id="canvas-row-ranking-list">
                             <div class="chart-card-header"><h3 id="title-main-ranking">Sectores más demandantes</h3></div>
                             <div class="chart-bar-list" id="main-ranking-bars-injector"></div>
@@ -135,10 +126,8 @@
 
                     </div>
 
-                    <!-- Bloque Derecho Estático de Control Cobertura -->
                     <div style="display: flex; flex-direction: column; gap: 24px;">
                         
-                        <!-- Panel Resumen del Período -->
                         <div class="chart-card" style="padding: 20px; background: #fafafa;">
                             <h4 style="font-size: 11px; font-weight: 800; color: var(--text-dark); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">Resumen del Período</h4>
                             <div style="font-size: 12.5px; display: flex; flex-direction: column; gap: 8px; color: var(--text-dark);" id="panel-resumen-periodo-text">
@@ -149,7 +138,6 @@
                             </div>
                         </div>
 
-                        <!-- Descargas de Reportes Rápidos -->
                         <div class="chart-card" style="padding: 20px;">
                             <h4 style="font-size: 11px; font-weight: 800; color: var(--text-dark); text-transform: uppercase; margin-bottom: 14px;">Exportar Informes</h4>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -157,10 +145,14 @@
                                 <button type="button" class="btn btn-secondary btn-repo-download" data-type="excel-sec" style="width: 100%; justify-content: flex-start; font-size: 12.5px; color: #16a34a;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> Reporte por Sector (Excel)</button>
                                 <button type="button" class="btn btn-secondary btn-repo-download" data-type="excel-cat" style="width: 100%; justify-content: flex-start; font-size: 12.5px; color: #16a34a;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> Casos por Categoría (Excel)</button>
                                 <button type="button" class="btn btn-secondary btn-repo-download" data-type="excel-part" style="width: 100%; justify-content: flex-start; font-size: 12.5px; color: #2563eb;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> Participación Vecinal (Excel)</button>
+                                
+                                <button id="btn-exportar-padron-excel" class="btn btn-secondary btn-repo-download" style="width: 100%; display: flex; align-items: center; justify-content: flex-start; padding: 12px; border-radius: 8px; font-weight: 700; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; cursor: pointer; margin-top: 10px;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="margin-right: 8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> 
+                                    Padrón de Vecinos (Excel)
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Acceso al Centro de Auditoría Exclusivo Aislado -->
                         <div class="chart-card" style="padding: 20px; border-left: 4px solid var(--kpi-purple);">
                             <h4 style="font-size: 11px; font-weight: 800; color: var(--text-dark); text-transform: uppercase; margin-bottom: 4px;">📜 Auditoría</h4>
                             <p style="font-size: 12px; color: var(--text-light); line-height: 1.4; margin: 0 0 14px 0;">Historial on-chain, logs y trazabilidad de acciones internas.</p>
@@ -170,7 +162,6 @@
                     </div>
                 </div>
 
-                <!-- 📜 FEED REDUCIDO DE ACTIVIDAD DE OPERACIONES -->
                 <div class="chart-card">
                     <div class="chart-card-header"><h3>Trazabilidad de Movimientos en el Período</h3></div>
                     <div style="overflow-x: auto;">

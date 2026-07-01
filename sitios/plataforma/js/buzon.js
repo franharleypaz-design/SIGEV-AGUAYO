@@ -23,8 +23,29 @@ const searchInput = document.getElementById("buzon-search");
 const selectTipo = document.getElementById("buzon-filter-tipo");
 const sidebarDetalle = document.getElementById("buzon-detail-sidebar");
 
+// 🚀 SPINNER DE CARGA BLOQUEANTE GLOBAL
+function mostrarLoaderBloqueante(mensaje) {
+    const exist = document.getElementById("global-loader-sigev");
+    if (exist) exist.remove();
+    const loader = document.createElement("div");
+    loader.id = "global-loader-sigev";
+    loader.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.8); backdrop-filter:blur(4px); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff;";
+    loader.innerHTML = `
+        <div class="loader-spinner" style="width:50px; height:50px; border:4px solid rgba(255,255,255,0.3); border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px;"></div>
+        <h3 style="margin:0; font-size:16px; font-weight:700;">${mensaje}</h3>
+        <style>@keyframes spin { 100% { transform:rotate(360deg); } }</style>
+    `;
+    document.body.appendChild(loader);
+}
+
+function ocultarLoaderBloqueante() {
+    const loader = document.getElementById("global-loader-sigev");
+    if (loader) loader.remove();
+}
+
 auth.onAuthStateChanged(async (user) => {
     if (user) {
+        mostrarLoaderBloqueante("Sincronizando expedientes y aportes...");
         actualizarPerfilLayout(user);
         try {
             const userSnap = await getDoc(doc(db, "usuarios", user.uid));
@@ -38,6 +59,7 @@ auth.onAuthStateChanged(async (user) => {
             }
         } catch (error) {
             console.error("Error inicializando entorno seguro de concejalía:", error);
+            ocultarLoaderBloqueante();
         }
     } else {
         window.location.href = "index.html";
@@ -176,6 +198,12 @@ function escucharColeccionBuzonCloud() {
             const actualizado = listaRegistrosBuzon.find(r => r.id === registroSeleccionadoId);
             if (actualizado) desplegarBarraLateralDetalle(actualizado);
         }
+
+        // 🚀 Ocultamos el spinner de carga al tener ya los datos
+        ocultarLoaderBloqueante();
+    }, (error) => {
+        console.error("Error al escuchar colección:", error);
+        ocultarLoaderBloqueante();
     });
 }
 
@@ -924,14 +952,28 @@ async function abrirModalClasificacion() {
 
         const responsableNombre = modalOverlay.querySelector("#clasif-responsable").options[modalOverlay.querySelector("#clasif-responsable").selectedIndex].getAttribute("data-nombre");
 
+        // 🚀 ESTÁNDAR DE RECLASIFICACIÓN DE BUZÓN
         let baseCodigo = reg.codigo;
-        if (!baseCodigo) {
+        const tnt = TENANT_ID.substring(0, 4).toUpperCase();
+        
+        if (!baseCodigo || baseCodigo === "S/N") {
             const d = reg.fecha ? new Date(reg.fecha.seconds * 1000) : new Date();
-            const fStr = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+            const yy = String(d.getFullYear()).slice(-2);
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const fStr = `${yy}${mm}${dd}`;
+            
             baseCodigo = `SIG-${fStr}-${reg.id.substring(0,4).toUpperCase()}`;
         }
-        baseCodigo = baseCodigo.replace("#", "SIG-");
-        const nuevoCodigoInterno = `${baseCodigo}-${hidDepCod.value}-${hidCatCod.value}-${hidSubCod.value}`;
+        
+        baseCodigo = baseCodigo.replace("#", "SIG-"); 
+        
+        let nuevoCodigoInterno = "";
+        if (baseCodigo.startsWith("SIG-") && !baseCodigo.includes(tnt)) {
+            nuevoCodigoInterno = `SIG-${tnt}-${baseCodigo.substring(4)}-${hidDepCod.value}-${hidCatCod.value}-${hidSubCod.value}`;
+        } else {
+            nuevoCodigoInterno = `${baseCodigo}-${hidDepCod.value}-${hidCatCod.value}-${hidSubCod.value}`;
+        }
 
         btnSubmit.disabled = true;
         btnSubmit.innerText = "Sincronizando Nube...";

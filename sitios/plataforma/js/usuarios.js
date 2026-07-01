@@ -3,46 +3,104 @@
 // ==============================================================================
 import { auth, db, app } from "./app.js";
 import { 
-    collection, getDocs, doc, getDoc, updateDoc, query, where 
+    collection, getDocs, doc, getDoc, updateDoc, query, where, serverTimestamp, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 // INYECCIÓN DE MULTIMEDIA DESDE FIREBASE STORAGE
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { inyectarEstructuraGlobal, actualizarPerfilLayout } from "./layout.js";
 
 const storage = getStorage(app);
-let usuariosMemory = [];
-let archivoFotoPendiente = null; // Almacena el binario de la nueva foto seleccionada
-const modalUsuario = document.getElementById("modal-editar-usuario");
 
-// ARQUITECTURA TENANT: Identificador maestro de aislamiento corporativo con Pasaporte Global
-const subdominioDetectado = window.location.hostname.split('.')[0];
-const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
+// 🚀 VARIABLES GLOBALES DE MEMORIA
+let personalMemory = [];
+let personalFiltradoGlobal = [];
+let paginaActual = 1;
+let itemsPorPagina = 10;
+let registroSeleccionadoId = null;
+let filtroEstadoTab = "Activo"; // 🚀 Por defecto mostramos a los usuarios operativos
 
-// Inyección de la estructura base nativa de tu sistema
+// 🕵️‍♂️ DETECTOR MULTI-TENANT SEGURO
+const subdominioCrudo = window.location.hostname.split('.')[0].toLowerCase();
+const subdominioLimpio = subdominioCrudo.replace('sigev-', ''); 
+const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioLimpio === 'localhost' || subdominioLimpio === '127' || subdominioLimpio === 'landing' || !subdominioLimpio) ? "paz" : subdominioLimpio);
+
+let DEPARTAMENTOS_MUNICIPALES = ["DIDECO", "DIMAO", "Obras", "Tránsito", "Seguridad", "Gabinete", "Territorial"];
+
 inyectarEstructuraGlobal();
 
+// ============================================================================
+// 1. INICIALIZACIÓN Y CONTROL DE SEGURIDAD (SOLO ADMINISTRADORES)
+// ============================================================================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         actualizarPerfilLayout(user);
-        await cargarUsuariosFirebase();
-        inicializarComponentesUsuarios();
+        try {
+            const snap = await getDoc(doc(db, "usuarios", user.uid));
+            if (snap.exists()) {
+                const rol = (snap.data().rol || "").toUpperCase();
+                // 🔒 ESCUDO: Si no es Admin o Super Admin, lo expulsa al Dashboard
+                if (!rol.includes("ADMIN")) {
+                    window.location.href = "dashboard.html";
+                } else {
+                    inicializarRelojMundial();
+                    await cargarParametrosGlobales();
+                    await cargarPersonalCore();
+                    inicializarBuscadorPersonal();
+                    aplicarFiltrosYRenderizar(); 
+                }
+            } else { window.location.href = "index.html"; }
+        } catch(e) { console.error(e); }
+    } else {
+        window.location.href = "index.html";
     }
 });
 
-// --- MOTOR DE INYECCIÓN DE ALERTAS PREMIUM ESTILIZADAS ---
-function mostrarAlertaPersonalizada(mensaje, tipo = "success") {
+function inicializarRelojMundial() {
+    const clockContainer = document.getElementById("live-clock");
+    if (!clockContainer) return;
+    const render = () => {
+        const ahora = new Date();
+        clockContainer.innerText = `|   ${ahora.toLocaleDateString('es-CL')}   ${ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    };
+    render(); setInterval(render, 1000);
+}
+
+function mostrarLoaderBloqueante(mensaje) {
+    const exist = document.getElementById("global-loader-sigev");
+    if (exist) exist.remove();
+    const loader = document.createElement("div");
+    loader.id = "global-loader-sigev";
+    loader.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.8); backdrop-filter:blur(4px); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff;";
+    loader.innerHTML = `
+        <div class="loader-spinner" style="width:50px; height:50px; border:4px solid rgba(255,255,255,0.3); border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px;"></div>
+        <h3 style="margin:0; font-size:16px; font-weight:700;">${mensaje}</h3>
+        <style>@keyframes spin { 100% { transform:rotate(360deg); } }</style>
+    `;
+    document.body.appendChild(loader);
+}
+
+function ocultarLoaderBloqueante() {
+    const loader = document.getElementById("global-loader-sigev");
+    if (loader) loader.remove();
+}
+
+function mostrarAlertaPersonalizada(mensaje, tipo = "success", alAceptar = null) {
     const overlay = document.createElement("div");
     overlay.className = "custom-alert-overlay";
     let iconSvg = ""; let titleText = ""; let iconStyles = "";
 
     if (tipo === "success") {
         iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        titleText = "¡Sincronización Exitosa!";
+        titleText = "Operación Exitosa";
         iconStyles = "background-color: rgba(16, 185, 129, 0.1); color: #10b981;";
-    } else {
-        iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="12" x2="12" y2="16"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
-        titleText = "Notificación del Sistema";
+    } else if (tipo === "info") {
+        iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="12" x2="12" y2="16"></line></svg>`;
+        titleText = "Información del Sistema";
         iconStyles = "background-color: rgba(37, 99, 235, 0.1); color: #2563eb;";
+    } else {
+        iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        titleText = "Atención Requerida";
+        iconStyles = "background-color: rgba(239, 68, 68, 0.1); color: #ef4444;";
     }
 
     overlay.innerHTML = `
@@ -53,480 +111,434 @@ function mostrarAlertaPersonalizada(mensaje, tipo = "success") {
             <button class="btn-alert-confirm">Aceptar</button>
         </div>`;
     document.body.appendChild(overlay);
-    const btnAceptar = overlay.querySelector(".btn-alert-confirm");
-    if (btnAceptar) btnAceptar.focus();
-    btnAceptar.addEventListener("click", () => overlay.remove());
+
+    overlay.querySelector(".btn-alert-confirm").onclick = () => {
+        overlay.remove();
+        if (alAceptar) alAceptar();
+    };
 }
 
-// --- CONFIRMACIÓN ASÍNCRONA PERSONALIZADA PARA DESTIERROS RÁPIDOS ---
-function mostrarConfirmacionPersonalizada(mensaje, onConfirm) {
-    const overlay = document.createElement("div");
-    overlay.className = "custom-alert-overlay";
-    overlay.innerHTML = `
-        <div class="custom-alert-overlay">
-            <div class="custom-alert-card" style="max-width: 440px;">
-                <div class="custom-alert-icon" style="background-color: rgba(220, 38, 38, 0.1); color: #dc2626; font-size: 24px; padding: 4px; box-shadow: 0 4px 10px rgba(220,38,38,0.15);">☠️</div>
-                <div class="custom-alert-title" style="color: #dc2626;">Sentencia de Destierro</div>
-                <div class="custom-alert-message" style="line-height: 1.5; margin-bottom: 20px;">${mensaje}</div>
-                <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
-                    <button class="btn-confirmar-destierro" style="background-color: #dc2626; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; flex: 1; transition: all 0.2s;">Desterrar</button>
-                    <button class="btn-cancelar-destierro" style="background-color: #cbd5e1; color: #334155; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; flex: 1; transition: all 0.2s;">Cancelar</button>
-                </div>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
-    
-    const btnConfirmar = overlay.querySelector(".btn-confirmar-destierro");
-    if (btnConfirmar) btnConfirmar.focus();
-
-    btnConfirmar.onclick = () => { overlay.remove(); onConfirm(); };
-    overlay.querySelector(".btn-cancelar-destierro").onclick = () => overlay.remove();
-}
-
-// --- CONSOLA DE JUICIO PARA CUENTAS PENDIENTES CON DOS OPCIONES ---
-function mostrarConsolaJuicioInframundo(usuario, onOportunidad, onDestierro) {
-    const overlay = document.createElement("div");
-    overlay.className = "custom-alert-overlay";
-    overlay.innerHTML = `
-        <div class="custom-alert-card" style="max-width: 460px; padding: 28px;">
-            <div class="custom-alert-icon" style="background-color: rgba(220, 38, 38, 0.1); color: #dc2626; font-size: 24px; padding: 4px; box-shadow: 0 4px 10px rgba(220,38,38,0.15);">☠️</div>
-            <div class="custom-alert-title" style="color: var(--text-dark); font-size: 16px; margin-top: 10px;">Juicio del Inframundo ☠️</div>
-            <div class="custom-alert-message" style="line-height: 1.5; margin-bottom: 22px; font-size: 13.5px; color: var(--text-dark);">
-                Recibiendo el alma de <b>${usuario.nombre || 'Humita CooCoo'}</b>. ¡Decide si otorgarle una nueva oportunidad o dejarlo aquí para siempre en el infierno de los desterrados!
-            </div>
-            <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
-                <button class="btn-oportunidad-ui" style="background-color: #10b981; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; flex: 1; transition: background 0.2s;" onmouseenter="this.style.background='#059669'" onmouseleave="this.style.background='#10b981'">Nueva Oportunidad</button>
-                <button class="btn-infierno-ui" style="background-color: #dc2626; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; flex: 1; transition: background 0.2s;" onmouseenter="this.style.background='#b91c1c'" onmouseleave="this.style.background='#dc2626'">Dejar en el Infierno</button>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
-
-    overlay.querySelector(".btn-oportunidad-ui").onclick = () => { overlay.remove(); onOportunidad(); };
-    overlay.querySelector(".btn-infierno-ui").onclick = () => { overlay.remove(); onDestierro(); };
-}
-
-async function cargarUsuariosFirebase() {
+async function cargarParametrosGlobales() {
     try {
-        const q = query(
-            collection(db, "usuarios"), 
-            where("tenantId", "==", CURRENT_TENANT_ID)
-        );
-        
-        const snap = await getDocs(q);
-        usuariosMemory = [];
-        snap.forEach(uDoc => {
-            const data = uDoc.data();
-            usuariosMemory.push({ id: uDoc.id, tenantId: CURRENT_TENANT_ID, ...data });
-        });
-
-        usuariosMemory.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-
-    } catch (error) {
-        console.error("Error al compilar la nómina de funcionarios:", error);
+        const docRef = doc(db, "configuracion_tenant", CURRENT_TENANT_ID);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            const c = snap.data();
+            if (c.departamentosAsignables && c.departamentosAsignables.length > 0) {
+                DEPARTAMENTOS_MUNICIPALES = c.departamentosAsignables;
+            }
+        }
+    } catch (e) {
+        console.error("Error cargando parámetros globales:", e);
     }
 }
 
-function inicializarComponentesUsuarios() {
-    document.getElementById("filter-usuario-busqueda").addEventListener("input", aplicarFiltrosUsuarios);
-    document.getElementById("filter-usuario-rol").addEventListener("change", aplicarFiltrosUsuarios);
-    document.getElementById("filter-usuario-estado").addEventListener("change", aplicarFiltrosUsuarios);
-    
-    const filterRow = document.querySelector(".filter-layout-row");
-    if (filterRow && !document.getElementById("btn-carpeta-desterrados")) {
-        const carpetaContainer = document.createElement("div");
-        carpetaContainer.className = "filter-control";
-        carpetaContainer.style.display = "flex";
-        carpetaContainer.style.alignItems = "flex-end";
-        carpetaContainer.innerHTML = `
-            <button id="btn-carpeta-desterrados" class="btn btn-secondary" style="background-color: #1e1e2d; color: #f87171; border: 1px solid #ef4444; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 10px 14px; gap: 8px; font-size: 12.5px; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.background='#2d2d3f'" onmouseleave="this.style.background='#1e1e2d'">
-                📁 Carpeta Desterrados ☠️
-            </button>
-        `;
-        filterRow.appendChild(carpetaContainer);
+async function cargarPersonalCore() {
+    mostrarLoaderBloqueante("Sincronizando expedientes del personal...");
+    try {
+        const snapU = await getDocs(collection(db, "usuarios"));
+        personalMemory = [];
         
-        document.getElementById("btn-carpeta-desterrados").addEventListener("click", () => {
-            document.getElementById("filter-usuario-estado").value = "Inactivo";
-            document.getElementById("filter-usuario-rol").value = "Todos";
-            document.getElementById("filter-usuario-busqueda").value = "";
-            aplicarFiltrosUsuarios();
-            mostrarAlertaPersonalizada("Abriendo la carpeta prohibida de los usuarios desterrados del sistema.", "info");
-        });
-    }
-
-    const fileInput = document.getElementById("mu-foto-file");
-    if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                archivoFotoPendiente = file;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const imgPreview = document.getElementById("mu-avatar-preview");
-                    const placeholder = document.getElementById("mu-avatar-placeholder");
-                    if (imgPreview && placeholder) {
-                        imgPreview.src = event.target.result;
-                        imgPreview.style.display = "block";
-                        placeholder.style.display = "none";
-                    }
-                };
-                reader.readAsDataURL(file);
+        snapU.forEach(d => {
+            const data = d.data();
+            const roleSeguro = (data.rol || "").toUpperCase();
+            if (!data.tenantId || data.tenantId === CURRENT_TENANT_ID || roleSeguro === "SUPER_ADMIN" || roleSeguro === "SUPERADMIN") {
+                personalMemory.push({ id: d.id, ...data });
             }
         });
+
+        personalMemory.sort((a, b) => (b.fechaRegistro?.seconds || 0) - (a.fechaRegistro?.seconds || 0));
+    } catch(e) { 
+        console.error("Error cargando DB:", e); 
+    } finally {
+        ocultarLoaderBloqueante();
+    }
+}
+
+// ============================================================================
+// 2. FILTROS Y RENDERING DE TABLA
+// ============================================================================
+
+function inicializarBuscadorPersonal() {
+    const inptSearch = document.getElementById("filter-personal-search");
+    const selectRol = document.getElementById("filter-rol");
+    const btnReset = document.getElementById("btn-reset-filters");
+
+    // Aseguramos que no exista botón de vincular
+    document.querySelectorAll("button").forEach(btn => {
+        if(btn.innerText.includes("Vincular Personal")) btn.remove();
+    });
+
+    if (inptSearch) inptSearch.addEventListener("input", aplicarFiltrosYRenderizar);
+    if (selectRol) selectRol.addEventListener("change", aplicarFiltrosYRenderizar);
+
+    if (btnReset) {
+        btnReset.onclick = () => {
+            if (inptSearch) inptSearch.value = "";
+            if (selectRol) selectRol.value = "Todos";
+            
+            filtroEstadoTab = "Activo";
+            const tabs = document.querySelectorAll(".user-tab");
+            tabs.forEach(t => {
+                t.classList.remove("active");
+                t.style.color = "#64748b";
+                t.style.fontWeight = "600";
+                t.style.borderBottom = "2px solid transparent";
+                if(t.getAttribute("data-estado") === "Activo") {
+                    t.classList.add("active");
+                    t.style.color = "#0b438c";
+                    t.style.fontWeight = "700";
+                    t.style.borderBottom = "2px solid #0b438c";
+                }
+            });
+
+            aplicarFiltrosYRenderizar();
+        };
     }
 
-    const btnToggleMobile = document.getElementById("btn-toggle-filters-mobile");
-    if (btnToggleMobile) {
-        btnToggleMobile.addEventListener("click", () => {
-            const panelCard = btnToggleMobile.closest(".filter-panel-card");
-            if (panelCard) panelCard.classList.toggle("filters-expanded");
+    const limitSelect = document.getElementById("user-limit-entries");
+    if (limitSelect) {
+        limitSelect.addEventListener("change", (e) => {
+            itemsPorPagina = parseInt(e.target.value);
+            paginaActual = 1;
+            inyectarFilasTablaPersonal();
         });
     }
 
-    document.getElementById("btn-reset-filters-usuarios").addEventListener("click", () => {
-        document.getElementById("filter-usuario-busqueda").value = "";
-        document.getElementById("filter-usuario-rol").value = "Todos";
-        document.getElementById("filter-usuario-estado").value = "Activo"; 
-        aplicarFiltrosUsuarios();
-    });
+    const prevBtn = document.getElementById("user-pag-prev");
+    const nextBtn = document.getElementById("user-pag-next");
+    if (prevBtn) prevBtn.addEventListener("click", () => { if (paginaActual > 1) { paginaActual--; inyectarFilasTablaPersonal(); } });
+    if (nextBtn) nextBtn.addEventListener("click", () => { const maxPage = Math.ceil(personalFiltradoGlobal.length / itemsPorPagina); if (paginaActual < maxPage) { paginaActual++; inyectarFilasTablaPersonal(); } });
 
-    if (modalUsuario) {
-        document.getElementById("btn-cerrar-modal-usuario").addEventListener("click", () => modalUsuario.style.display = "none");
-        document.getElementById("btn-cancelar-modal-usuario").addEventListener("click", () => modalUsuario.style.display = "none");
-        window.addEventListener("click", (e) => { if (e.target === modalUsuario) modalUsuario.style.display = "none"; });
-        
-        document.getElementById("btn-guardar-modal-usuario").addEventListener("click", guardarCambiosUsuarioFirestore);
-    }
-
-    document.getElementById("filter-usuario-estado").value = "Activo";
-    aplicarFiltrosUsuarios();
-}
-
-function aplicarFiltrosUsuarios() {
-    const busqueda = document.getElementById("filter-usuario-busqueda").value.toLowerCase();
-    const rol = document.getElementById("filter-usuario-rol").value;
-    const estado = document.getElementById("filter-usuario-estado").value;
-
-    let filtrados = usuariosMemory.filter(u => {
-        const coincideBusqueda = !busqueda || 
-            (u.nombre || "").toLowerCase().includes(busqueda) || 
-            (u.correo || u.email || "").toLowerCase().includes(busqueda);
+    const tabs = document.querySelectorAll(".user-tab, #user-tabs-container .user-tab");
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => {
+                t.classList.remove("active");
+                t.style.color = "#64748b";
+                t.style.fontWeight = "600";
+                t.style.borderBottom = "2px solid transparent";
+            });
             
-        let rolMatch = u.rol || "pendiente";
-        if (rolMatch === "admin" || rolMatch === "Administrador") rolMatch = "ADMIN";
-        if (rolMatch === "Moderador") rolMatch = "GESTOR_TERRITORIAL";
-
-        const coincideRol = (rol === "Todos") || (rolMatch === rol);
-        const coincideEstado = (estado === "Todos") || ((u.estado || "Activo") === estado);
-
-        return coincideBusqueda && coincideRol && coincideEstado;
+            tab.classList.add("active");
+            tab.style.color = "#0b438c";
+            tab.style.fontWeight = "700";
+            tab.style.borderBottom = "2px solid #0b438c";
+            
+            filtroEstadoTab = tab.getAttribute("data-estado") || "Todos"; 
+            aplicarFiltrosYRenderizar();
+        });
     });
-
-    renderizarTablaUsuarios(filtrados);
 }
 
-function renderizarTablaUsuarios(lista) {
-    const tbody = document.querySelector("#tabla-global-usuarios tbody");
+function aplicarFiltrosYRenderizar() {
+    const iSearch = document.getElementById("filter-personal-search");
+    const term = iSearch ? iSearch.value.toLowerCase().trim() : "";
+    
+    const iRol = document.getElementById("filter-rol");
+    const filtroRol = iRol ? iRol.value : "Todos";
+
+    personalFiltradoGlobal = personalMemory.filter(u => {
+        // 1. FILTRO DE BÚSQUEDA (Nombre o Correo)
+        const searchString = `${u.nombreCompleto || u.nombre || ''} ${u.email || ''} ${u.rolVisual || ''}`.toLowerCase();
+        let matchS = true;
+        if (term) matchS = searchString.includes(term);
+
+        // 2. FILTRO DE ROL DESPLEGABLE (Tolerante a variaciones)
+        let matchRol = true;
+        if (filtroRol !== "Todos") {
+            const rV = (u.rol || "").toUpperCase(); // Normalizamos la BD a mayúsculas
+            
+            if (filtroRol === "SUPER_ADMIN") {
+                matchRol = rV.includes("SUPER"); 
+            } else if (filtroRol === "ADMIN") {
+                matchRol = (rV === "ADMIN"); 
+            } else if (filtroRol === "GESTOR_TERRITORIAL") {
+                matchRol = rV.includes("GESTOR"); 
+            } else if (filtroRol === "pendiente") {
+                matchRol = (rV === "PENDIENTE"); 
+            } else if (filtroRol === "Inactivo") {
+                matchRol = (rV === "INACTIVO");
+            } else {
+                matchRol = (u.rol === filtroRol);
+            }
+        }
+
+        // 3. FILTRO DE TABS SUPERIORES (Unificando estado de cuenta)
+        let matchSt = true;
+        // Solo verificamos el campo oficial estadoCuenta para la visualización del filtro
+        const estadoVirtual = (u.estadoCuenta === "Suspendido" || u.estadoCuenta === "Inactivo") ? "Inactivo" : "Activo";
+
+        if (filtroEstadoTab !== "Todos") {
+            if (filtroEstadoTab === "Activo" && estadoVirtual !== "Activo") matchSt = false;
+            if (filtroEstadoTab === "Inactivo" && estadoVirtual !== "Inactivo") matchSt = false;
+        }
+
+        return matchS && matchRol && matchSt;
+    });
+
+    paginaActual = 1;
+    inyectarFilasTablaPersonal();
+}
+
+function inyectarFilasTablaPersonal() {
+    const tbody = document.querySelector("#tabla-global-usuarios tbody") || document.querySelector("#tabla-usuarios tbody") || document.querySelector("table tbody");
     if (!tbody) return;
 
-    const currentLoggedUid = auth.currentUser ? auth.currentUser.uid : "";
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const paginada = personalFiltradoGlobal.slice(inicio, fin);
 
     let html = "";
-    lista.forEach(u => {
-        const emailSrc = u.correo || u.email || "Sin correo";
-        const estadoCuenta = u.estado || "Activo";
+    paginada.forEach(u => {
+        const fotoUrl = u.fotoPerfil || u.foto || u.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100";
         
-        let fotoSrc = u.foto || u.photoURL || u.fotoPerfil || "";
-        if (!fotoSrc || fotoSrc.includes("photo-1535713875002-d1d0cf377fde")) {
-            fotoSrc = "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=100"; 
-        }
+        const rolSistema = (u.rol || "").toUpperCase();
+        let iconoRol = '⭐'; 
         
-        let claseRolBadge = "badge-role-pendiente";
-        let rolImpresión = u.rolVisual || u.rol || "pendiente";
-        let iconoRol = "☠️"; 
-
-        if (u.rol === "SUPER_ADMIN") {
-            claseRolBadge = "badge-role-superadmin";
-            iconoRol = "🎩";
-        } else if (u.rol === "ADMIN" || u.rol === "admin" || u.rol === "Administrador") {
-            claseRolBadge = "badge-role-admin";
-            iconoRol = "👑";
-        } else if (u.rol === "GESTOR_TERRITORIAL" || u.rol === "Moderador" || u.rol === "Equipo Territorial") {
-            claseRolBadge = "badge-role-territorial";
-            iconoRol = "⭐";
+        if (rolSistema.includes("SUPER")) { 
+            iconoRol = '🎩';
+        } else if (rolSistema.includes("ADMIN")) { 
+            iconoRol = '👑';
+        } else if (rolSistema === "INACTIVO" || u.rol === "Inactivo") {
+            iconoRol = '📁';
         }
 
-        const claseEstado = estadoCuenta === "Activo" ? "revision" : "finalizada";
-
-        let loginFormateado = "No registra";
-        if (u.ultimaConexion) {
-            let dateObj = null;
-            if (typeof u.ultimaConexion.toDate === "function") {
-                dateObj = u.ultimaConexion.toDate();
-            } else if (u.ultimaConexion.seconds) {
-                dateObj = new Date(u.ultimaConexion.seconds * 1000);
-            } else if (u.ultimaConexion.pointer) {
-                dateObj = u.ultimaConexion;
-            } else {
-                dateObj = new Date(u.ultimaConexion);
-            }
-
-            if (dateObj && !isNaN(dateObj.getTime())) {
-                loginFormateado = `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}`;
-            }
+        const uidCorto = u.id ? u.id.substring(0, 6).toUpperCase() : "N/A";
+        const rolVisualTexto = u.rolVisual || (rolSistema.includes("SUPER") ? "Super Administrador" : rolSistema.includes("ADMIN") ? "Administrador" : u.rol === "pendiente" ? "Pendiente" : u.rol === "Inactivo" ? "Inactivo" : "Gestor");
+        
+        let bgRol = "#f1f5f9"; 
+        let colorRol = "#475569";
+        const rolLower = rolVisualTexto.toLowerCase();
+        
+        if (rolLower.includes("admin")) { 
+            bgRol = "#fce7f3"; colorRol = "#db2777"; 
+        } else if (rolLower.includes("concejal")) { 
+            bgRol = "#e0e7ff"; colorRol = "#4338ca"; 
+        } else if (rolLower.includes("gestor") || rolLower.includes("terri")) { 
+            bgRol = "#d1fae5"; colorRol = "#059669"; 
         }
 
-        let accionHtml = "";
-        if (u.rol === "SUPER_ADMIN" && u.id !== currentLoggedUid) {
-            accionHtml = `<span style="color: var(--text-light); font-size: 11.5px; font-weight: 700; background: #f1f5f9; padding: 4px 10px; border-radius: 6px;">Inmune 🛡️</span>`;
-        } else {
-            let botonDestierroRapido = "";
-            if ((u.rol === "pendiente" || !u.rol) && estadoCuenta === "Activo") {
-                botonDestierroRapido = `
-                    <button class="btn-accion-u u-ban-fast" data-id="${u.id}" style="background: none; border: none; cursor: pointer; padding: 6px; font-size: 14px; margin-left: 4px; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.1));" title="Enviar inmediatamente al infierno">
-                        ☠️
-                    </button>
-                `;
-            }
-
-            accionHtml = `
-                <div style="display: flex; align-items: center; justify-content: center;">
-                    <button class="btn-accion-u u-edit" data-id="${u.id}" style="background: none; border: none; cursor: pointer; color: var(--primary-blue); padding: 6px; transition: 0.2s;" title="Modificar permisos y rol">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                    ${botonDestierroRapido}
-                </div>
-            `;
+        // Utilizamos solo estadoCuenta
+        const estadoSt = (u.estadoCuenta === "Suspendido" || u.estadoCuenta === "Inactivo") ? "Inactivo" : "Activo";
+        let bgEstado = estadoSt === "Activo" ? "#ffedd5" : "#f1f5f9"; 
+        let colEstado = estadoSt === "Activo" ? "#c2410c" : "#475569";
+        
+        let fechaAct = "No registra";
+        if (u.ultimaModificacion || u.fechaRegistro) {
+            try {
+                const fechaVal = u.ultimaModificacion ? new Date(u.ultimaModificacion.seconds * 1000) : new Date(u.fechaRegistro.seconds * 1000);
+                const d = fechaVal.getDate().toString().padStart(2, '0');
+                const m = (fechaVal.getMonth() + 1).toString().padStart(2, '0');
+                const y = fechaVal.getFullYear();
+                fechaAct = `${d}-${m}-${y}`;
+            } catch(e) { fechaAct = "24-06-2026"; } 
         }
 
         html += `
-            <tr data-id="${u.id}">
-                <td>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <img src="${fotoSrc}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;">
+            <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s; background: #ffffff;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                
+                <td style="padding: 16px; min-width: 280px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <img src="${fotoUrl}" referrerpolicy="no-referrer" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <div>
-                            <span style="display:block; font-weight:700; color:var(--text-dark); font-size:13px;">${iconoRol} ${u.nombre || 'Funcionario'}</span>
-                            <span style="font-size:11px; color:var(--text-light); font-weight:600;">UID: ${u.id.substring(0,6).toUpperCase()}</span>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 14px;">${iconoRol} ${u.nombreCompleto || u.nombre || "Usuario Invitado"}</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 2px; font-family: monospace;">UID: ${uidCorto}</div>
                         </div>
                     </div>
                 </td>
-                <td style="font-weight:600; font-size:12.5px;">${emailSrc}</td>
-                <td><span class="${claseRolBadge}">${rolImpresión}</span></td>
-                <td style="text-align:center;"><span class="badge-status ${claseEstado}" style="padding:4px 10px; font-size:11px; border-radius:20px;">${estadoCuenta}</span></td>
-                <td style="text-align:center; font-weight:500; font-size:12px; color:var(--text-dark);">${loginFormateado}</td>
-                <td style="text-align:center;">${accionHtml}</td>
+                <td style="padding: 16px; font-size: 13.5px; color: #0f172a; font-weight: 500;">
+                    ${u.email || "Sin correo"}
+                </td>
+                <td style="padding: 16px;">
+                    <span style="background: ${bgRol}; color: ${colorRol}; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 700;">
+                        ${rolVisualTexto}
+                    </span>
+                </td>
+                <td style="padding: 16px;">
+                    <span style="background: ${bgEstado}; color: ${colEstado}; padding: 4px 12px; border-radius: 9999px; font-size: 11.5px; font-weight: 600;">
+                        ${estadoSt}
+                    </span>
+                </td>
+                <td style="padding: 16px; font-size: 13px; color: #475569; font-weight: 500;">
+                    ${fechaAct}
+                </td>
+                <td style="padding: 16px; text-align: center;">
+                    <button class="btn-editar-usuario" data-id="${u.id}" style="background: transparent; border: none; cursor: pointer; color: #475569; transition: 0.2s; padding: 6px; border-radius: 6px;" onmouseover="this.style.color='#0f172a'; this.style.background='#f1f5f9';" onmouseout="this.style.color='#475569'; this.style.background='transparent';" title="Editar Funcionario">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </td>
             </tr>`;
     });
 
-    tbody.innerHTML = html || `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-light);">No se registran funcionarios bajo este filtro.</td></tr>`;
-    document.getElementById("pag-info-usuarios").innerText = `Mostrando 1 a ${lista.length} de ${lista.length} funcionarios integrados`;
-
-    conectarManejadoresEdicion();
-}
-
-function abrirModalFormularioUsuarioConActivacion(usuario) {
-    const currentLoggedUid = auth.currentUser ? auth.currentUser.uid : "";
-    const esMiPropioPerfil = (usuario.id === currentLoggedUid);
-    archivoFotoPendiente = null; // Reiniciar cola de carga
-
-    let rolFormulario = usuario.rol || "pendiente";
-    if (rolFormulario === "admin" || rolFormulario === "Administrador") rolFormulario = "ADMIN";
-    if (rolFormulario === "Moderador" || rolFormulario === "Equipo Territorial") rolFormulario = "GESTOR_TERRITORIAL";
-
-    document.getElementById("mu-id-val").value = usuario.id;
+    tbody.innerHTML = html || `<tr><td colspan="6" style="text-align:center; padding:40px; color:#64748b; font-weight: 500;">No se encontraron funcionarios integrados con estos filtros.</td></tr>`;
     
-    const imgPreview = document.getElementById("mu-avatar-preview");
-    const placeholder = document.getElementById("mu-avatar-placeholder");
-    const fotoUrlActual = usuario.foto || usuario.photoURL || usuario.fotoPerfil || "";
-
-    if (imgPreview && placeholder) {
-        if (fotoUrlActual && !fotoUrlActual.includes("photo-1535713875002-d1d0cf377fde")) {
-            imgPreview.src = fotoUrlActual;
-            imgPreview.style.display = "block";
-            placeholder.style.display = "none";
+    const paginationText = document.getElementById("pagination-info-text");
+    if (paginationText) {
+        if (personalFiltradoGlobal.length === 0) {
+            paginationText.innerText = `Mostrando 0 funcionarios integrados`;
         } else {
-            imgPreview.src = "";
-            imgPreview.style.display = "none";
-            placeholder.style.display = "flex";
+            paginationText.innerText = `Mostrando ${inicio + 1} a ${Math.min(fin, personalFiltradoGlobal.length)} de ${personalFiltradoGlobal.length} funcionarios integrados`;
         }
     }
 
-    const inputNombre = document.getElementById("mu-nombre");
-    if (inputNombre) {
-        inputNombre.value = usuario.nombre || "Funcionario";
-        if (esMiPropioPerfil) {
-            inputNombre.readOnly = true;
-            inputNombre.style.backgroundColor = "#f1f5f9";
-            inputNombre.style.cursor = "not-allowed";
-        } else {
-            inputNombre.readOnly = false;
-            inputNombre.style.backgroundColor = "";
-            inputNombre.style.cursor = "";
-        }
-    }
-
-    const inputCorreo = document.getElementById("mu-correo");
-    if (inputCorreo) {
-        inputCorreo.value = usuario.correo || usuario.email || "";
-        inputCorreo.readOnly = true;
-        inputCorreo.style.backgroundColor = "#f1f5f9";
-        inputCorreo.style.cursor = "not-allowed";
-    }
-
-    const selectRol = document.getElementById("mu-rol");
-    if (selectRol) {
-        selectRol.value = rolFormulario;
-        if (esMiPropioPerfil) {
-            selectRol.disabled = true;
-            selectRol.style.backgroundColor = "#f1f5f9";
-            selectRol.style.cursor = "not-allowed";
-        } else {
-            selectRol.disabled = false;
-            selectRol.style.backgroundColor = "";
-            selectRol.style.cursor = "";
-        }
-    }
-
-    const selectEstado = document.getElementById("mu-estado");
-    if (selectEstado) {
-        selectEstado.value = usuario.estado || "Activo";
-        if (esMiPropioPerfil) {
-            selectEstado.disabled = true;
-            selectEstado.style.backgroundColor = "#f1f5f9";
-            selectEstado.style.cursor = "not-allowed";
-        } else {
-            selectEstado.disabled = false;
-            selectEstado.style.backgroundColor = "";
-            selectEstado.style.cursor = "";
-        }
-    }
-
-    const inputRolVisual = document.getElementById("mu-rol-visual");
-    if (inputRolVisual) inputRolVisual.value = usuario.rolVisual || "";
-
-    const txtInfo = document.getElementById("mu-info");
-    if (txtInfo) txtInfo.value = usuario.infoInterna || "";
-
-    if (modalUsuario) modalUsuario.style.display = "flex";
-}
-
-function conectarManejadoresEdicion() {
-    document.querySelectorAll(".u-edit").forEach(elemento => {
-        elemento.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const id = elemento.getAttribute("data-id");
-            const usuario = usuariosMemory.find(u => u.id === id);
-            if (!usuario) return;
-
-            if (usuario.rol === "pendiente" || !usuario.rol) {
-                mostrarConsolaJuicioInframundo(
-                    usuario,
-                    () => { abrirModalFormularioUsuarioConActivacion(usuario); },
-                    async () => {
-                        try {
-                            const docRef = doc(db, "usuarios", id);
-                            await updateDoc(docRef, { estado: "Inactivo", rol: "pendiente" });
-                            await cargarUsuariosFirebase();
-                            aplicarFiltrosUsuarios();
-                            mostrarAlertaPersonalizada(`El usuario ${usuario.nombre} ha sido desterrado con éxito. ☠️`, "success");
-                        } catch (error) {
-                            console.error("Error en procesamiento infernal:", error);
-                        }
-                    }
-                );
-            } else {
-                abrirModalFormularioUsuarioConActivacion(usuario);
-            }
-        });
-    });
-
-    document.querySelectorAll(".u-ban-fast").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const id = btn.getAttribute("data-id");
-            const usuario = usuariosMemory.find(u => u.id === id);
-            if (!usuario) return;
-
-            mostrarConfirmacionPersonalizada(
-                `¿Estás completamente seguro de desterrar inmediatamente a <b>${usuario.nombre}</b>?`,
-                async () => {
-                    try {
-                        const docRef = doc(db, "usuarios", id);
-                        await updateDoc(docRef, { estado: "Inactivo", rol: "pendiente" });
-                        await cargarUsuariosFirebase();
-                        aplicarFiltrosUsuarios();
-                        mostrarAlertaPersonalizada(`El usuario ${usuario.nombre} ha sido desterrado con éxito. ☠️`, "success");
-                    } catch (error) {
-                        console.error("Error en destierro rápido:", error);
-                    }
-                }
-            );
-        });
-    });
-}
-
-async function guardarCambiosUsuarioFirestore() {
-    const id = document.getElementById("mu-id-val").value;
-    const nuevoRol = document.getElementById("mu-rol").value;
-    const nuevoEstado = document.getElementById("mu-estado").value;
-    const btnGuardar = document.getElementById("btn-guardar-modal-usuario");
-
-    const inputRolVisual = document.getElementById("mu-rol-visual");
-    const txtInfo = document.getElementById("mu-info");
-    const inputNombre = document.getElementById("mu-nombre");
-
-    if (!id) return;
-    btnGuardar.disabled = true;
-    btnGuardar.innerText = "Sincronizando transacciones...";
-
-    const currentLoggedUid = auth.currentUser ? auth.currentUser.uid : "";
-    const esMiPropioPerfil = (id === currentLoggedUid);
-
-    try {
-        const docRef = doc(db, "usuarios", id);
-        
-        const payloadUpdate = {
-            rolVisual: inputRolVisual ? inputRolVisual.value.trim() : "",
-            infoInterna: txtInfo ? txtInfo.value.trim() : "",
-            tenantId: CURRENT_TENANT_ID
+    tbody.querySelectorAll(".btn-editar-usuario").forEach(btn => {
+        btn.onclick = () => {
+            const uId = btn.getAttribute("data-id");
+            const userData = personalMemory.find(x => x.id === uId);
+            abrirEditorPerfilPersonal(userData);
         };
+    });
+}
 
-        if (archivoFotoPendiente) {
-            const storageRef = ref(storage, `fotos_usuarios/${id}`);
-            await uploadBytes(storageRef, archivoFotoPendiente);
-            const downloadURL = await getDownloadURL(storageRef);
-            payloadUpdate.foto = downloadURL;
+// ============================================================================
+// 3. EDITOR Y VISOR DE PERFILES (DISEÑO CONSOLIDADO Y FOTO BLOQUEADA)
+// ============================================================================
+function abrirEditorPerfilPersonal(user) {
+    if (!user) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "profile-modal-overlay";
+    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); display: flex; align-items: center; justify-content: center; z-index: 3500; backdrop-filter: blur(4px);";
+
+    const isSuperAdmin = (user.rol === "SUPER_ADMIN" || user.rol === "SUPERADMIN" || user.rol === "super_admin");
+    const fotoActual = user.fotoPerfil || user.foto || user.photoURL || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100";
+    const infoAntigua = [user.departamento, user.telefono].filter(Boolean).join(" - ");
+    const bitacoraValue = user.bitacora || (infoAntigua !== "Territorio General" ? infoAntigua : "");
+
+    // Unificamos la lectura al único campo oficial: estadoCuenta
+    const estadoActualCuenta = user.estadoCuenta || "Activo";
+
+    overlay.innerHTML = `
+        <div class="profile-modal-card" style="max-width: 520px; width: 90%; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;">
+            
+            <div class="profile-modal-header" style="background: #0b438c; padding: 20px 24px; position: relative; flex-shrink: 0;">
+                <div style="padding-right: 32px;">
+                    <h3 style="font-size: 18px; color: #ffffff; margin: 0; font-weight: 700;">Permisos de Funcionario</h3>
+                    <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0 0; font-size: 13px;">Configuración de accesos y nivel de privilegios en la plataforma.</p>
+                </div>
+                <button class="btn-profile-close" style="color:#ffffff; top: 20px; right: 20px; border:none; background:transparent; font-size:24px; cursor:pointer; position: absolute; line-height: 1;">&times;</button>
+            </div>
+            
+            <div class="profile-modal-body" style="padding: 28px 32px; overflow-y: auto; flex-grow: 1;">
+                
+                <div style="text-align: center; margin-bottom: 24px; position: relative;">
+                    <img src="${fotoActual}" referrerpolicy="no-referrer" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #f1f5f9; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                </div>
+                
+                <div style="margin-bottom: 18px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #0b438c; margin-bottom: 6px; display: block;">Nombre Completo</label>
+                    <input type="text" id="edit-nombre" value="${user.nombreCompleto || user.nombre || ''}" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 500; font-size: 13.5px; outline:none; background:#f8fafc; color: #0f172a; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0b438c'" onblur="this.style.borderColor='#cbd5e1'">
+                </div>
+                
+                <div style="margin-bottom: 18px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #0b438c; margin-bottom: 6px; display: block;">Correo Electrónico</label>
+                    <input type="email" value="${user.email || ''}" readonly style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 500; font-size: 13.5px; outline:none; background:#f1f5f9; color: #475569; cursor: not-allowed;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700; color: #0b438c; margin-bottom: 6px; display: block;">Rol de Sistema *</label>
+                        <select id="edit-rol" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 500; font-size: 13.5px; outline:none; background:${isSuperAdmin ? '#f1f5f9' : '#f8fafc'}; color: ${isSuperAdmin ? '#64748b' : '#0f172a'};" ${isSuperAdmin ? 'disabled' : ''}>
+                            <option value="SUPER_ADMIN" ${isSuperAdmin ? 'selected' : ''}>SUPER_ADMIN (Dueño)</option>
+                            <option value="ADMIN" ${user.rol === 'ADMIN' ? 'selected' : ''}>ADMIN (Administrador)</option>
+                            <option value="GESTOR_TERRITORIAL" ${(user.rol === 'GESTOR_TERRITORIAL' || user.rol === 'Inactivo') ? 'selected' : ''}>GESTOR_TERRITORIAL</option>
+                            <option value="pendiente" ${user.rol === 'pendiente' ? 'selected' : ''}>Pendiente de Aprobación</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700; color: #0b438c; margin-bottom: 6px; display: block;">Rol Visual (Cargo Escrito) *</label>
+                        <input type="text" id="edit-rol-visual" value="${user.rolVisual || ''}" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 500; font-size: 13.5px; outline:none; background:#ffffff; color: #0f172a; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0b438c'" onblur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 18px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #0b438c; margin-bottom: 6px; display: block;">Estado de Acceso *</label>
+                    <select id="edit-estado" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 500; font-size: 13.5px; outline:none; background:#f8fafc; color: #0f172a;" ${isSuperAdmin ? 'disabled' : ''}>
+                        <option value="Activo" ${estadoActualCuenta === 'Activo' ? 'selected' : ''}>Activo (Habilitado para operar)</option>
+                        <option value="Suspendido" ${(estadoActualCuenta === 'Suspendido' || estadoActualCuenta === 'Inactivo') ? 'selected' : ''}>Suspendido (Bloqueado)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 13px; font-weight: 700; color: #0b438c; margin-bottom: 6px; display: block;">Bitácora e Info Interna de Terreno</label>
+                    <textarea id="edit-bitacora" placeholder="Anotaciones de uso interno (Teléfono corporativo, horarios, anexos)..." style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 500; font-size: 13.5px; outline:none; background:#ffffff; color: #0f172a; min-height: 85px; resize: vertical; font-family: inherit; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0b438c'" onblur="this.style.borderColor='#cbd5e1'">${bitacoraValue}</textarea>
+                </div>
+
+            </div>
+
+            <div style="padding: 16px 32px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
+                <button type="button" class="btn-cerrar-mdl" style="padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 13.5px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">Cancelar</button>
+                <button type="button" id="btn-guardar-perfil" style="padding: 10px 24px; border-radius: 6px; font-weight: 700; font-size: 13.5px; border: none; background: #0b438c; color: #ffffff; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#1e3a8a'" onmouseout="this.style.background='#0b438c'">Actualizar Permisos</button>
+            </div>
+            
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const btnGuardar = overlay.querySelector("#btn-guardar-perfil");
+    overlay.querySelector(".btn-cerrar-mdl").onclick = () => overlay.remove();
+    overlay.querySelector(".btn-profile-close").onclick = () => overlay.remove();
+
+    btnGuardar.onclick = async () => {
+        const nNombre = overlay.querySelector("#edit-nombre").value.trim();
+        let nRol = overlay.querySelector("#edit-rol").value;
+        let nRolV = overlay.querySelector("#edit-rol-visual").value.trim();
+        const nEst = overlay.querySelector("#edit-estado").value; // "Activo" o "Suspendido"
+        const nBitacora = overlay.querySelector("#edit-bitacora").value.trim();
+
+        if (!nNombre) {
+            mostrarAlertaPersonalizada("El nombre es obligatorio.", "error");
+            return;
         }
 
-        if (!esMiPropioPerfil) {
-            payloadUpdate.rol = nuevoRol;
-            payloadUpdate.estado = nuevoEstado;
-            if (inputNombre) payloadUpdate.nombre = inputNombre.value.trim();
-
-            if (payloadUpdate.rolVisual && payloadUpdate.rolVisual.toLowerCase() === "concejal") {
-                payloadUpdate.esConcejal = true;
-                payloadUpdate.apellidoConcejal = (payloadUpdate.nombre || "Aguayo").split(" ").pop();
+        // Lógica corregida: 
+        // 1. Si se suspende, matamos el rol de sistema para evitar accesos fantasmas.
+        // 2. Si se activa y no tenía rol, le damos uno por defecto para revivirlo.
+        if (nEst === "Suspendido") {
+            nRol = "Inactivo";
+            nRolV = "Inactivo";
+        } else if (nEst === "Activo") {
+            // El rol debe ser siempre Inactivo o pendiente por defecto si no es administrador
+            if (nRol !== "ADMIN" && nRol !== "SUPER_ADMIN" && nRol !== "GESTOR_TERRITORIAL") {
+                nRol = "Inactivo";
+            }
+            if (!nRolV || nRolV.toLowerCase() === "inactivo" || nRolV.toLowerCase() === "pendiente") {
+                nRolV = "Inactivo";
             }
         }
 
-        await updateDoc(docRef, payloadUpdate);
+        btnGuardar.disabled = true;
+        btnGuardar.innerText = "Guardando...";
 
-        if (modalUsuario) modalUsuario.style.display = "none";
-        
-        await cargarUsuariosFirebase();
-        aplicarFiltrosUsuarios();
-        
-        if (!esMiPropioPerfil && nuevoEstado === "Inactivo") {
-            mostrarAlertaPersonalizada("El usuario ha sido desterrado con éxito. ☠️", "success");
-        } else {
-            mostrarAlertaPersonalizada("¡Rango y fotografía actualizados con éxito! Datos sincronizados en el Workspace.", "success");
+        try {
+            // Enviamos un único estado de cuenta claro
+            const payload = {
+                nombreCompleto: nNombre,
+                nombre: nNombre,
+                rol: isSuperAdmin ? "SUPER_ADMIN" : nRol,
+                rolVisual: nRolV,
+                estadoCuenta: isSuperAdmin ? "Activo" : nEst,
+                bitacora: nBitacora,
+                ultimaModificacion: serverTimestamp()
+            };
+
+            await updateDoc(doc(db, "usuarios", user.id), payload);
+            
+            Object.assign(user, payload);
+            overlay.remove();
+            mostrarAlertaPersonalizada("Permisos actualizados correctamente.", "success");
+            
+            aplicarFiltrosYRenderizar();
+        } catch (error) {
+            console.error(error);
+            mostrarAlertaPersonalizada("Error al guardar en el servidor.", "error");
+            btnGuardar.disabled = false;
+            btnGuardar.innerText = "Actualizar Permisos";
         }
-
-    } catch (error) {
-        console.error("Error al mutar el rol en Firestore:", error);
-    } finally {
-        btnGuardar.disabled = false;
-        btnGuardar.innerText = "Actualizar Permisos";
-    }
+    };
 }

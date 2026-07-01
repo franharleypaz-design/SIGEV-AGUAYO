@@ -36,666 +36,726 @@ window.sesionEditandoId = null;
 window.prepararNuevaSesion = function() {
     window.sesionEditandoId = null;
     document.getElementById("form-maestro-sesion").reset();
-    const btnGuardar = document.getElementById("btn-guardar-sesion-maestra");
-    if(btnGuardar) btnGuardar.innerText = "Sincronizar y Consolidar Acta";
     document.getElementById("lbl-pdf-name").innerText = "📄 Haz clic aquí para adjuntar el acta en PDF";
     document.getElementById("lbl-pdf-name").style.color = "#475569";
     document.getElementById("lbl-pdf-name").style.fontWeight = "normal";
-    
-    // Limpiar sub-formulario de votos
-    const subformList = document.getElementById("votaciones-dinamicas-list");
-    if(subformList) subformList.innerHTML = "";
-    
-    window.abrirModalG("modal-sesion-form");
+    document.getElementById("votaciones-dinamicas-list").innerHTML = "";
+    document.getElementById("s-acta-file").required = true;
+    window.abrirModalG('modal-sesion-form');
 };
 
-// Asignar evento al botón de nueva sesión
-document.addEventListener("DOMContentLoaded", () => {
-    const btnNueva = document.getElementById("btn-trigger-nueva-sesion");
-    if(btnNueva) {
-        btnNueva.addEventListener("click", window.prepararNuevaSesion);
-    }
-});
+document.getElementById('btn-trigger-nueva-sesion')?.addEventListener('click', window.prepararNuevaSesion);
+document.getElementById('btn-close-form-x')?.addEventListener('click', () => window.cerrarModalG('modal-sesion-form'));
+document.getElementById('btn-cancelar-sesion')?.addEventListener('click', () => window.cerrarModalG('modal-sesion-form'));
 
-window.abrirEdicionSesion = function(idSesion) {
-    window.sesionEditandoId = idSesion;
-    const sesion = sesionesMemory.find(s => s.id === idSesion);
-    if (!sesion) return;
-
-    // Poblar datos maestros
-    document.getElementById("s-numero").value = sesion.numeroSesion || "";
-    document.getElementById("s-fecha").value = sesion.fecha || "";
-    document.getElementById("s-tipo").value = sesion.tipo || "Ordinaria";
-    document.getElementById("s-resumen").value = sesion.resumenEjecutivo || "";
+// Lógica de Formulario Dinámico de Temas (Sub-Votaciones)
+document.getElementById('btn-append-voto-row')?.addEventListener('click', () => {
+    const container = document.getElementById("votaciones-dinamicas-list");
+    const count = container.children.length + 1;
     
-    // PDF
-    const lblPdf = document.getElementById("lbl-pdf-name");
-    if(sesion.pdfActaUrl) {
-        lblPdf.innerText = "✅ Acta guardada en la nube";
-        lblPdf.style.color = "#0b438c";
-        lblPdf.style.fontWeight = "bold";
-    } else {
-        lblPdf.innerText = "📄 Haz clic aquí para adjuntar el acta en PDF";
-        lblPdf.style.color = "#475569";
-        lblPdf.style.fontWeight = "normal";
-    }
-
-    // Poblar las votaciones vinculadas
-    const subformList = document.getElementById("votaciones-dinamicas-list");
-    if(subformList) {
-        subformList.innerHTML = "";
-        const votosAsociados = votacionesMemory.filter(v => v.idSesion === idSesion);
-        votosAsociados.forEach(v => {
-            window.inyectarFilaVotacionDinamica();
-            
-            const nodos = subformList.querySelectorAll(".subform-vote-row-box");
-            const lastNodo = nodos[nodos.length - 1];
-            
-            if(lastNodo) {
-                lastNodo.querySelector(".input-v-tema").value = v.tema || "";
-                lastNodo.querySelector(".select-v-categoria").value = v.categoria || "Todos";
-                lastNodo.querySelector(".select-v-resultado").value = v.resultadoGeneral || "Aprobado";
-                lastNodo.querySelector(".select-v-aguayo").value = v.votoAguayo || "A Favor";
-                lastNodo.querySelector(".input-v-comentario").value = v.comentarioExplicacion || "";
-                lastNodo.dataset.votoId = v.id;
-            }
-        });
-    }
-
-    const btnGuardar = document.getElementById("btn-guardar-sesion-maestra");
-    if(btnGuardar) btnGuardar.innerText = "Actualizar Acta";
-
-    window.abrirModalG("modal-sesion-form");
-};
-
-// ==============================================================================
-// SIGEV-AGUAYO - MOTOR CONTROLADOR DE CONCEJOS Y ACUERDOS LEGISLATIVOS
-// ==============================================================================
-import { app, auth, db } from "./app.js";
-import { 
-    collection, getDocs, doc, query, where, addDoc, serverTimestamp, writeBatch
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { 
-    getStorage, ref, uploadBytes, getDownloadURL 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-
-// 🕵️‍♂️ DETECTOR MULTI-TENANT DINÁMICO CON OVERRIDE DE SESIÓN
-const subdominioDetectado = window.location.hostname.split('.')[0];
-const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioDetectado === 'localhost' || subdominioDetectado === '127') ? "paz" : subdominioDetectado);
-
-// Cachés globales en memoria para cruces instantáneos
-let sesionesMemory = [];
-let votacionesMemory = [];
-let subformVotacionContador = 0;
-
-// Elementos de Control del Entorno
-const tabsBotones = document.querySelectorAll(".concejo-tab-btn");
-const panelesContenido = document.querySelectorAll(".concejo-panel-content");
-const modalForm = document.getElementById("modal-sesion-form");
-const subformListContainer = document.getElementById("votaciones-dinamicas-list");
-
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        inicializarComponentesConcejo();
-        await sincronizarDatosBaseConcejo();
-        calcularDashboardIndicadores();
-        renderizarPanelesActivos();
-    }
-});
-
-function inicializarComponentesConcejo() {
-    // Control de Navegación de Pestañas
-    tabsBotones.forEach(btn => {
-        btn.addEventListener("click", () => {
-            tabsBotones.forEach(t => t.classList.remove("active"));
-            panelesContenido.forEach(p => p.classList.remove("active"));
-            btn.classList.add("active");
-            document.getElementById(btn.getAttribute("data-target")).classList.add("active");
-        });
-    });
-
-    // Filtros de búsqueda en tiempo real
-    document.getElementById("filter-voto-categoria").addEventListener("change", filtrarYRenderizarTablaVotos);
-    document.getElementById("filter-voto-busqueda").addEventListener("input", (e) => {
-        if(e.target.value.length > 2 || e.target.value.length === 0) filtrarYRenderizarTablaVotos();
-    });
-
-    // Controles del formulario
-    document.getElementById("btn-append-voto-row").addEventListener("click", inyectarFilaVotacionDinamica);
-    document.getElementById("btn-guardar-sesion-maestra").addEventListener("click", ejecutarGuardadoSesionConcejo);
-}
-
-// --- CAPA DE EXTRACCIÓN DE DATOS FIREBASE CLOUD FIRESTORE ---
-async function sincronizarDatosBaseConcejo() {
-    try {
-        const qS = query(collection(db, "sesiones_concejo"), where("tenantId", "==", CURRENT_TENANT_ID));
-        const qV = query(collection(db, "votaciones_concejo"), where("tenantId", "==", CURRENT_TENANT_ID));
-
-        const [snapSesiones, snapVotaciones] = await Promise.all([getDocs(qS), getDocs(qV)]);
-
-        sesionesMemory = [];
-        snapSesiones.forEach(d => sesionesMemory.push({ id: d.id, ...d.data() }));
-        sesionesMemory.sort((a, b) => Number(b.numeroSesion) - Number(a.numeroSesion));
-
-        votacionesMemory = [];
-        snapVotaciones.forEach(d => votacionesMemory.push({ id: d.id, ...d.data() }));
-        votacionesMemory.sort((a, b) => b.fecha.localeCompare(a.fecha));
-    } catch (err) {
-        console.error("Error sincronizando concejo:", err);
-    }
-}
-
-// --- LÓGICA DE CÁLCULO DE DASHBOARD DE KPIS ---
-function calcularDashboardIndicadores() {
-    const stats = { total: 0, favor: 0, contra: 0, abstencion: 0, ausente: 0 };
-    votacionesMemory.forEach(v => {
-        stats.total++;
-        if (v.votoAguayo === "A Favor") stats.favor++;
-        else if (v.votoAguayo === "En Contra") stats.contra++;
-        else if (v.votoAguayo === "Abstención") stats.abstencion++;
-        else if (v.votoAguayo === "Ausente") stats.ausente++;
-    });
-
-    document.getElementById("stat-total-votes").innerText = stats.total;
-    document.getElementById("stat-favor-votes").innerText = stats.favor;
-    document.getElementById("stat-contra-votes").innerText = stats.contra;
-    document.getElementById("stat-abstencion-votes").innerText = stats.abstencion;
-    document.getElementById("stat-ausente-votes").innerText = stats.ausente;
-}
-
-// --- DISPARADORES DE RENDERIZADO GENERAL ---
-function renderizarPanelesActivos() {
-    // Renderizado Panel 1: Sesiones Actas
-    const canvasSesiones = document.getElementById("lista-sesiones-canvas");
-    if (canvasSesiones) {
-        let htmlS = "";
-        sesionesMemory.forEach(s => {
-            const fFormatted = s.fecha ? s.fecha.split("-").reverse().join("/") : "S/F";
-            
-            let badgeAsistencia = (s.asistencia === 'Asiste' || !s.asistencia) 
-                ? '<div style="display: flex; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 3px #d1fae5;"></div><span style="color: #065f46; font-size: 12.5px; font-weight: 700;">Concejal Presente</span></div>' 
-                : '<div style="display: flex; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; border-radius: 50%; background-color: #ef4444; box-shadow: 0 0 0 3px #fee2e2;"></div><span style="color: #991b1b; font-size: 12.5px; font-weight: 700;">Concejal Ausente</span></div>';
-
-            let linkExpediente = `<button onclick="window.abrirVistaExpediente('${s.id}')" style="background: linear-gradient(135deg, #0b438c, #1e3a8a); border: none; cursor: pointer; color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 8px; width: 100%; box-shadow: 0 2px 4px rgba(11,67,140,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)';" onmouseout="this.style.transform='scale(1)';">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                Expediente de la Sesión
-               </button>`;
-
-            let leftBorderColor = (s.asistencia === 'Asiste' || !s.asistencia) ? '#10b981' : '#ef4444';
-
-            htmlS += `
-                <div style="display: flex; flex-wrap: wrap; align-items: center; background: #ffffff; padding: 18px 24px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid ${leftBorderColor}; box-shadow: 0 2px 6px rgba(0,0,0,0.03); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); gap: 24px; position: relative;" onmouseover="this.style.boxShadow='0 8px 15px rgba(0,0,0,0.05)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.03)'; this.style.transform='translateY(0)';">
-                    
-                    <div style="flex: 0 0 auto; text-align: center; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #f1f5f9;">
-                        <span style="display: block; font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Sesión Nº</span>
-                        <span style="display: block; font-size: 20px; color: #0b438c; font-weight: 900; line-height: 1.1; margin: 4px 0;">${s.numeroSesion}</span>
-                        <span style="display: block; font-size: 11px; color: #475569; font-weight: 600;">${fFormatted}</span>
-                    </div>
-
-                    <div style="flex: 1 1 300px; display: flex; flex-direction: column; justify-content: center;">
-                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                            <span style="background: #eff6ff; color: #1d4ed8; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">TIPO: ${s.tipo}</span>
-                            ${badgeAsistencia}
-                        </div>
-                        <p style="font-size: 13.5px; color: #334155; margin: 0; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.5;">${s.resumenEjecutivo || '<i>No se ha registrado un resumen ejecutivo para esta jornada legislativa.</i>'}</p>
-                    </div>
-
-                    <div style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; min-width: 170px;">
-                        ${linkExpediente}
-                    </div>
-                </div>
-            `;
-        });
-        
-        canvasSesiones.style.display = 'flex';
-        canvasSesiones.style.flexDirection = 'column';
-        canvasSesiones.style.gap = '12px';
-
-        canvasSesiones.innerHTML = htmlS || `<div style="text-align:center; padding:30px; color:var(--text-light); background: white; border-radius: 8px; border: 1px dashed #cbd5e1;">No se registran actas municipales ingresadas.</div>`;
-    }
-    filtrarYRenderizarTablaVotos();
-}
-
-window.kpiFiltroActivo = "Todos";
-window.aplicarFiltroKPI = function(tipoVoto, elemento) {
-    window.kpiFiltroActivo = tipoVoto;
-    const tarjetas = document.querySelectorAll('.kpi-mini-card');
-    tarjetas.forEach(t => {
-        t.style.opacity = '0.5';
-        t.style.transform = 'scale(0.98)';
-        t.style.border = 'none';
-        t.style.boxShadow = 'none';
-    });
-    if(elemento) {
-        elemento.style.opacity = '1';
-        elemento.style.transform = 'scale(1.02)';
-        elemento.style.border = '1px solid #0f172a';
-        elemento.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-    }
-    filtrarYRenderizarTablaVotos();
-};
-
-function filtrarYRenderizarTablaVotos() {
-    const catFiltro = document.getElementById("filter-voto-categoria").value;
-    const searchTexto = document.getElementById("filter-voto-busqueda").value.toLowerCase().trim();
-    const tbody = document.querySelector("#tabla-global-votaciones tbody");
-    if (!tbody) return;
-
-    const filtrados = votacionesMemory.filter(v => {
-        const coincideCat = (catFiltro === "Todos") || (v.categoria === catFiltro);
-        const coincideBusqueda = !searchTexto || v.tema.toLowerCase().includes(searchTexto) || (v.comentarioExplicacion || "").toLowerCase().includes(searchTexto);
-        const coincideKPI = (window.kpiFiltroActivo === "Todos") || (v.votoAguayo === window.kpiFiltroActivo);
-        return coincideCat && coincideBusqueda && coincideKPI;
-    });
-
-    let htmlV = "";
-    filtrados.forEach(v => {
-        const fFormatted = v.fecha ? v.fecha.split("-").reverse().join("/") : "S/F";
-        let badgeClass = v.votoAguayo === "A Favor" ? "favor" : v.votoAguayo === "En Contra" ? "contra" : v.votoAguayo === "Abstención" ? "abstencion" : "ausente";
-        let statusGralClass = v.resultadoGeneral === "Aprobado" ? "color:#10b981; font-weight:700;" : "color:#ef4444; font-weight:700;";
-
-        htmlV += `
-            <tr>
-                <td>
-                    <span style="display:block; font-weight:700; color:var(--text-dark); font-size:12.5px;">${fFormatted}</span>
-                    <span style="font-size:11px; color:var(--text-light); font-weight:600;">Ordinaria #${v.numeroSesion}</span>
-                </td>
-                <td style="font-weight:600; font-size:13px; color:var(--text-dark); max-width:280px; line-height:1.4;">${v.tema}</td>
-                <td><span style="font-size:12px; font-weight:600; background:#f1f5f9; padding:3px 8px; border-radius:4px; color:#475569;">${v.categoria}</span></td>
-                <td style="text-align:center; font-size:12.5px; ${statusGralClass}">${v.resultadoGeneral}</td>
-                <td style="text-align:center;"><span class="vote-pill ${badgeClass}">${v.votoAguayo}</span></td>
-                <td style="font-size:12px; color:var(--text-light); font-style:italic; max-width:240px; line-height:1.35;">"${v.comentarioExplicacion || 'Sin observaciones anexas.'}"</td>
-                <td style="text-align: center; vertical-align: middle;">
-                    <button onclick="window.abrirVistaVotoUnico('${v.id}')" style="background: white; border: 1px solid #cbd5e1; color: #475569; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='white'; this.style.color='#475569'; this.style.borderColor='#cbd5e1';">
-                        👁️ Ver / Editar
-                    </button>
-                </td>
-            </tr>`;
-    });
-
-    tbody.innerHTML = htmlV || `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-light);">No se registran votaciones bajo este filtro de búsqueda.</td></tr>`;
-}
-
-// --- FLUJO OPERACIONAL MÁSTER: ESCRITURA RELACIONAL EN FIREBASE ---
-async function ejecutarGuardadoSesionConcejo() {
-    const numSesion = document.getElementById("s-numero").value;
-    const fechaSesion = document.getElementById("s-fecha").value;
-    const tipoSesion = document.getElementById("s-tipo").value;
-    const resumen = document.getElementById("s-resumen").value.trim();
-
-    if (!numSesion || !fechaSesion) return;
-
-    const btnGuardar = document.getElementById("btn-guardar-sesion-maestra");
-    btnGuardar.disabled = true; btnGuardar.innerText = "Subiendo archivo y consolidando...";
-
-    // 🚀 LÓGICA DE SUBIDA DE PDF A FIREBASE STORAGE (Con variable "app" incluida)
-    const fileInput = document.getElementById("s-acta-file");
-    let urlActa = "";
+    const div = document.createElement("div");
+    div.className = "voto-row-item";
+    div.style.cssText = "background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin-bottom: 12px; position: relative;";
     
-    try {
-        if (fileInput && fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const storage = getStorage(app); // Obtiene la instancia de Storage asociada a TU cuenta logueada
-            const fileRef = ref(storage, `concejos/${CURRENT_TENANT_ID}/actas/${Date.now()}_${file.name}`);
-            
-            // Subir el archivo a Firebase Storage
-            const snapshot = await uploadBytes(fileRef, file);
-            // Obtener la URL de descarga pública
-            urlActa = await getDownloadURL(snapshot.ref);
-        } else if (window.sesionEditandoId) {
-            // Si estamos editando y no subió archivo nuevo, mantenemos la URL antigua
-            const sesionAntigua = sesionesMemory.find(s => s.id === window.sesionEditandoId);
-            if (sesionAntigua && sesionAntigua.pdfActaUrl) urlActa = sesionAntigua.pdfActaUrl;
-        }
-    } catch (error) {
-        console.error("Error al subir PDF a Storage:", error);
-        alert("Hubo un problema al subir el PDF a la nube. Revisa las reglas de Storage en Firebase o tu conexión a internet.");
-        btnGuardar.disabled = false; btnGuardar.innerText = "Sincronizar y Consolidar Acta";
-        return; // Detener guardado si el PDF falla para evitar datos rotos
-    }
-
-    try {
-        const payloadSesion = {
-            numeroSesion: Number(numSesion), fecha: fechaSesion, tipo: tipoSesion,
-            pdfActaUrl: urlActa, resumenEjecutivo: resumen, tenantId: CURRENT_TENANT_ID,
-            fechaUltimaModificacion: serverTimestamp()
-        };
+    div.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 12px; right: 16px; color: #ef4444; background: none; border: none; font-size: 16px; cursor: pointer;" title="Eliminar este tema">&times;</button>
+        <h5 style="margin: 0 0 12px 0; font-size: 11px; color: #64748b; text-transform: uppercase;">Tema #${count}</h5>
         
-        let targetSesionId = window.sesionEditandoId;
-        const batch = writeBatch(db);
-
-        if (targetSesionId) {
-            const docRefSesion = doc(db, "sesiones_concejo", targetSesionId);
-            batch.update(docRefSesion, payloadSesion);
-            
-            const votosAsociados = votacionesMemory.filter(v => v.idSesion === targetSesionId);
-            votosAsociados.forEach(v => {
-                const refVieja = doc(db, "votaciones_concejo", v.id);
-                batch.delete(refVieja);
-            });
-        } else {
-            payloadSesion.fechaCargaPlataforma = serverTimestamp();
-            const docRefSesion = await addDoc(collection(db, "sesiones_concejo"), payloadSesion);
-            targetSesionId = docRefSesion.id;
-        }
-
-        const subformNodos = subformListContainer.querySelectorAll(".subform-vote-row-box");
-        if (subformNodos.length > 0) {
-            subformNodos.forEach(nodo => {
-                const subPayload = {
-                    idSesion: targetSesionId,
-                    numeroSesion: Number(numSesion),
-                    fecha: fechaSesion,
-                    tema: nodo.querySelector(".input-v-tema").value.trim(),
-                    categoria: nodo.querySelector(".select-v-categoria").value,
-                    resultadoGeneral: nodo.querySelector(".select-v-resultado").value,
-                    votoAguayo: nodo.querySelector(".select-v-aguayo").value,
-                    comentarioExplicacion: nodo.querySelector(".input-v-comentario").value.trim(),
-                    tenantId: CURRENT_TENANT_ID
-                };
-                const docRefRefNewVoto = doc(collection(db, "votaciones_concejo"));
-                batch.set(docRefRefNewVoto, subPayload);
-            });
-        }
-        
-        await batch.commit(); 
-
-        window.cerrarModalG("modal-sesion-form");
-        window.sesionEditandoId = null;
-        await sincronizarDatosBaseConcejo();
-        calcularDashboardIndicadores();
-        renderizarPanelesActivos();
-    } catch (err) {
-        console.error(err);
-    } finally {
-        btnGuardar.disabled = false; btnGuardar.innerText = "Sincronizar y Consolidar Acta";
-    }
-}
-
-function inyectarFilaVotacionDinamica() {
-    subformVotacionContador++;
-    const rowHTML = `
-        <div class="subform-vote-row-box" id="voto-row-${subformVotacionContador}">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <h5 style="font-size:12px; margin:0; color:var(--text-dark);">Punto en Tabla de Sesión</h5>
-                <button type="button" style="background:none; border:none; color:#ef4444; font-size:16px; cursor:pointer;" onclick="document.getElementById('voto-row-${subformVotacionContador}').remove()">&times;</button>
+        <div class="form-row-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px;">
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">Categoría *</label>
+                <select class="din-cat" required style="font-size: 13px;">
+                    <option value="">Seleccione...</option>
+                    <option value="Seguridad">Seguridad Comunal</option>
+                    <option value="Educación">Educación</option>
+                    <option value="Salud">Salud</option>
+                    <option value="Áreas Verdes">Áreas Verdes y Ornato</option>
+                    <option value="Tránsito">Tránsito y Transporte</option>
+                    <option value="Presupuesto">Presupuesto y Finanzas</option>
+                    <option value="Patentes">Patentes de Alcoholes/Comerciales</option>
+                    <option value="Urbanismo">Urbanismo y Obras públicas</option>
+                </select>
             </div>
-            <div class="form-row-grid">
-                <div class="form-group" style="flex:2;"><label>Tema Tratado / Proyecto</label><input type="text" class="input-v-tema" placeholder="Ej: Adjudicación licitación áreas verdes..." required></div>
-                <div class="form-group" style="flex:1;">
-                    <label>Categoría</label>
-                    <select class="select-v-categoria">
-                        <option value="Todos">General</option>
-                        <option value="Seguridad">Seguridad Comunal</option>
-                        <option value="Educación">Educación</option>
-                        <option value="Salud">Salud</option>
-                        <option value="Áreas Verdes">Áreas Verdes y Ornato</option>
-                        <option value="Tránsito">Tránsito y Transporte</option>
-                        <option value="Presupuesto">Presupuesto y Finanzas</option>
-                        <option value="Patentes">Patentes de Alcoholes/Comerciales</option>
-                        <option value="Urbanismo">Urbanismo y Obras públicas</option>
-                    </select>
-                </div>
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">Resultado del Concejo *</label>
+                <select class="din-res" required style="font-size: 13px;">
+                    <option value="Aprobado">Aprobado</option>
+                    <option value="Rechazado">Rechazado</option>
+                </select>
             </div>
-            <div class="form-row-grid">
-                <div class="form-group">
-                    <label>Resultado General Concejo</label>
-                    <select class="select-v-resultado">
-                        <option value="Aprobado">✅ Aprobado</option>
-                        <option value="Rechazado">❌ Rechazado</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Mi Voto Emitido</label>
-                    <select class="select-v-aguayo" style="font-weight:700;">
-                        <option value="A Favor" style="color:#10b981;">A Favor</option>
-                        <option value="En Contra" style="color:#ef4444;">En Contra</option>
-                        <option value="Abstención" style="color:#f59e0b;">Abstención</option>
-                        <option value="Ausente" style="color:#64748b;">Ausente en Sala</option>
-                    </select>
-                </div>
-                <div class="form-group" style="flex:2;"><label>Comentario / Justificación Ciudadana</label><input type="text" class="input-v-comentario" placeholder="Argumento del voto para el público..."></div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size: 11px;">Descripción del Tema / Proyecto *</label>
+            <input type="text" class="din-tema" placeholder="Ej: Aprobación trato directo luminarias" required style="font-size: 13px;">
+        </div>
+        
+        <div class="form-row-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; align-items: start;">
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">Mi Voto *</label>
+                <select class="din-voto" required style="font-size: 13px;">
+                    <option value="Pendiente">Pendiente de Votar</option>
+                    <option value="A Favor">A Favor</option>
+                    <option value="En Contra">En Contra</option>
+                    <option value="Abstención">Abstención</option>
+                    <option value="Ausente">Ausente en Sala</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">Argumentación (Opcional)</label>
+                <textarea class="din-com" rows="2" placeholder="Motivo del voto..." style="font-size: 13px;"></textarea>
             </div>
         </div>
     `;
-    subformListContainer.insertAdjacentHTML('beforeend', rowHTML);
+    container.appendChild(div);
+});
+
+// ==============================================================================
+// 👑 LÓGICA DE FIRESTORE (GUARDAR Y CARGAR)
+// ==============================================================================
+import { auth, db, app } from "./app.js";
+import { collection, addDoc, doc, getDoc, updateDoc, getDocs, query, where, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+const storage = getStorage(app);
+const subdominioCrudo = window.location.hostname.split('.')[0].toLowerCase();
+const subdominioLimpio = subdominioCrudo.replace('sigev-', ''); 
+const CURRENT_TENANT_ID = sessionStorage.getItem('SIGEV_ACTIVE_TENANT') || ((subdominioLimpio === 'localhost' || subdominioLimpio === '127' || subdominioLimpio === 'landing' || !subdominioLimpio) ? "paz" : subdominioLimpio);
+
+let memorySesiones = [];
+let memoryVotaciones = [];
+
+// Función para subir archivos a Firebase Storage
+async function subirActaPDF(file, sessionId) {
+    if (!file) return null;
+    const storageRef = ref(storage, `actas_concejo/${CURRENT_TENANT_ID}/${sessionId}_${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
 }
 
-window.inyectarFilaVotacionDinamica = inyectarFilaVotacionDinamica;
-
-// ==============================================================================
-// 👑 LÓGICA DE VISTA DE EXPEDIENTE LECTURA
-// ==============================================================================
-window.abrirVistaExpediente = function(idSesion) {
-    const sesion = sesionesMemory.find(s => s.id === idSesion);
-    if (!sesion) return;
-
-    document.getElementById("exp-tipo-sesion").innerText = sesion.tipo || "ORDINARIA";
-    document.getElementById("exp-num-sesion").innerText = "#" + (sesion.numeroSesion || "");
+// Guardar / Actualizar Sesión Maestra
+document.getElementById('btn-guardar-sesion-maestra')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-guardar-sesion-maestra');
     
-    const elFecha = document.getElementById("exp-fecha-sesion");
-    if(elFecha) elFecha.innerText = sesion.fecha ? sesion.fecha.split("-").reverse().join("/") : "S/F";
+    const sNum = document.getElementById("s-numero").value;
+    const sFec = document.getElementById("s-fecha").value;
+    const sTip = document.getElementById("s-tipo").value;
+    const sRes = document.getElementById("s-resumen").value.trim();
+    const fileInput = document.getElementById("s-acta-file");
     
-    document.getElementById("exp-resumen").innerHTML = sesion.resumenEjecutivo || '<i>No se ha registrado un resumen ejecutivo para esta jornada legislativa.</i>';
-
-    const asisCont = document.getElementById("exp-asistencia");
-    if(sesion.asistencia === 'Asiste' || !sesion.asistencia) {
-        asisCont.innerHTML = "✅ Presente";
-        asisCont.style.color = "#16a34a"; asisCont.style.background = "#f0fdf4"; asisCont.style.borderColor = "#bbf7d0";
-    } else {
-        asisCont.innerHTML = "❌ Ausente";
-        asisCont.style.color = "#dc2626"; asisCont.style.background = "#fef2f2"; asisCont.style.borderColor = "#fecaca";
+    if(!sNum || !sFec || !sTip) {
+        alert("Faltan datos maestros obligatorios.");
+        return;
     }
 
-    const pdfCont = document.getElementById("exp-pdf-container");
-    // Escondemos el visor por defecto cada vez que se abre el expediente
-    const viewer = document.getElementById("exp-pdf-viewer");
-    if(viewer) viewer.style.display = "none";
+    if (!window.sesionEditandoId && fileInput.files.length === 0) {
+        alert("Debe adjuntar el archivo PDF del acta.");
+        return;
+    }
 
-    if(sesion.pdfActaUrl) {
-        pdfCont.innerHTML = `
-            <div style="display: flex; gap: 8px;">
-                <button onclick="window.togglePdfPreview('${sesion.pdfActaUrl}')" style="display: inline-flex; align-items: center; gap: 6px; background: #0f172a; border: none; cursor: pointer; color: white; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; transition: all 0.2s;">
-                    👁️ Previsualizar Acta
-                </button>
-                <a href="${sesion.pdfActaUrl}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; color: #0f172a; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; border: 1px solid #cbd5e1;">
-                    ⬇️ Descargar
-                </a>
+    btn.disabled = true;
+    btn.innerText = "Sincronizando...";
+
+    try {
+        let pdfUrl = null;
+        let finalSessionId = window.sesionEditandoId;
+
+        // 1. Crear o Actualizar Documento Maestro de la Sesión
+        if (finalSessionId) {
+            // Modo Edición
+            const updatePayload = {
+                numero: parseInt(sNum),
+                fechaIso: sFec,
+                tipo: sTip,
+                resumen: sRes,
+                ultimaModificacion: serverTimestamp()
+            };
+            if (fileInput.files.length > 0) {
+                updatePayload.urlActa = await subirActaPDF(fileInput.files[0], finalSessionId);
+            }
+            await updateDoc(doc(db, "sesiones_concejo", finalSessionId), updatePayload);
+        } else {
+            // Modo Creación
+            const newRef = doc(collection(db, "sesiones_concejo"));
+            finalSessionId = newRef.id;
+            
+            pdfUrl = await subirActaPDF(fileInput.files[0], finalSessionId);
+            
+            const createPayload = {
+                tenantId: CURRENT_TENANT_ID,
+                numero: parseInt(sNum),
+                fechaIso: sFec,
+                tipo: sTip,
+                resumen: sRes,
+                urlActa: pdfUrl,
+                estado: "Cerrada", 
+                fechaRegistro: serverTimestamp()
+            };
+            await setDoc(newRef, createPayload);
+        }
+
+        // 2. Procesar Sub-Votaciones (Temas de la sesión)
+        const temasNodes = document.querySelectorAll(".voto-row-item");
+        let contadorA = 0; let contadorC = 0; let contadorAbs = 0; let contadorAus = 0;
+
+        for (let i = 0; i < temasNodes.length; i++) {
+            const node = temasNodes[i];
+            const cat = node.querySelector(".din-cat").value;
+            const res = node.querySelector(".din-res").value;
+            const tem = node.querySelector(".din-tema").value.trim();
+            const vot = node.querySelector(".din-voto").value;
+            const com = node.querySelector(".din-com").value.trim();
+
+            if(!cat || !tem || !vot) continue; 
+
+            if (vot === "A Favor") contadorA++;
+            if (vot === "En Contra") contadorC++;
+            if (vot === "Abstención") contadorAbs++;
+            if (vot === "Ausente") contadorAus++;
+
+            const payloadVoto = {
+                tenantId: CURRENT_TENANT_ID,
+                sessionId: finalSessionId,
+                sesionNum: parseInt(sNum),
+                sesionFecha: sFec,
+                categoria: cat,
+                resultadoConcejo: res,
+                tema: tem,
+                miVoto: vot,
+                comentario: com,
+                fechaRegistro: serverTimestamp()
+            };
+
+            await addDoc(collection(db, "votos_concejo"), payloadVoto);
+        }
+
+        // 3. Actualizar contadores totales de la sesión
+        await updateDoc(doc(db, "sesiones_concejo", finalSessionId), {
+            votosAFavor: contadorA,
+            votosEnContra: contadorC,
+            votosAbstencion: contadorAbs,
+            votosAusente: contadorAus,
+            totalTemas: temasNodes.length
+        });
+
+        window.cerrarModalG('modal-sesion-form');
+        window.cargarDatosMaestrosConcejo(); 
+        
+    } catch(err) {
+        console.error("Error guardando sesión:", err);
+        alert("Ocurrió un error al procesar el acta.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Sincronizar y Consolidar Acta";
+    }
+});
+
+// Cargar Todos los Datos (Sesiones y Votaciones)
+window.cargarDatosMaestrosConcejo = async function() {
+    try {
+        const qSesiones = query(collection(db, "sesiones_concejo"), where("tenantId", "==", CURRENT_TENANT_ID));
+        const sSnap = await getDocs(qSesiones);
+        memorySesiones = [];
+        sSnap.forEach(d => memorySesiones.push({ id: d.id, ...d.data() }));
+        memorySesiones.sort((a, b) => new Date(b.fechaIso) - new Date(a.fechaIso));
+
+        const qVotos = query(collection(db, "votos_concejo"), where("tenantId", "==", CURRENT_TENANT_ID));
+        const vSnap = await getDocs(qVotos);
+        memoryVotaciones = [];
+        vSnap.forEach(d => memoryVotaciones.push({ id: d.id, ...d.data() }));
+        memoryVotaciones.sort((a, b) => new Date(b.sesionFecha) - new Date(a.sesionFecha));
+
+        renderizarGrillaSesiones();
+        renderizarTablaVotaciones(memoryVotaciones);
+        actualizarKPIsVotaciones(memoryVotaciones);
+
+    } catch (e) {
+        console.error("Error leyendo datos del concejo:", e);
+    }
+};
+
+// Renderizar Tarjetas de Sesiones
+function renderizarGrillaSesiones() {
+    const canvas = document.getElementById("lista-sesiones-canvas");
+    if (!canvas) return;
+
+    if (memorySesiones.length === 0) {
+        canvas.innerHTML = `<div style="text-align:center; padding: 40px; color: #64748b; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; width: 100%;">No hay sesiones de concejo registradas en la plataforma.</div>`;
+        return;
+    }
+
+    let html = "";
+    memorySesiones.forEach(s => {
+        let fStr = "00/00/0000";
+        if(s.fechaIso) {
+            const p = s.fechaIso.split("-");
+            fStr = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        const statsA = s.votosAFavor || 0;
+        const statsC = s.votosEnContra || 0;
+        const statsTot = s.totalTemas || 0;
+
+        html += `
+        <div class="session-card">
+            <div class="session-card-header">
+                <div class="session-id">SESIÓN Nº ${s.numero || "S/N"}</div>
+                <div class="session-type">${s.tipo || "General"}</div>
             </div>
+            
+            <div class="session-date-row">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                Celebrada el ${fStr}
+            </div>
+
+            <div class="session-abstract">
+                ${s.resumen || "<i>Sin resumen ingresado.</i>"}
+            </div>
+
+            <div class="session-kpi-row">
+                <div class="s-kpi"><span class="val">${statsTot}</span><span class="lbl">Temas Tratados</span></div>
+                <div class="s-kpi"><span class="val a-favor">${statsA}</span><span class="lbl">Votos Favor</span></div>
+                <div class="s-kpi"><span class="val en-contra">${statsC}</span><span class="lbl">Votos Contra</span></div>
+            </div>
+
+            <button class="btn-ver-expediente" onclick="window.abrirExpedienteMaestro('${s.id}')">
+                Abrir Expediente y Acta
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+        `;
+    });
+
+    canvas.innerHTML = html;
+}
+
+// ==============================================================================
+// 👑 LÓGICA DEL EXPEDIENTE MAESTRO DE LECTURA (SESIÓN COMPLETA)
+// ==============================================================================
+window.sesionExpedienteActiva = null; 
+window.urlActaCache = null;
+
+window.abrirExpedienteMaestro = async function(id) {
+    const s = memorySesiones.find(x => x.id === id);
+    if(!s) return;
+    
+    window.sesionExpedienteActiva = s;
+    window.urlActaCache = s.urlActa; 
+    
+    document.getElementById("exp-num-sesion").innerText = `#${s.numero || "S/N"}`;
+    document.getElementById("exp-tipo-sesion").innerText = (s.tipo || "General").toUpperCase();
+    
+    let fStr = "Desconocida";
+    if(s.fechaIso) {
+        const p = s.fechaIso.split("-");
+        fStr = `${p[2]}/${p[1]}/${p[0]}`;
+    }
+    document.getElementById("exp-fecha-sesion").innerText = fStr;
+    
+    document.getElementById("exp-resumen").innerHTML = s.resumen ? s.resumen.replace(/\n/g, '<br>') : "<i>Sin resumen ejecutivo ingresado.</i>";
+
+    let asistenciaHtml = "Asistió y Votó";
+    if (s.totalTemas > 0 && s.votosAusente === s.totalTemas) {
+        asistenciaHtml = "<span style='color:#ef4444;'>❌ Ausente en Sesión</span>";
+    } else {
+        asistenciaHtml = "✅ Presente y Votando";
+    }
+    document.getElementById("exp-asistencia").innerHTML = asistenciaHtml;
+
+    // Descargador directo de PDF
+    const url = s.urlActa;
+    const container = document.getElementById("exp-pdf-container");
+    
+    if (url) {
+        container.style.display = "block";
+        container.innerHTML = `
+            <a href="${url}" target="_blank" style="background:#f8fafc; border:1px solid #cbd5e1; padding:12px 16px; border-radius:6px; display:inline-flex; align-items:center; gap:8px; color:#0b438c; text-decoration:none; font-size:13px; font-weight:700; transition:0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg> 
+                Descargar Acta Digital PDF
+            </a>
         `;
     } else {
-        pdfCont.innerHTML = `<span style="font-size: 12px; color: #94a3b8; font-weight: 600; display: block; padding: 8px 0;">No se ha subido el documento original.</span>`;
+        container.innerHTML = `<span style="font-size: 13px; color: #94a3b8; font-style: italic;">Sin archivo adjunto</span>`;
     }
 
-    const tbodyVotos = document.getElementById("exp-lista-votaciones");
-    const votosAsociados = votacionesMemory.filter(v => v.idSesion === idSesion);
+    // Llenar tabla de votaciones hijas
+    const tbody = document.getElementById("exp-lista-votaciones");
+    const votosHijos = memoryVotaciones.filter(v => v.sessionId === id);
     
-    if(votosAsociados.length > 0) {
-        let htmlV = "";
-        votosAsociados.forEach(v => {
-            let badgeClass = v.votoAguayo === "A Favor" ? "background:#f0fdf4; color:#16a34a; border: 1px solid #bbf7d0;" : 
-                             v.votoAguayo === "En Contra" ? "background:#fef2f2; color:#dc2626; border: 1px solid #fecaca;" : 
-                             v.votoAguayo === "Abstención" ? "background:#fdf2f8; color:#db2777; border: 1px solid #fbcfe8;" : 
-                             "background:#f1f5f9; color:#64748b; border: 1px solid #e2e8f0;";
-                             
-            let resGralClass = v.resultadoGeneral === "Aprobado" ? "background: #f0fdf4; color: #16a34a;" : "background: #fef2f2; color: #dc2626;";
-
-            htmlV += `<tr style="border-bottom: 1px solid #f1f5f9;">
-                        <td style="padding: 16px; font-size: 12px; font-weight: 700; color: #0ea5e9;">${v.categoria}</td>
-                        <td style="padding: 16px;">
-                            <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">${v.tema}</p>
-                            <p style="font-size: 11px; color: #64748b; margin: 0; font-style: italic;">"${v.comentarioExplicacion || 'Sin justificación registrada.'}"</p>
-                        </td>
-                        <td style="padding: 16px; text-align: center;"><span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; ${resGralClass}">${v.resultadoGeneral}</span></td>
-                        <td style="padding: 16px; text-align: center;"><span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; ${badgeClass}">${v.votoAguayo}</span></td>
-                    </tr>`;
-        });
-        if(tbodyVotos) tbodyVotos.innerHTML = htmlV;
+    if (votosHijos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">No hay temas ni votaciones registradas para esta sesión.</td></tr>`;
     } else {
-        if(tbodyVotos) tbodyVotos.innerHTML = `<tr><td colspan="4" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12px;">No se registraron temas o votaciones en esta sesión.</td></tr>`;
-    }
+        let html = "";
+        votosHijos.forEach(v => {
+            let safeCat = v.categoria || v.area || "General";
+            let safeTema = v.tema || v.titulo || "Sin descripción registrada";
+            let resConcejo = v.resultadoConcejo || v.resultado || "Pendiente";
+            let mVoto = v.miVoto || "Pendiente";
 
-    const btnEditar = document.getElementById("exp-btn-editar-modal");
-    if(btnEditar) {
-        btnEditar.onclick = function() {
-            window.cerrarModalG('modal-expediente-sesion');
-            setTimeout(() => {
-                window.abrirEdicionSesion(idSesion);
-            }, 350); 
-        };
+            let resBadge = resConcejo === "Aprobado" 
+                ? `<span style="background: #f0fdf4; color: #16a34a; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; border: 1px solid #bbf7d0;">Aprobado</span>` 
+                : `<span style="background: #fef2f2; color: #ef4444; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; border: 1px solid #fca5a5;">Rechazado</span>`;
+            
+            let miVotoBadge = "";
+            if(mVoto === "A Favor") miVotoBadge = `<span style="background: #f0fdf4; color: #16a34a; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; border: 1px solid #bbf7d0;">🟢 A Favor</span>`;
+            else if(mVoto === "En Contra") miVotoBadge = `<span style="background: #fef2f2; color: #ef4444; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; border: 1px solid #fca5a5;">🔴 En Contra</span>`;
+            else if(mVoto === "Abstención") miVotoBadge = `<span style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; border: 1px solid #fde68a;">🟡 Abstención</span>`;
+            else if(mVoto === "Ausente") miVotoBadge = `<span style="background: #f8fafc; color: #64748b; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; border: 1px solid #e2e8f0;">⚫ Ausente</span>`;
+            else miVotoBadge = `<span style="background: #f1f5f9; color: #94a3b8; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; border: 1px solid #cbd5e1;">⚪ Pendiente</span>`;
+
+            html += `
+            <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                <td style="padding: 14px 16px; font-size: 12.5px; font-weight: 700; color: #0b438c; width: 15%; white-space: nowrap;">${safeCat}</td>
+                <td style="padding: 14px 16px; font-size: 13.5px; color: #334155; line-height: 1.5; width: 55%; font-weight: 500;">${safeTema}</td>
+                <td style="padding: 14px 16px; text-align: center; width: 15%; white-space: nowrap;">${resBadge}</td>
+                <td style="padding: 14px 16px; text-align: center; width: 15%; white-space: nowrap;">${miVotoBadge}</td>
+            </tr>
+            `;
+        });
+        tbody.innerHTML = html;
     }
 
     window.abrirModalG("modal-expediente-sesion");
 };
 
 // ==============================================================================
-// 👑 LÓGICA DE VISTA Y EDICIÓN DE VOTO ÚNICO
+// 👑 LÓGICA DE TABLA GENERAL DE VOTACIONES Y SUS FILTROS
 // ==============================================================================
-window.votoUnicoEditandoId = null;
-window.sesionAsociadaAlVotoId = null;
+function renderizarTablaVotaciones(lista) {
+    const tbody = document.querySelector("#tabla-global-votaciones tbody");
+    if (!tbody) return;
 
-window.abrirVistaVotoUnico = function(idVoto) {
-    const voto = votacionesMemory.find(v => v.id === idVoto);
-    if (!voto) return;
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">No se encontraron registros de votaciones.</td></tr>`;
+        return;
+    }
+
+    let html = "";
+    lista.forEach(v => {
+        let fStr = "00/00/0000";
+        if(v.sesionFecha) {
+            const p = v.sesionFecha.split("-");
+            fStr = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        let safeCat = v.categoria || v.area || "General";
+        let safeTema = v.tema || v.titulo || "Sin descripción registrada";
+        let resConcejo = v.resultadoConcejo || v.resultado || "Pendiente";
+        let mVoto = v.miVoto || "Pendiente";
+
+        let resBadge = resConcejo === "Aprobado" 
+            ? `<span style="background:#f0fdf4; color:#16a34a; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">Aprobado</span>` 
+            : `<span style="background:#fef2f2; color:#ef4444; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">Rechazado</span>`;
+        
+        let miVotoBadge = "";
+        if(mVoto === "A Favor") miVotoBadge = `<span style="color:#16a34a; font-weight:800; font-size:13px;">🟢 A Favor</span>`;
+        else if(mVoto === "En Contra") miVotoBadge = `<span style="color:#ef4444; font-weight:800; font-size:13px;">🔴 En Contra</span>`;
+        else if(mVoto === "Abstención") miVotoBadge = `<span style="color:#f59e0b; font-weight:800; font-size:13px;">🟡 Abstención</span>`;
+        else if(mVoto === "Ausente") miVotoBadge = `<span style="color:#64748b; font-weight:800; font-size:13px;">⚫ Ausente</span>`;
+        else miVotoBadge = `<span style="color:#94a3b8; font-weight:800; font-size:13px;">⚪ Pendiente</span>`;
+
+        html += `
+        <tr style="border-bottom: 1px solid #f1f5f9; background: #fff;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+            <td style="padding: 14px 16px; font-size: 13px; color: #475569; font-weight: 600; white-space: nowrap;">
+                Sesión ${v.sesionNum || "S/N"}<br>
+                <span style="font-size: 11px; font-weight: normal;">${fStr}</span>
+            </td>
+            <td style="padding: 14px 16px; font-size: 13px; color: #0f172a; font-weight: 500; line-height: 1.4; max-width: 250px;">
+                ${safeTema}
+            </td>
+            <td style="padding: 14px 16px; font-size: 12.5px; color: #0b438c; font-weight: 700;">
+                ${safeCat}
+            </td>
+            <td style="padding: 14px 16px; text-align: center;">
+                ${resBadge}
+            </td>
+            <td style="padding: 14px 16px; text-align: center;">
+                ${miVotoBadge}
+            </td>
+            <td style="padding: 14px 16px; font-size: 12px; color: #64748b; font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${v.comentario || 'Sin observaciones'}">
+                ${v.comentario || 'Sin nota...'}
+            </td>
+            <td style="padding: 14px 16px; text-align: center;">
+                <button onclick="window.abrirDetalleVotoUnico('${v.id}')" style="background: transparent; border: 1px solid #cbd5e1; color: #475569; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='#0f172a'; this.style.background='#f1f5f9';">
+                    Ver Detalle
+                </button>
+            </td>
+        </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+function actualizarKPIsVotaciones(lista) {
+    document.getElementById("stat-total-votes").innerText = lista.length;
+    document.getElementById("stat-favor-votes").innerText = lista.filter(x => x.miVoto === "A Favor").length;
+    document.getElementById("stat-contra-votes").innerText = lista.filter(x => x.miVoto === "En Contra").length;
+    document.getElementById("stat-abstencion-votes").innerText = lista.filter(x => x.miVoto === "Abstención").length;
+    document.getElementById("stat-ausente-votes").innerText = lista.filter(x => x.miVoto === "Ausente").length;
+}
+
+// Motor de Filtros de Votaciones
+let currentKpiFilterVotos = "Todos";
+
+window.aplicarFiltroKPI = function(valor, element) {
+    currentKpiFilterVotos = valor;
+    document.querySelectorAll(".kpi-mini-card").forEach(c => {
+        c.style.opacity = "0.5";
+        c.style.border = "none";
+        c.style.transform = "scale(1)";
+    });
+    element.style.opacity = "1";
+    element.style.border = "1px solid #0b438c";
+    element.style.transform = "scale(1.02)";
+    filtrarVotacionesMaestro();
+};
+
+document.getElementById("filter-voto-categoria")?.addEventListener("change", filtrarVotacionesMaestro);
+document.getElementById("filter-voto-busqueda")?.addEventListener("input", filtrarVotacionesMaestro);
+
+document.getElementById("btn-clear-vote-filters")?.addEventListener("click", () => {
+    document.getElementById("filter-voto-categoria").value = "Todos";
+    document.getElementById("filter-voto-busqueda").value = "";
+    document.querySelector(".kpi-mini-card.total-votes").click(); 
+});
+
+function filtrarVotacionesMaestro() {
+    const cat = document.getElementById("filter-voto-categoria")?.value || "Todos";
+    const search = document.getElementById("filter-voto-busqueda")?.value.toLowerCase().trim() || "";
+
+    const filtrados = memoryVotaciones.filter(v => {
+        let pKpi = true;
+        if (currentKpiFilterVotos !== "Todos") {
+            pKpi = v.miVoto === currentKpiFilterVotos;
+        }
+
+        let pCat = true;
+        if (cat !== "Todos") {
+            pCat = (v.categoria || v.area || "") === cat;
+        }
+
+        let pSearch = true;
+        if (search) {
+            pSearch = (v.tema || v.titulo || "").toLowerCase().includes(search) || (v.comentario || "").toLowerCase().includes(search);
+        }
+
+        return pKpi && pCat && pSearch;
+    });
+
+    renderizarTablaVotaciones(filtrados);
+}
+
+
+// ==============================================================================
+// 👑 LÓGICA DE DETALLE Y EDICIÓN DE VOTO ÚNICO (MODAL POPUP)
+// ==============================================================================
+window.votoActivoId = null;
+
+window.abrirDetalleVotoUnico = function(id) {
+    const v = memoryVotaciones.find(x => x.id === id);
+    if (!v) return;
+
+    window.votoActivoId = v.id;
     
-    window.votoUnicoEditandoId = idVoto;
-    window.sesionAsociadaAlVotoId = voto.idSesion;
+    const sesionPadre = memorySesiones.find(s => s.id === v.sessionId);
+    window.sesionExpedienteActiva = sesionPadre || null;
+
+    let safeTema = v.tema || v.titulo || "Tema Registrado";
+    let safeCat = v.categoria || v.area || "GENERAL";
+    let resConcejo = v.resultadoConcejo || v.resultado || "Pendiente";
+
+    document.getElementById("mv-tema-title").innerText = safeTema;
+    document.getElementById("mv-categoria").innerText = safeCat.toUpperCase();
+    document.getElementById("mv-num-sesion").innerText = v.sesionNum || "S/N";
+    
+    let fStr = "00/00/0000";
+    if(v.sesionFecha) {
+        const p = v.sesionFecha.split("-");
+        fStr = `${p[2]}/${p[1]}/${p[0]}`;
+    }
+    document.getElementById("mv-fecha-sesion").innerText = fStr;
+
+    document.getElementById("mv-input-tema").value = safeTema;
+    
+    const catSelect = document.getElementById("mv-input-categoria");
+    let optionExists = Array.from(catSelect.options).some(opt => opt.value === safeCat);
+    catSelect.value = optionExists ? safeCat : "Todos";
+    
+    document.getElementById("mv-input-resultado").value = resConcejo;
+    document.getElementById("mv-input-aguayo").value = v.miVoto || "Pendiente";
+    document.getElementById("mv-input-comentario").value = v.comentario || "";
 
     window.cancelarEdicionVotoUnico();
-
-    document.getElementById("mv-categoria").innerText = voto.categoria || "General";
-    document.getElementById("mv-tema-title").innerText = voto.tema || "Sin título";
-
-    const fFormatted = voto.fecha ? voto.fecha.split("-").reverse().join("/") : "S/F";
-    document.getElementById("mv-num-sesion").innerText = voto.numeroSesion || "";
-    document.getElementById("mv-fecha-sesion").innerText = fFormatted;
-
-    document.getElementById("mv-input-tema").value = voto.tema || "";
-    document.getElementById("mv-input-categoria").value = voto.categoria || "Todos";
-    document.getElementById("mv-input-resultado").value = voto.resultadoGeneral || "Aprobado";
-    document.getElementById("mv-input-aguayo").value = voto.votoAguayo || "A Favor";
-    document.getElementById("mv-input-comentario").value = voto.comentarioExplicacion || "";
-
-    const selectAguayo = document.getElementById("mv-input-aguayo");
-    selectAguayo.style.color = voto.votoAguayo === "A Favor" ? "#10b981" : 
-                               voto.votoAguayo === "En Contra" ? "#ef4444" : 
-                               voto.votoAguayo === "Abstención" ? "#f59e0b" : "#64748b";
 
     window.abrirModalG("modal-voto-single");
 };
 
+// FUNCIÓN CORREGIDA: Fuerza estilos visuales y remueve bloqueos
 window.activarEdicionVotoUnico = function() {
-    const inputs = document.querySelectorAll(".modo-vista-lectura");
-    inputs.forEach(input => {
-        if(input.tagName === "SELECT") {
-            input.removeAttribute("disabled");
-        } else {
-            input.removeAttribute("readonly");
+    const inputs = ["mv-input-tema", "mv-input-categoria", "mv-input-resultado", "mv-input-aguayo", "mv-input-comentario"];
+    
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.removeAttribute("readonly");
+            el.removeAttribute("disabled");
+            el.style.border = "1px solid #cbd5e1";
+            el.style.background = "#ffffff";
+            el.style.paddingLeft = "12px";
+            el.style.pointerEvents = "auto";
         }
     });
 
-    document.getElementById("mv-input-aguayo").style.color = "#0f172a";
     document.getElementById("btn-activar-edicion-voto").style.display = "none";
     document.getElementById("mv-acciones-guardar").style.display = "block";
 };
 
+// FUNCIÓN CORREGIDA: Devuelve a modo estricto de lectura
 window.cancelarEdicionVotoUnico = function() {
-    const inputs = document.querySelectorAll(".modo-vista-lectura");
-    inputs.forEach(input => {
-        if(input.tagName === "SELECT") {
-            input.setAttribute("disabled", "true");
-        } else {
-            input.setAttribute("readonly", "true");
+    const inputs = ["mv-input-tema", "mv-input-categoria", "mv-input-resultado", "mv-input-aguayo", "mv-input-comentario"];
+    
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.tagName === "SELECT") {
+                el.setAttribute("disabled", true);
+            } else {
+                el.setAttribute("readonly", true);
+            }
+            // Restaurar estilos de lectura
+            el.style.border = "1px solid transparent";
+            el.style.background = "transparent";
+            el.style.paddingLeft = "0";
+            el.style.pointerEvents = "none";
         }
     });
 
     document.getElementById("btn-activar-edicion-voto").style.display = "flex";
     document.getElementById("mv-acciones-guardar").style.display = "none";
-    
-    if(window.votoUnicoEditandoId) {
-        const voto = votacionesMemory.find(v => v.id === window.votoUnicoEditandoId);
-        if(voto) {
-            const selectAguayo = document.getElementById("mv-input-aguayo");
-            selectAguayo.style.color = voto.votoAguayo === "A Favor" ? "#10b981" : 
-                                       voto.votoAguayo === "En Contra" ? "#ef4444" : 
-                                       voto.votoAguayo === "Abstención" ? "#f59e0b" : "#64748b";
+
+    // Si cancela, devolvemos los valores originales
+    if(window.votoActivoId) {
+        const v = memoryVotaciones.find(x => x.id === window.votoActivoId);
+        if(v) {
+            let safeTema = v.tema || v.titulo || "Tema Registrado";
+            let safeCat = v.categoria || v.area || "GENERAL";
+
+            document.getElementById("mv-input-tema").value = safeTema;
+            
+            const catSelect = document.getElementById("mv-input-categoria");
+            let optionExists = Array.from(catSelect.options).some(opt => opt.value === safeCat);
+            catSelect.value = optionExists ? safeCat : "Todos";
+
+            document.getElementById("mv-input-resultado").value = v.resultadoConcejo || v.resultado || "Pendiente";
+            document.getElementById("mv-input-aguayo").value = v.miVoto || "Pendiente";
+            document.getElementById("mv-input-comentario").value = v.comentario || "";
         }
-    }
-};
-
-window.guardarEdicionVotoUnico = async function() {
-    if(!window.votoUnicoEditandoId) return;
-
-    const btnSubmit = document.querySelector("#mv-acciones-guardar button[type='submit']");
-    btnSubmit.disabled = true;
-    btnSubmit.innerText = "Guardando...";
-
-    try {
-        const payload = {
-            tema: document.getElementById("mv-input-tema").value.trim(),
-            categoria: document.getElementById("mv-input-categoria").value,
-            resultadoGeneral: document.getElementById("mv-input-resultado").value,
-            votoAguayo: document.getElementById("mv-input-aguayo").value,
-            comentarioExplicacion: document.getElementById("mv-input-comentario").value.trim()
-        };
-
-        const batch = writeBatch(db);
-        const refVoto = doc(db, "votaciones_concejo", window.votoUnicoEditandoId);
-        batch.update(refVoto, payload);
-        await batch.commit();
-
-        window.cerrarModalG("modal-voto-single");
-        await sincronizarDatosBaseConcejo();
-        calcularDashboardIndicadores();
-        filtrarYRenderizarTablaVotos();
-        renderizarPanelesActivos(); 
-    } catch(err) {
-        console.error("Error actualizando voto", err);
-    } finally {
-        btnSubmit.disabled = false;
-        btnSubmit.innerText = "Guardar Cambios del Voto";
     }
 };
 
 window.irAExpedienteDesdeVoto = function() {
-    if(window.sesionAsociadaAlVotoId) {
-        window.cerrarModalG("modal-voto-single");
+    window.cerrarModalG("modal-voto-single");
+    if(window.sesionExpedienteActiva) {
         setTimeout(() => {
-            window.abrirVistaExpediente(window.sesionAsociadaAlVotoId);
-        }, 350);
+            window.abrirExpedienteMaestro(window.sesionExpedienteActiva.id);
+        }, 300);
     }
 };
 
-// ==============================================================================
-// 👑 LÓGICA DE PREVISUALIZACIÓN DE PDF TIPO BLOB (ANTI-BLOQUEOS)
-// ==============================================================================
-window.togglePdfPreview = async function(url) {
-    const viewer = document.getElementById("exp-pdf-viewer");
-    const iframe = document.getElementById("exp-pdf-iframe");
-    
-    if (viewer.style.display === "none") {
-        viewer.style.display = "block";
-        iframe.src = ""; // Limpiamos visor anterior
-        
-        // Animación de carga visual (Base64 SVG)
-        viewer.style.background = "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" preserveAspectRatio=\"xMidYMid\" width=\"40\" height=\"40\" style=\"margin:auto; display:block;\"><circle cx=\"50\" cy=\"50\" fill=\"none\" stroke=\"%230b438c\" stroke-width=\"8\" r=\"35\" stroke-dasharray=\"164.93361431346415 56.97787143782138\"><animateTransform attributeName=\"transform\" type=\"rotate\" repeatCount=\"indefinite\" dur=\"1s\" values=\"0 50 50;360 50 50\" keyTimes=\"0;1\"></animateTransform></circle></svg>') center center no-repeat #f8fafc";
-        
-        try {
-            // Descargamos el documento como Blob para saltarnos el bloqueo de CORS y X-Frame-Options de Google
-            const response = await fetch(url);
-            const blob = await response.blob();
-            
-            // Creamos una URL local temporal en el navegador y la inyectamos
-            const objectUrl = URL.createObjectURL(blob);
-            iframe.src = objectUrl;
-            
-        } catch(e) {
-            console.error("Error al cargar la previsualización del PDF:", e);
-            // Plan B en caso de que las reglas de red fallen
-            iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+window.guardarEdicionVotoUnico = async function() {
+    if (!window.votoActivoId) return;
+
+    const nTema = document.getElementById("mv-input-tema").value.trim();
+    const nCat = document.getElementById("mv-input-categoria").value;
+    const nRes = document.getElementById("mv-input-resultado").value;
+    const nVoto = document.getElementById("mv-input-aguayo").value;
+    const nCom = document.getElementById("mv-input-comentario").value.trim();
+
+    if(!nTema) { alert("El tema no puede estar vacío."); return; }
+
+    const vRef = doc(db, "votos_concejo", window.votoActivoId);
+
+    try {
+        await updateDoc(vRef, {
+            tema: nTema,
+            categoria: nCat,
+            resultadoConcejo: nRes,
+            miVoto: nVoto,
+            comentario: nCom
+        });
+
+        const obj = memoryVotaciones.find(x => x.id === window.votoActivoId);
+        if(obj) {
+            if (obj.miVoto !== nVoto) {
+                await recalcularEstadisticasSesion(obj.sessionId);
+            }
+
+            obj.tema = nTema;
+            obj.categoria = nCat;
+            obj.resultadoConcejo = nRes;
+            obj.miVoto = nVoto;
+            obj.comentario = nCom;
         }
-    } else {
-        iframe.src = "";
-        viewer.style.display = "none";
+
+        filtrarVotacionesMaestro(); 
+        window.cancelarEdicionVotoUnico();
+        alert("Voto modificado con éxito.");
+        
+    } catch(e) {
+        console.error("Error al actualizar voto:", e);
+        alert("Hubo un error al guardar los cambios.");
     }
 };
+
+async function recalcularEstadisticasSesion(sessionId) {
+    const hijos = memoryVotaciones.filter(x => x.sessionId === sessionId);
+    
+    let aF = 0; let eC = 0; let aB = 0; let aU = 0;
+    hijos.forEach(h => {
+        let votoEvaluado = h.miVoto || "Pendiente";
+        if(votoEvaluado === "A Favor") aF++;
+        if(votoEvaluado === "En Contra") eC++;
+        if(votoEvaluado === "Abstención") aB++;
+        if(votoEvaluado === "Ausente") aU++;
+    });
+
+    try {
+        await updateDoc(doc(db, "sesiones_concejo", sessionId), {
+            votosAFavor: aF,
+            votosEnContra: eC,
+            votosAbstencion: aB,
+            votosAusente: aU
+        });
+        
+        const sObj = memorySesiones.find(x => x.id === sessionId);
+        if(sObj) {
+            sObj.votosAFavor = aF;
+            sObj.votosEnContra = eC;
+            sObj.votosAbstencion = aB;
+            sObj.votosAusente = aU;
+        }
+        
+        renderizarGrillaSesiones();
+        
+    } catch(e) {
+        console.error("Error recalculando metadatos de sesión:", e);
+    }
+}
+
+document.querySelectorAll(".concejo-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".concejo-tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".concejo-panel-content").forEach(p => p.classList.remove("active"));
+        
+        btn.classList.add("active");
+        document.getElementById(btn.getAttribute("data-target")).classList.add("active");
+    });
+});
+
+// INIT
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        window.cargarDatosMaestrosConcejo();
+    }
+});

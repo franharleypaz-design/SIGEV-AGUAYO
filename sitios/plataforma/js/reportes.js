@@ -49,7 +49,8 @@ async function descargarYCompilarUniversoSaaS() {
                 id: doc.id,
                 fecha: d.fechaRegistro ? d.fechaRegistro.toDate() : new Date(),
                 sector: d.sectorTerritorial || "Sin Información",
-                activo: d.estadoExpediente === "Activo"
+                activo: d.estadoExpediente === "Activo",
+                ...d // <-- Agregamos toda la metadata para la exportación a Excel
             });
         });
 
@@ -100,215 +101,216 @@ async function descargarYCompilarUniversoSaaS() {
 }
 
 function procesarCalculosEstrategicos() {
-    const fDesde = new Date(document.getElementById("repo-filter-desde").value + "T00:00:00");
-    const fHasta = new Date(document.getElementById("repo-filter-hasta").value + "T23:59:59");
+    const fDesdeStr = document.getElementById("repo-filter-desde").value;
+    const fHastaStr = document.getElementById("repo-filter-hasta").value;
 
-    // Corte temporal de datos
-    let solsPeriodo = universoSolicitudesMemory.filter(s => s.fecha >= fDesde && s.fecha <= fHasta);
-    let vecinosPeriodo = universoVecinosMemory.filter(v => v.fecha >= fDesde && v.fecha <= fHasta);
+    const inicioDia = new Date(fDesdeStr + "T00:00:00");
+    const finDia = new Date(fHastaStr + "T23:59:59");
 
-    const delta = fHasta.getTime() - fDesde.getTime();
-    let solsAnterior = universoSolicitudesMemory.filter(s => s.fecha >= new Date(fDesde.getTime() - delta) && s.fecha < fDesde);
-    let vecinosAnterior = universoVecinosMemory.filter(v => v.fecha >= new Date(fDesde.getTime() - delta) && v.fecha < fDesde);
+    const filtradasSols = universoSolicitudesMemory.filter(s => s.fecha >= inicioDia && s.fecha <= finDia);
+    const filtradosVecinos = universoVecinosMemory.filter(v => v.fecha >= inicioDia && v.fecha <= finDia);
 
-    // 🎛️ RE-RENDERIZADO DE SECCIONES SEGÚN SUB-PESTAÑA (EL CORAZÓN DEL CENTRO DE INTELIGENCIA)
-    document.getElementById("repo-main-title").innerText = `Reporte ${pestañaActivaReportes.toUpperCase()}`;
+    actualizarKPIsGlobales(filtradasSols, filtradosVecinos);
     
-    // Contenedores universales para inyección mutante
-    const rowDonuts = document.getElementById("canvas-row-donuts");
-    const titleDonut1 = document.getElementById("title-donut-1");
-    const titleDonut2 = document.getElementById("title-donut-2");
-    const titleRanking = document.getElementById("title-main-ranking");
-
-    let dist1 = {}, dist2 = {}, distRanking = {};
-
     if (pestañaActivaReportes === "ejecutivo") {
-        rowDonuts.style.display = "grid";
-        titleDonut1.innerText = "Solicitudes por Categoría";
-        titleDonut2.innerText = "Solicitudes por Estado";
-        titleRanking.innerText = "Top Sectores más demandantes";
-
-        solsPeriodo.forEach(s => { dist1[s.categoria] = (dist1[s.categoria] || 0) + 1; dist2[s.estado] = (dist2[s.estado] || 0) + 1; distRanking[s.sector] = (distRanking[s.sector] || 0) + 1; });
-
-        renderizarCardKPI(1, "VECINOS REGISTRADOS", universoVecinosMemory.length, vecinosAnterior.length, "vecinos", false);
-        renderizarCardKPI(2, "SOLICITUDES INGRESADAS", solsPeriodo.length, solsAnterior.length, "tickets", false);
-        renderizarCardKPI(3, "SOLICITUDES RESUELTAS", calcularPorcentajeCierre(solsPeriodo), calcularPorcentajeCierre(solsAnterior), "%", false);
-        renderizarCardKPI(4, "TIEMPO PROMEDIO GESTIÓN", calcularTiempoPromedio(solsPeriodo), calcularTiempoPromedio(solsAnterior), "días", true);
-
+        renderizarModuloEjecutivo(filtradasSols, filtradosVecinos);
     } else if (pestañaActivaReportes === "territorial") {
-        rowDonuts.style.display = "none"; // En territorial no hay donuts, solo rankings duros
-        titleRanking.innerText = "Distribución de Solicitudes por Sector Comunal";
+        renderizarModuloTerritorial(filtradasSols, filtradosVecinos);
+    } else if (pestañaActivaReportes === "rendimiento") {
+        renderizarModuloRendimiento(filtradasSols);
+    }
+}
 
-        solsPeriodo.forEach(s => { distRanking[s.sector] = (distRanking[s.sector] || 0) + 1; });
-        universoVecinosMemory.forEach(v => { dist1[v.sector] = (dist1[v.sector] || 0) + 1; });
+function actualizarKPIsGlobales(sols, vecinos) {
+    const cerradas = sols.filter(s => ["completada", "cerrada", "finalizada", "resuelta"].includes(s.estado.toLowerCase())).length;
+    const abiertas = sols.length - cerradas;
+    const tasa = sols.length > 0 ? Math.round((cerradas / sols.length) * 100) : 0;
 
-        renderizarCardKPI(1, "VECINOS SECTOR 1", universoVecinosMemory.filter(v=>v.sector.includes("1")).length, 400, "vecinos", false);
-        renderizarCardKPI(2, "VECINOS SECTOR 2", universoVecinosMemory.filter(v=>v.sector.includes("2")).length, 300, "vecinos", false);
-        renderizarCardKPI(3, "SOLICITUDES POR 100 VECINOS", universoVecinosMemory.length > 0 ? Math.round((solsPeriodo.length / universoVecinosMemory.length) * 100) : 0, 10, "casos", false);
-        renderizarCardKPI(4, "SECTORES URBANOS ACTIVOS", calcularSectoresActivos(solsPeriodo), 6, "de 6", false);
+    const prevSols = universoSolicitudesMemory.filter(s => s.fecha < new Date(document.getElementById("repo-filter-desde").value)).length;
+    const prevVec = universoVecinosMemory.filter(v => v.fecha < new Date(document.getElementById("repo-filter-desde").value)).length;
 
-    } else if (pestañaActivaReportes === "gestion") {
-        rowDonuts.style.display = "grid";
-        titleDonut1.innerText = "Casos por Estado Crítico";
-        titleDonut2.innerText = "Carga por Departamento";
-        titleRanking.innerText = "Efectividad de Cierre por Departamento";
+    const diffSols = sols.length - prevSols;
+    const diffVec = vecinos.length - prevVec;
 
-        solsPeriodo.forEach(s => { dist1[s.estado] = (dist1[s.estado] || 0) + 1; dist2[s.depto] = (dist2[s.depto] || 0) + 1; if(["Resuelto","Finalizada"].includes(s.estado)) distRanking[s.depto] = (distRanking[s.depto] || 0) + 1; });
-
-        renderizarCardKPI(1, "CASOS CERRADOS", solsPeriodo.filter(s=>["Resuelto","Finalizada"].includes(s.estado)).length, 80, "casos", false);
-        renderizarCardKPI(2, "CASOS PENDIENTES", solsPeriodo.filter(s=>!["Resuelto","Finalizada"].includes(s.estado)).length, 12, "casos", true);
-        renderizarCardKPI(3, "CASOS VENCIDOS (+30D)", solsPeriodo.filter(s=>s.prioridad === "Alta" && !["Resuelto","Finalizada"].includes(s.estado)).length, 14, "alertas", true);
-        renderizarCardKPI(4, "TIEMPO PROMEDIO CIERRE", calcularTiempoPromedio(solsPeriodo), 8, "días", true);
-
-    } else if (pestañaActivaReportes === "participacion") {
-        rowDonuts.style.display = "grid";
-        titleDonut1.innerText = "Canales de Captación Utilizados";
-        titleDonut2.innerText = "Organizaciones Vinculadas";
-        titleRanking.innerText = "Índice de Participación por Sector Urbanístico";
-
-        solsPeriodo.forEach(s => { dist1[s.origen] = (dist1[s.origen] || 0) + 1; distRanking[s.sector] = (distRanking[s.sector] || 0) + 1; });
-        dist2["Juntas de Vecinos"] = 12; dist2["Clubes Deportivos"] = 8; dist2["Agrupaciones"] = 4;
-
-        renderizarCardKPI(1, "NUEVOS VECINOS (MES)", vecinosPeriodo.length, vecinosAnterior.length, "inscritos", false);
-        renderizarCardKPI(2, "VECINOS ACTIVOS (30D)", universoVecinosMemory.filter(v=>v.activo).length, 120, "vecinos", false);
-        renderizarCardKPI(3, "VECINOS QUE COOPERAN", universoVecinosMemory.length, 185, "fichas", false);
-        renderizarCardKPI(4, "ORGANIZACIONES EN MATRIZ", 24, 22, "sedes", false);
-
-    } else if (pestañaActivaReportes === "tendencias") {
-        rowDonuts.style.display = "grid";
-        titleDonut1.innerText = "Problemas Recurrentes";
-        titleDonut2.innerText = "Estacionalidad Climática";
-        titleRanking.innerText = "Categorías Emergentes (Crecimiento)";
-
-        solsPeriodo.forEach(s => { dist1[s.categoria] = (dist1[s.categoria] || 0) + 1; distRanking[s.categoria] = (distRanking[s.categoria] || 0) + 1; });
-        dist2["Invierno: Alumbrado"] = 45; dist2["Verano: Áreas Verdes"] = 20;
-
-        renderizarCardKPI(1, "ÍNDICE PRESENCIA TERRITORIAL", Math.round((calcularSectoresActivos(solsPeriodo)/6)*100), 100, "% Cobertura", false);
-        renderizarCardKPI(2, "ÍNDICE PARTICIPACIÓN VECINAL", universoVecinosMemory.length > 0 ? Math.round((universoVecinosMemory.filter(v=>v.activo).length / universoVecinosMemory.length)*100) : 0, 80, "% IPV", false);
-        renderizarCardKPI(3, "ÍNDICE DE RESPUESTA", calcularPorcentajeCierre(solsPeriodo), 75, "% Resuelto", false);
-        renderizarCardKPI(4, "TENDENCIA GENERAL EMERGENTE", solsPeriodo.length, solsAnterior.length, "casos", false);
+    if(document.getElementById("rkpi-total-casos")) {
+        document.getElementById("rkpi-total-casos").innerText = sols.length;
+        document.getElementById("rkpi-total-casos-tendencia").innerHTML = diffSols >= 0 ? `↑ ${diffSols} vs mes ant.` : `↓ ${Math.abs(diffSols)} vs mes ant.`;
+        document.getElementById("rkpi-total-casos-tendencia").style.color = diffSols >= 0 ? "#10b981" : "#ef4444";
     }
 
-    // 🌟 INYECTOR DE HISTOGRAMAS NATIVOS EN EL CANVAS
-    inyectarBarrasVisualesNativas("lista-donut-1-items", dist1, solsPeriodo.length || 1, "fill-blue");
-    inyectarBarrasVisualesNativas("lista-donut-2-items", dist2, solsPeriodo.length || 1, "fill-purple");
-    inyectarBarrasVisualesNativas("main-ranking-bars-injector", distRanking, solsPeriodo.length || 1, "fill-orange");
-
-    // Redibujar Anillos Cónicos Dinámicos CSS
-    ajustarAnilloConicoGrafico("donut-1-render", dist1, solsPeriodo.length, ["#2563eb", "#8b5cf6", "#f59e0b", "#10b981", "#cbd5e1"]);
-    ajustarAnilloConicoGrafico("donut-2-render", dist2, solsPeriodo.length, ["#10b981", "#f59e0b", "#ef4444", "#64748b"]);
-
-    // 🌟 RE-CALCULAR WIDGET LATERAL EXCLUSIVO DE COBERTURA (LA JOYA DE GONZALO)
-    document.getElementById("resumen-fechas").innerText = `${fDesde.toLocaleDateString('es-CL')} al ${fHasta.toLocaleDateString('es-CL')}`;
-    document.getElementById("resumen-cobertura-pct").innerText = `${Math.round((calcularSectoresActivos(solsPeriodo)/6)*100)}% Comuna`;
-    document.getElementById("resumen-ipv-pct").innerText = `${universoVecinosMemory.length > 0 ? Math.round((universoVecinosMemory.filter(v=>v.activo).length / universoVecinosMemory.length)*100) : 0}% Activos`;
-    document.getElementById("resumen-respuesta-pct").innerText = `${calcularPorcentajeCierre(solsPeriodo)}% Cerrados`;
-
-    // Renderizar Bitácora reducida
-    renderizarBitacoraActividadReciente(solsPeriodo);
-}
-
-function renderizarCardKPI(index, label, valActual, valAnterior, unidad, esInverso) {
-    document.getElementById(`lbl-kpi-${index}`).innerText = label;
-    const h3 = document.getElementById(`kpi-val-${index}`);
-    const badge = document.getElementById(`trend-val-${index}`);
-    const subtext = document.getElementById(`subtext-kpi-${index}`);
-
-    h3.innerHTML = `${valActual} <span style="font-size:12px; font-weight:600; color:var(--text-light); margin-left:2px;">${unidad}</span>`;
-    if (subtext) subtext.innerText = `vs. período anterior (${valAnterior} ${unidad})`;
-
-    if (valAnterior === 0) {
-        badge.innerText = "= 0%"; badge.style.background = "#f1f5f9"; badge.style.color = "#475569"; return;
+    if(document.getElementById("rkpi-resolucion")) {
+        document.getElementById("rkpi-resolucion").innerText = `${tasa}%`;
+        const diffTasa = tasa - 50; 
+        document.getElementById("rkpi-resolucion-tendencia").innerHTML = diffTasa >= 0 ? `↑ Efectividad alta` : `↓ Requiere atención`;
+        document.getElementById("rkpi-resolucion-tendencia").style.color = diffTasa >= 0 ? "#10b981" : "#d97706";
     }
-    const cambio = ((valActual - valAnterior) / valAnterior) * 100;
-    const cambioAbs = Math.abs(Math.round(cambio));
 
-    if (cambio > 0) { badge.innerText = `▲ +${cambioAbs}%`; badge.style.background = esInverso ? "#fef2f2" : "#f0fdf4"; badge.style.color = esInverso ? "#ef4444" : "#16a34a"; }
-    else if (cambio < 0) { badge.innerText = `▼ -${cambioAbs}%`; badge.style.background = esInverso ? "#f0fdf4" : "#fef2f2"; badge.style.color = esInverso ? "#16a34a" : "#ef4444"; }
-    else { badge.innerText = `= 0%`; badge.style.background = "#f1f5f9"; badge.style.color = "#475569"; }
+    if(document.getElementById("rkpi-casos-abiertos")) {
+        document.getElementById("rkpi-casos-abiertos").innerText = abiertas;
+    }
+
+    if(document.getElementById("rkpi-nuevos-vecinos")) {
+        document.getElementById("rkpi-nuevos-vecinos").innerText = vecinos.length;
+        document.getElementById("rkpi-nuevos-vecinos-tendencia").innerHTML = diffVec >= 0 ? `↑ ${diffVec} vs ant.` : `↓ ${Math.abs(diffVec)} vs ant.`;
+        document.getElementById("rkpi-nuevos-vecinos-tendencia").style.color = diffVec >= 0 ? "#10b981" : "#ef4444";
+    }
 }
 
-function calcularSectoresActivos(lista) {
-    let sectores = new Set();
-    lista.forEach(s => { if(s.sector && s.sector !== "Sin Información" && !s.sector.includes("Web")) sectores.add(s.sector); });
-    return sectores.size === 0 ? 4 : sectores.size; // Balance por defecto
+// ==============================================================================
+// MÓDULO 1: RESUMEN EJECUTIVO
+// ==============================================================================
+function renderizarModuloEjecutivo(sols, vecinos) {
+    const content = document.getElementById("reporte-content-area");
+    if (!content) return;
+
+    // Conteo por Categoría Oficial
+    const conteoCat = {};
+    sols.forEach(s => { conteoCat[s.categoria] = (conteoCat[s.categoria] || 0) + 1; });
+    const topCats = Object.entries(conteoCat).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+    let htmlTopCats = topCats.length === 0 ? `<p style="font-size:12px; color:var(--text-light);">No hay datos.</p>` : "";
+    topCats.forEach((c, idx) => {
+        const perc = Math.round((c[1] / sols.length) * 100);
+        const colores = ["#2563eb", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444"];
+        htmlTopCats += `
+            <div style="margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px; color:var(--text-dark);">
+                    <span>${c[0]}</span><span>${c[1]} <small style="color:var(--text-light)">(${perc}%)</small></span>
+                </div>
+                <div style="width:100%; height:6px; background:#f1f5f9; border-radius:3px;">
+                    <div style="width:${perc}%; height:100%; background:${colores[idx]}; border-radius:3px;"></div>
+                </div>
+            </div>`;
+    });
+
+    // Origen de Solicitudes
+    let pPresencial = 0; let pDigital = 0;
+    if (sols.length > 0) {
+        const pres = sols.filter(s => s.origen === "Presencial").length;
+        pPresencial = Math.round((pres / sols.length) * 100);
+        pDigital = 100 - pPresencial;
+    }
+
+    content.innerHTML = `
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+            <div class="section-card">
+                <h4 style="font-size: 13px; font-weight: 800; color: var(--text-dark); margin: 0 0 16px 0; text-transform: uppercase;">Top 5: Demandas Ciudadanas</h4>
+                ${htmlTopCats}
+            </div>
+            
+            <div class="section-card">
+                <h4 style="font-size: 13px; font-weight: 800; color: var(--text-dark); margin: 0 0 16px 0; text-transform: uppercase;">Canal de Ingreso</h4>
+                <div style="display:flex; align-items:center; justify-content:center; gap:20px; height: 120px;">
+                    <div style="width:100px; height:100px; border-radius:50%; background: conic-gradient(#2563eb 0% ${pPresencial}%, #8b5cf6 ${pPresencial}% 100%);"></div>
+                    <div>
+                        <div style="font-size:12px; font-weight:700; margin-bottom:8px;"><span style="color:#2563eb;">●</span> Presencial: ${pPresencial}%</div>
+                        <div style="font-size:12px; font-weight:700;"><span style="color:#8b5cf6;">●</span> Digital (Buzón): ${pDigital}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
-function calcularTiempoPromedio(lista) {
-    let resueltos = lista.filter(s => ["Resuelto", "Finalizada"].includes(s.estado));
-    if (resueltos.length === 0) return 5.2;
-    let suma = resueltos.reduce((acc, s) => acc + (s.id.charCodeAt(0) % 5 + 3), 0);
-    return parseFloat((suma / resueltos.length).toFixed(1));
-}
+// ==============================================================================
+// MÓDULO 2: DESPLIEGUE TERRITORIAL
+// ==============================================================================
+function renderizarModuloTerritorial(sols, vecinos) {
+    const content = document.getElementById("reporte-content-area");
+    if (!content) return;
 
-function calcularPorcentajeCierre(lista) {
-    if (lista.length === 0) return 78;
-    let resueltos = lista.filter(s => ["Resuelto", "Finalizada", "Finalizada (Caso Respondido)"].includes(s.estado)).length;
-    return Math.round((resueltos / lista.length) * 100);
-}
+    // Calcular distribución por sector
+    const conteoSectores = { "S1":0, "S2":0, "S3":0, "S4":0, "S5":0, "S6":0, "Sin Info":0 };
+    sols.forEach(s => {
+        if (s.sector.includes("1")) conteoSectores["S1"]++;
+        else if (s.sector.includes("2")) conteoSectores["S2"]++;
+        else if (s.sector.includes("3")) conteoSectores["S3"]++;
+        else if (s.sector.includes("4")) conteoSectores["S4"]++;
+        else if (s.sector.includes("5")) conteoSectores["S5"]++;
+        else if (s.sector.includes("6")) conteoSectores["S6"]++;
+        else conteoSectores["Sin Info"]++;
+    });
 
-function inyectarBarrasVisualesNativas(containerId, dataObject, total, colorClass) {
-    const container = document.getElementById(containerId);
-    if (!container) return; container.innerHTML = "";
-    let sorted = Object.entries(dataObject).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
-    sorted.forEach(([label, count]) => {
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-        const div = document.createElement("div");
-        div.className = "chart-bar-item";
-        div.innerHTML = `
-            <div class="chart-bar-info"><span class="chart-bar-label"><b>${count}</b> - ${label}</span><span>${pct}%</span></div>
-            <div class="chart-bar-track"><div class="chart-bar-fill ${colorClass}" id="bf-${containerId}-${label.replace(/\s+/g,'-')}"></div></div>
+    const maxVal = Math.max(...Object.values(conteoSectores), 1);
+    const coloresBarras = ["#2563eb", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4", "#ef4444", "#cbd5e1"];
+    
+    let htmlBarras = `<div style="display:flex; align-items:flex-end; justify-content:space-between; height:160px; padding-top:20px; gap:8px;">`;
+    Object.keys(conteoSectores).forEach((key, idx) => {
+        const val = conteoSectores[key];
+        const h = Math.max((val / maxVal) * 100, 5); // Mínimo 5% visual
+        htmlBarras += `
+            <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
+                <span style="font-size:11px; font-weight:800; color:var(--text-dark); margin-bottom:6px;">${val}</span>
+                <div style="width:100%; max-width:40px; height:${h}%; background:${coloresBarras[idx]}; border-radius:4px 4px 0 0;"></div>
+                <span style="font-size:10px; font-weight:700; color:var(--text-light); margin-top:8px;">${key}</span>
+            </div>
         `;
-        container.appendChild(div);
-        setTimeout(() => { const el = document.getElementById(`bf-${containerId}-${label.replace(/\s+/g,'-')}`); if (el) el.style.width = `${pct}%`; }, 60);
     });
+    htmlBarras += `</div>`;
+
+    content.innerHTML = `
+        <div class="section-card">
+            <h4 style="font-size: 13px; font-weight: 800; color: var(--text-dark); margin: 0 0 16px 0; text-transform: uppercase;">Incidencias por Sector Territorial</h4>
+            ${htmlBarras}
+            <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 12px; color: var(--text-light);">
+                <strong>Nota Analítica:</strong> El gráfico representa la distribución geográfica de los tickets en las unidades vecinales del período seleccionado.
+            </div>
+        </div>
+    `;
 }
 
-function ajustarAnilloConicoGrafico(elementId, dataObject, total, coloresArray) {
-    const donut = document.getElementById(elementId); if (!donut) return;
-    if (!total || total === 0) { donut.style.background = "#e2e8f0"; return; }
-    let sorted = Object.entries(dataObject).sort((a,b) => b[1] - a[1]);
-    let acumulado = 0; let gradStr = "conic-gradient(";
-    sorted.forEach(([label, count], i) => {
-        const color = coloresArray[i % coloresArray.length]; const pIni = acumulado; const pFin = acumulado + ((count / total) * 100); acumulado = pFin;
-        gradStr += `${color} ${pIni}% ${pFin}%${i === sorted.length - 1 ? '' : ', '}`;
-    });
-    if (acumulado < 100) gradStr += `, #cbd5e1 ${acumulado}% 100%`;
-    gradStr += ")"; donut.style.background = gradStr;
-}
+// ==============================================================================
+// MÓDULO 3: RENDIMIENTO Y DERIVACIONES
+// ==============================================================================
+function renderizarModuloRendimiento(sols) {
+    const content = document.getElementById("reporte-content-area");
+    if (!content) return;
 
-function renderizarBitacoraActividadReciente(listaTickets) {
-    const tbody = document.querySelector("#tabla-repo-actividad-reciente tbody");
-    if (!tbody) return;
-    let html = ""; let recientes = listaTickets.slice(0, 4);
-    if (recientes.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Sin movimientos en el rango de fechas.</td></tr>`; return; }
-    recientes.forEach(s => {
-        const fStr = s.fecha.toLocaleDateString('es-CL') + " " + s.fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-        let accionText = "Ingreso de requerimiento";
-        if (s.estado === "Derivada") accionText = "Ticket derivado a depto";
-        if (["Resuelto","Finalizada"].includes(s.estado)) accionText = "Caso resuelto por secretaría";
-        html += `
-            <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 12px 10px; font-family: monospace; font-weight:600; color: var(--text-light);">${fStr}</td>
-                <td style="padding: 12px 10px; font-weight: 700; color: var(--text-dark);">${s.usuario}</td>
-                <td style="padding: 12px 10px;"><span style="font-size:11.5px; background:#f1f5f9; padding:2px 8px; border-radius:4px; font-weight:600; color:#334155;">${accionText}</span></td>
-                <td style="padding: 12px 10px; font-weight: 600; color:#64748b; text-transform:capitalize;">${s.origen}</td>
-                <td style="padding: 12px 10px; font-family: monospace; font-weight:700; color: var(--primary-blue);">${s.codigo}</td>
-            </tr>`;
+    const deptoCount = {};
+    sols.forEach(s => { deptoCount[s.depto] = (deptoCount[s.depto] || 0) + 1; });
+    const topDeptos = Object.entries(deptoCount).sort((a,b) => b[1] - a[1]);
+
+    let htmlDeptos = "";
+    topDeptos.forEach(d => {
+        htmlDeptos += `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 10px; font-weight: 600; color: #0f172a; font-size: 12.5px;">${d[0]}</td>
+            <td style="padding: 10px; text-align: right; font-weight: 800; color: #2563eb; font-size: 12.5px;">${d[1]}</td>
+        </tr>`;
     });
-    tbody.innerHTML = html;
+
+    content.innerHTML = `
+        <div class="section-card">
+            <h4 style="font-size: 13px; font-weight: 800; color: var(--text-dark); margin: 0 0 16px 0; text-transform: uppercase;">Top Oficinas / Derivaciones</h4>
+            <div style="max-height: 250px; overflow-y: auto; padding-right: 10px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="position: sticky; top: 0; background: #fff; z-index: 1;">
+                        <tr style="border-bottom: 2px solid #e2e8f0;">
+                            <th style="text-align: left; padding: 8px 10px; font-size: 11px; color: var(--text-light); text-transform: uppercase;">Departamento</th>
+                            <th style="text-align: right; padding: 8px 10px; font-size: 11px; color: var(--text-light); text-transform: uppercase;">Tickets Asignados</th>
+                        </tr>
+                    </thead>
+                    <tbody>${htmlDeptos || `<tr><td colspan="2" style="text-align:center; padding: 20px; color: #94a3b8; font-size: 12px;">Sin datos.</td></tr>`}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
 }
 
 function mostrarAlertaPersonalizada(mensaje, tipo = "success") {
     const overlay = document.createElement("div"); overlay.className = "custom-alert-overlay";
     let iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    
+    if (tipo === "error") {
+        iconSvg = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    }
+
     overlay.innerHTML = `
         <div class="custom-alert-card">
-            <div class="custom-alert-icon" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">${iconSvg}</div>
-            <div class="custom-alert-title">¡Procesando Reporte!</div>
+            <div class="custom-alert-icon" style="background-color: ${tipo === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${tipo === 'success' ? '#10b981' : '#ef4444'};">${iconSvg}</div>
+            <div class="custom-alert-title">¡Información del Sistema!</div>
             <div class="custom-alert-message">${mensaje}</div>
-            <button class="btn-alert-confirm">Aceptar</button>
+            <button class="btn-alert-confirm" style="background-color: #0b438c; width: 100%; border-radius: 8px;">Aceptar</button>
         </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector(".btn-alert-confirm").onclick = () => overlay.remove();
@@ -343,4 +345,93 @@ function vincularEscuchadoresReportes() {
             mostrarAlertaPersonalizada(msg, "success");
         };
     });
+
+    // 🚀 BINDEAR EL NUEVO BOTÓN DE DESCARGA DE PADRÓN DE VECINOS
+    const btnDescargarPadron = document.getElementById("btn-exportar-padron-excel");
+    if (btnDescargarPadron) {
+        btnDescargarPadron.addEventListener("click", exportarPadronVecinosExcel);
+    }
+}
+
+// ==============================================================================
+// 🚀 EXPORTACIÓN MASIVA: PADRÓN DE VECINOS A EXCEL
+// ==============================================================================
+function calcularEdad(fechaNacimiento) {
+    if (!fechaNacimiento || fechaNacimiento === "No registrada" || fechaNacimiento === "") return "S/R";
+    const hoy = new Date();
+    const cumpleanos = new Date(fechaNacimiento + "T00:00:00");
+    if (isNaN(cumpleanos.getTime())) return "S/R";
+    let edad = hoy.getFullYear() - cumpleanos.getFullYear();
+    const m = hoy.getMonth() - cumpleanos.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) {
+        edad--;
+    }
+    return edad;
+}
+
+function exportarPadronVecinosExcel() {
+    if (typeof XLSX === "undefined") {
+        alert("Error: La librería XLSX (SheetJS) no está cargada en el navegador.");
+        return;
+    }
+
+    if (universoVecinosMemory.length === 0) {
+        mostrarAlertaPersonalizada("No hay vecinos registrados en la base de datos para exportar.", "error");
+        return;
+    }
+
+    mostrarAlertaPersonalizada("Procesando matriz de vecinos... Descargando Padrón Completo en formato Excel (.xlsx).", "success");
+
+    // Mapear los datos ordenados tipo reporte
+    const dataAExportar = universoVecinosMemory.map(v => {
+        let fNacimiento = v.fechaNacimiento || "No registrada";
+        let fRegistro = v.fechaRegistro && v.fechaRegistro.seconds ? new Date(v.fechaRegistro.seconds * 1000).toLocaleDateString("es-CL") : (v.fechaRegistro ? new Date(v.fechaRegistro).toLocaleDateString("es-CL") : "No registrada");
+
+        return {
+            "ID Vecino": v.correlativo ? `SIG-VEC-${String(v.correlativo).padStart(5, '0')}` : v.id.substring(0,6).toUpperCase(),
+            "RUT": v.rut || "Sin RUT",
+            "Nombre Completo": v.nombreCompleto || "S/R",
+            "Teléfono": v.telefono || "S/R",
+            "Correo Electrónico": v.correo || "S/R",
+            "Sexo": v.sexo || "S/R",
+            "Fecha Nacimiento": fNacimiento,
+            "Edad": calcularEdad(fNacimiento),
+            "Dirección Principal": v.direccion || "S/R",
+            "Dirección Complementaria": v.direccionComplementaria || "",
+            "Sector Territorial": v.sectorTerritorial || "S/R",
+            "Unidad Vecinal (UV)": v.unidadVecinal || "S/R",
+            "Junta de Vecinos": v.juntaVecinos || "S/R",
+            "Barrio / Villa Popular": v.barrioPopular || "S/R",
+            "Previsión de Salud": v.previsionSalud || "S/R",
+            "Tramo / Isapre": v.tramoLetraIsapre || "",
+            "Ocupación / Oficio": v.ocupacion || "",
+            "Tipo Solicitante": v.tipoSolicitante || "Vecino/a",
+            "Tipo Organización": v.tipoOrganizacion || "",
+            "Nombre Organización": v.nombreOrganizacion || "",
+            "Jefe de Hogar": v.jefeHogar ? "SÍ" : "NO",
+            "Integrantes Hogar": v.cantidadIntegrantes || 1,
+            "ID Grupo Familiar": v.idHogar || "",
+            "Latitud": v.lat || "",
+            "Longitud": v.lng || "",
+            "Fecha Registro": fRegistro,
+            "Notas / Observaciones": v.observaciones || ""
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataAExportar);
+    
+    // Auto-ajustar ancho de columnas para que el Excel se vea profesional
+    const wscols = [
+        {wch: 15}, {wch: 15}, {wch: 35}, {wch: 18}, {wch: 30}, {wch: 12}, {wch: 18}, {wch: 8}, 
+        {wch: 35}, {wch: 25}, {wch: 25}, {wch: 20}, {wch: 25}, {wch: 25}, {wch: 20}, {wch: 18},
+        {wch: 25}, {wch: 25}, {wch: 25}, {wch: 30}, {wch: 15}, {wch: 18}, {wch: 30}, {wch: 15}, 
+        {wch: 15}, {wch: 15}, {wch: 50}
+    ];
+    ws['!cols'] = wscols;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Padrón Total");
+
+    const fechaHoy = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `Reporte_Padron_Completo_${CURRENT_TENANT_ID.toUpperCase()}_${fechaHoy}.xlsx`);
 }
